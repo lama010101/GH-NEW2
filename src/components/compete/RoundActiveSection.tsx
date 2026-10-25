@@ -723,7 +723,9 @@ export default function RoundActiveSection({
             .filter((p) => p.playerId !== playerId)
             .map((p) => (
                 <div key={p.playerId} className={styles.opponentRow}>
-                  {p.hasSubmitted ? (
+                  {p.leftAt != null ? (
+                    <div className={styles.opponentStatusLeft}>{t('left')}</div>
+                  ) : p.hasSubmitted ? (
                     <div className={styles.opponentStatusGuessed}>{t('guessed')}</div>
                   ) : (
                     <div className={styles.opponentStatusWaiting}>{t('waiting_for')}</div>
@@ -735,6 +737,7 @@ export default function RoundActiveSection({
                     size={42}
                     submitted={p.hasSubmitted}
                     isAi={p.isAi}
+                    className={p.leftAt != null ? styles.opponentAvatarLeft : undefined}
                   />
                 </div>
               ))
@@ -1075,7 +1078,7 @@ export default function RoundActiveSection({
             </p>
             <button
               type="button"
-              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
+              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; window.setTimeout(() => setHomeNavigating(false), 3000); }}
               disabled={homeNavigating}
               className={styles.settingsHomeBtn}
             >

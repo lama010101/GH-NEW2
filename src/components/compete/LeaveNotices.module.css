@@ -1,0 +1,122 @@
+/* MP-BUILD-LEFTPLAYER-NOTICE-1021-004 — leave toast + solo banner (sync only).
+   Placement mirrors the existing .playerSubmittedToast idiom: fixed top-center
+   below the round HUD (timer pill bottom ≈ 78px), safe-area aware, z 9000 —
+   above gameplay HUD (≤50), below fullscreen overlays/modals (≥9000 peers). */
+
+.stack {
+  position: fixed;
+  top: calc(88px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none; /* non-blocking: only the banner re-enables events */
+}
+
+/* Mobile: the opponent column (status pill + avatar ≈140px wide) occupies the
+   top-right from y16, so a centered stack always overlaps it at 390px. Anchor
+   left instead — below roundPill (bottom≈44) and settingsBell (bottom≈94),
+   and bounded left of the opponent column's worst-case left edge. */
+@media (max-width: 640px) {
+  .stack {
+    top: calc(104px + env(safe-area-inset-top));
+    left: 16px;
+    transform: none;
+    align-items: flex-start;
+    max-width: calc(100vw - 176px);
+  }
+
+  .toast {
+    max-width: 100%;
+  }
+
+  .soloBannerActions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+.soloBanner {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--gh-border-default);
+  box-shadow: var(--gh-shadow-modal, 0 8px 32px rgba(0, 0, 0, 0.4));
+}
+
+.soloBannerTitle {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  text-align: center;
+}
+
+.soloBannerActions {
+  display: flex;
+  gap: 10px;
+}
+
+.soloContinueBtn,
+.soloExitBtn {
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--gh-border-default);
+  color: var(--gh-text-primary);
+  background: var(--gh-glass-bg, rgba(255, 255, 255, 0.08));
+}
+
+.soloExitBtn {
+  color: var(--gh-danger-text, var(--gh-text-primary));
+  border-color: var(--gh-danger, var(--gh-border-default));
+}
+
+.toastList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--gh-modal-overlay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 24px;
+  padding: 10px 18px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--gh-text-primary);
+  animation: leaveToastIn 200ms ease-out;
+}
+
+@keyframes leaveToastIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

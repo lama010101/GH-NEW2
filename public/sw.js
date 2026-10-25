@@ -85,7 +85,7 @@ self.addEventListener('push', (event) => {
       console.warn('[sw] push event data could not be parsed as JSON', err);
     }
 
-    const title = payload.title || 'Guess History';
+    const title = payload.title || 'Back to the Past';
     const options = {
       body: payload.body || '',
       icon: payload.icon,
@@ -93,6 +93,9 @@ self.addEventListener('push', (event) => {
       tag: payload.tag,
       data: { url: payload.url || '/' },
     };
+    if (payload.tag) {
+      options.renotify = true;
+    }
 
     console.log('[sw] calling showNotification', { title, options });
     try {
@@ -108,17 +111,30 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const url = event.notification?.data?.url;
-  if (url) {
-    event.waitUntil(self.clients.openWindow(url));
-  } else {
-    event.waitUntil(
-      self.clients.matchAll({ type: 'window' }).then((clientList) => {
-        if (clientList.length > 0) {
-          return clientList[0].focus();
-        }
-        return self.clients.openWindow('/');
-      })
-    );
+  const rawUrl = event.notification?.data?.url || '/';
+  let targetUrl;
+  try {
+    const resolved = new URL(rawUrl, self.location.origin);
+    targetUrl = resolved.origin === self.location.origin ? resolved.href : `${self.location.origin}/`;
+  } catch (err) {
+    targetUrl = `${self.location.origin}/`;
   }
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clientList) => {
+      if (clientList.length > 0) {
+        const client = clientList[0];
+        await client.focus();
+        if ('navigate' in client) {
+          try {
+            await client.navigate(targetUrl);
+          } catch (navErr) {
+            return self.clients.openWindow(targetUrl);
+          }
+        }
+        return;
+      }
+      return self.clients.openWindow(targetUrl);
+    })
+  );
 });

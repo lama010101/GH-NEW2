@@ -1,0 +1,104 @@
+.card {
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.muted {
+  font-size: var(--font-sm);
+  color: var(--gh-text-secondary);
+}
+
+.prefRow {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prefLabel {
+  color: var(--gh-text-secondary);
+  font-size: var(--font-sm);
+  padding: 0;
+  margin-bottom: 2px;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option {
+  position: relative;
+  display: inline-flex;
+}
+
+.radio {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-secondary);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.radio:checked + .pill {
+  background: var(--gh-orange);
+  border-color: var(--gh-orange);
+  color: var(--gh-bg-base);
+  font-weight: 600;
+}
+
+.radio:focus-visible + .pill {
+  outline: 2px solid var(--gh-orange);
+  outline-offset: 2px;
+}
+
+.radio:disabled + .pill {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.radio:disabled {
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: var(--font-xs);
+  color: var(--gh-text-secondary);
+}
+
+.error {
+  font-size: var(--font-xs);
+  color: var(--gh-danger);
+}

@@ -196,7 +196,29 @@
     "compete_play_aria": "Play",
     "compete_delete_aria": "Delete",
     "coming_up_soon": "Coming Up Soon",
-    "daily_view_results": "View results"
+    "daily_view_results": "View results",
+    "journey_up_next": "Up next",
+    "journey_pass_chip": "Pass ≥ {pct}%",
+    "journey_difficulty_chip": "Difficulty {rating}/10",
+    "journey_start": "Start your journey",
+    "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
+    "journey_view": "View journey",
+    "round_of": "Round {current} of {total}",
+    "daily_tagline": "same difficulty for everyone",
+    "daily_status_new": "NEW",
+    "daily_status_in_progress": "IN PROGRESS",
+    "daily_status_done": "DONE",
+    "daily_play_today": "Play today's Daily",
+    "daily_resume": "Resume Daily",
+    "daily_streak": "streak",
+    "daily_playing_today": "{count} playing today",
+    "daily_rank_line": "#{rank} worldwide · Top {pct}%",
+    "daily_xp_gained": "+{xp} XP",
+    "daily_load_error": "Couldn't load today's status",
+    "challenge_sub": "Play with friends",
+    "practice_tagline": "Play solo · Unlimited",
+    "practice_eras_chip": "{selected}/{total} eras",
+    "practice_regions_chip": "{selected}/{total} regions"
   },
   "common": {
     "next_round": "Next Round",
@@ -433,6 +455,12 @@
     "when_badges": "When",
     "where_badges": "Where",
     "no_badges": "No badges earned this game",
+    "highlights": "Highlights",
+    "hl_closest_guess": "Closest guess",
+    "hl_sharpest_year": "Sharpest year",
+    "hl_toughest_round": "Toughest round",
+    "hl_years_off": "±{n} yr",
+    "badges_count": "{count, plural, one {# badge} other {# badges}}",
     "era_ancient": "Ancient",
     "era_medieval": "Medieval",
     "era_earlymodern": "Early Modern",
@@ -567,7 +595,24 @@
     "taking_too_long": "Taking too long?",
     "retry": "Retry",
     "region_oceania_antarctica": "Oceania & Antarctica",
-    "game_accuracy_pct": "Game Accuracy (%)"
+    "game_accuracy_pct": "Game Accuracy (%)",
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "About this event",
+    "learn_close": "Close",
+    "learn_find_year": "How to find the year",
+    "learn_find_location": "How to find the location",
+    "learn_what_happened": "What happened",
+    "learn_related_events": "Related events",
+    "learn_related_to": "Proximate",
+    "learn_related_location": "Related location",
+    "learn_this_event": "This event",
+    "learn_error": "Couldn't load event details",
+    "learn_cta": "About this event",
+    "left": "Left",
+    "player_left_toast": "{name} left the game",
+    "solo_banner_title": "You're the only player left",
+    "solo_continue": "Continue solo",
+    "solo_exit": "Exit game"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -612,6 +657,14 @@
     "overall": "Overall",
     "daily": "Daily",
     "level_up": "Level Up",
+    "journey": "Journey",
+    "sort_accuracy": "Accuracy",
+    "sort_xp": "XP",
+    "sort_stage": "Stage",
+    "journey_stage": "Stage {n}",
+    "journey_stages_completed": "{n, plural, one {{n} stage completed} other {{n} stages completed}}",
+    "journey_no_stage": "No stage completed yet",
+    "no_results_journey": "No journey results yet.",
     "today": "Today",
     "all_time": "All-time",
     "err_load_failed": "Failed to load data. Please try again.",
@@ -629,7 +682,9 @@
     "rank_suffix_two": "nd",
     "rank_suffix_few": "rd",
     "rank_suffix_many": "th",
-    "rank_suffix_other": "th"
+    "rank_suffix_other": "th",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "No more ranked players."
   },
   "profile": {
     "accuracy_breakdown": "Accuracy breakdown",
@@ -639,8 +694,6 @@
     "score_distribution": "Score distribution",
     "history_collection": "History collection",
     "accuracy_by_century": "Accuracy by century",
-    "account": "Account",
-    "email": "Email",
     "member_since": "Member since",
     "events_seen": "Events seen",
     "by_century": "By century",
@@ -658,7 +711,6 @@
     "games_played": "Games played",
     "rounds_played": "Rounds played",
     "no_games_yet": "No games yet",
-    "sign_out": "Sign out",
     "experience": "Experience",
     "accuracy": "Accuracy",
     "era": "Era",
@@ -672,7 +724,10 @@
     "countries": "Countries",
     "practice": "Practice",
     "daily_all_time": "Daily (all-time)",
-    "level": "Level"
+    "level": "Level",
+    "era_region": "Era & region",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "Account",
@@ -687,7 +742,16 @@
     "settings": "Settings",
     "sound": "Sound",
     "vibrate": "Vibrate",
-    "distance_unit": "Distance unit"
+    "distance_unit": "Distance unit",
+    "notif_prefs": "Notifications",
+    "notif_prefs_lobby_invite": "Game invitations",
+    "notif_prefs_session_complete": "A player finished a game",
+    "notif_channel_none": "None",
+    "notif_channel_push": "Push only",
+    "notif_channel_in_app": "In-app only",
+    "notif_channel_both": "Both",
+    "notif_push_hint": "Push is off in this browser — enable notifications to receive pushes.",
+    "notif_save_error": "Couldn't save. Try again."
   },
   "avatar_picker": {
     "title": "Choose Avatar",
@@ -716,7 +780,14 @@
     "turn_desc": "Get notified when it's your turn in Relax games. You can change this anytime in settings.",
     "not_now": "Not now",
     "enable": "Enable",
-    "someone": "Someone"
+    "someone": "Someone",
+    "push_enable": "Enable push notifications",
+    "push_disable": "Disable push notifications",
+    "push_enabled_msg": "Push notifications enabled.",
+    "push_disabled_msg": "Push notifications disabled.",
+    "push_failed_enable": "Failed to enable.",
+    "push_failed_disable": "Failed to disable.",
+    "push_unexpected": "An unexpected error occurred."
   },
   "welcome": {
     "title": "Welcome to Guess-History!",
@@ -748,6 +819,7 @@
   },
   "rank": {
     "rank_label": "Rank",
+    "your_rank": "Your rank",
     "tier_prefix": "T",
     "next_label": "Next",
     "rank_1": "Wanderer",
@@ -761,7 +833,10 @@
     "rank_9": "Scholar",
     "rank_10": "Cartographer Royal",
     "next_rank": "{xp} XP to {title}",
-    "max_rank": "Max rank achieved"
+    "max_rank": "Max rank achieved",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",
@@ -1051,7 +1126,9 @@
         "principle_1": "Maximum compensation ratio.",
         "principle_2": "Investor return cap.",
         "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "principle_4": "Mission-first governance.",
+        "purpose_title": "Purpose",
+        "principles_title": "Principles"
       }
     },
     "partnerships": {
@@ -1218,9 +1295,26 @@
       "sources": "Sources",
       "references": "References",
       "legal": "Legal disclaimer",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "nav_aria": "Investor footer"
     },
-    "nav_aria_label": "Grow page sections"
+    "nav_aria_label": "Grow page sections",
+    "nav": {
+      "slides_aria": "Slide chapters",
+      "toc_expand": "Expand table of contents",
+      "toc_collapse": "Collapse table of contents",
+      "toc_aria": "Table of contents",
+      "chapters": "Chapters",
+      "toc_close": "Close table of contents",
+      "go_beginning": "Go to beginning",
+      "go_end": "Go to end",
+      "prev": "Previous slide",
+      "prev_disabled": "Previous slide (unavailable)",
+      "next": "Next slide",
+      "next_disabled": "Next slide (unavailable)",
+      "beginning_disabled": "Beginning (already on first slide)",
+      "end_disabled": "End (already on last slide)"
+    }
   },
   "practice": {
     "title": "Practice game in progress",
@@ -1266,7 +1360,7 @@
     "badge_gold": "Gold",
     "badge_silver": "Silver",
     "badge_bronze": "Bronze",
-    "badge_completion": "Completion",
+    "badge_completion": "Completed",
     "badge_none": "No badge",
     "load_error": "Couldn't load your journey. Please try again.",
     "result_pass_mark": "Pass mark {pct}%",
@@ -1291,7 +1385,10 @@
     "list_current": "Current",
     "list_timer_label": "{time} per round",
     "list_years": "{from}–{to}",
-    "list_best_aria": "Best score: {pct}%"
+    "list_best_aria": "Best score: {pct}%",
+    "list_stage_title": "Stage {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "Completed"
   },
   "legal": {
     "privacy": {
@@ -1376,5 +1473,293 @@
       "section10_title": "10. Contact Us",
       "contact_text": "For questions about these Terms, contact us at: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "Fullscreen & install",
+    "tagline": "Choose how Guess-History opens on this device.",
+    "install_app": "Install App",
+    "ios_intro": "<strong>Add to Home Screen</strong> to install the app:",
+    "install_unavailable": "App install is not available in this browser.",
+    "remember_choice": "Remember my choice"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — Investor Deck",
+    "meta_description": "A cinematic investor presentation: from a history game to a human-grounded visual AI benchmark.",
+    "meta_image_alt": "Guess History investor deck",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "Register Your Interest",
+    "cta_play": "Play Guess History",
+    "cta_test": "Register Interest",
+    "status_verified": "VERIFIED",
+    "status_illustrative": "ILLUSTRATIVE",
+    "status_roadmap": "ROADMAP",
+    "status_conceptual": "CONCEPTUAL",
+    "model_tag": "MODEL",
+    "s01": {
+      "headline": "What if a game could become an AI benchmark?",
+      "body": [
+        "Guess History is a game where players reconstruct where and when historical events happened.",
+        "But the game can create something much larger: a human-grounded visual AI benchmark."
+      ],
+      "statements": [
+        "The game is the beginning."
+      ],
+      "alt": "Cinematic historical scene with depth, human figures, and visually ambiguous clues"
+    },
+    "s02": {
+      "headline": "A simple game with an unusual data engine.",
+      "body": [
+        "The visitor should understand the game without reading instructions."
+      ],
+      "alt": "Historical scene used for the where-and-when mini-demo",
+      "steps": [
+        "Historical scene",
+        "Where?",
+        "When?",
+        "Reveal"
+      ]
+    },
+    "s03": {
+      "headline": "Players aren't just players.",
+      "subheadline": "They are creating a human benchmark.",
+      "body": [
+        "Every answer makes the benchmark more informative."
+      ],
+      "final": "Every answer makes the benchmark more informative.",
+      "alt": "The same historical image used to anchor the accumulating human observations",
+      "items": [
+        {
+          "label": "Human attempts",
+          "value": "10,281"
+        },
+        {
+          "label": "Median year error",
+          "value": "8 years"
+        },
+        {
+          "label": "Median location error",
+          "value": "74 km"
+        },
+        {
+          "label": "Difficulty",
+          "value": "HARD"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "Now give the same challenge to AI.",
+      "body": [
+        "Human and AI are given the same image and the same two questions. Their results can be compared directly."
+      ],
+      "final": "Now we can compare them.",
+      "alt": "Split-screen visual showing the same image tested against a human and an AI model",
+      "status_label": "Planned evaluation capability",
+      "columns": [
+        {
+          "title": "HUMAN",
+          "items": [
+            "Where?",
+            "When?",
+            "Result"
+          ]
+        },
+        {
+          "title": "AI MODEL",
+          "items": [
+            "Where?",
+            "When?",
+            "Result"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "A new layer of AI evaluation.",
+      "body": [
+        "A clean evaluation report. The benchmark is not just \"right or wrong.\""
+      ],
+      "final": "Not just 'right or wrong.'",
+      "metrics": [
+        {
+          "label": "TEMPORAL REASONING",
+          "value": "Median error: 8 years"
+        },
+        {
+          "label": "SPATIAL REASONING",
+          "value": "Median distance: 182 km"
+        },
+        {
+          "label": "CALIBRATION",
+          "value": "High-confidence error: 9%"
+        },
+        {
+          "label": "LATENCY",
+          "value": "P95: 3.1 s"
+        },
+        {
+          "label": "COST",
+          "value": "$0.014 / evaluation"
+        }
+      ],
+      "flow": [
+        "MODEL",
+        "BENCHMARK",
+        "HUMAN BASELINE",
+        "PERFORMANCE"
+      ]
+    },
+    "s06": {
+      "headline": "The valuable asset isn't the image.",
+      "body": [
+        "The moat grows through usage.",
+        "More human observations → stronger benchmark.",
+        "More model evaluations → richer comparison.",
+        "More history → stronger longitudinal dataset."
+      ],
+      "final": "It is the dataset around the image.",
+      "alt": "Historical image with progressively denser data layers building around it",
+      "stack": [
+        "Verified ground truth",
+        "Human observations",
+        "Human difficulty",
+        "Confidence",
+        "AI responses",
+        "Model versions",
+        "Evaluation methodology"
+      ]
+    },
+    "s07": {
+      "headline": "Test your model.",
+      "body": [
+        "A model provider submits a vision model, runs the benchmark, and receives a reproducible, human-grounded evaluation."
+      ],
+      "final": "Independent. Human-grounded. Reproducible.",
+      "status_label": "Planned evaluation capability",
+      "steps": [
+        "Vision Model v4.2",
+        "RUN BENCHMARK"
+      ],
+      "metrics": [
+        {
+          "label": "TEMPORAL",
+          "value": "72%"
+        },
+        {
+          "label": "LOCATION",
+          "value": "81%"
+        },
+        {
+          "label": "CALIBRATION",
+          "value": "0.11"
+        },
+        {
+          "label": "HUMAN WIN",
+          "value": "64%"
+        },
+        {
+          "label": "P95 LATENCY",
+          "value": "2.4s"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "Don't test a model once.",
+      "subheadline": "Track every version.",
+      "body": [
+        "Three model versions travel through the same benchmark. A line graph evolves. Metrics improve or regress."
+      ],
+      "final": "Did your model actually improve?",
+      "steps": [
+        "MODEL v1 → BENCHMARK",
+        "MODEL v2 → BENCHMARK",
+        "MODEL v3 → BENCHMARK"
+      ]
+    },
+    "s09": {
+      "headline": "Four ways to monetize the benchmark.",
+      "body": [
+        "No hypothetical revenue numbers are presented. The four primary products and secondary opportunities are described."
+      ],
+      "nodes": [
+        {
+          "label": "01 — Benchmark API",
+          "description": "Automated model evaluations"
+        },
+        {
+          "label": "02 — Enterprise Monitoring",
+          "description": "Continuous model-version testing"
+        },
+        {
+          "label": "03 — Custom Benchmarks",
+          "description": "Customer-specific evaluation programs"
+        },
+        {
+          "label": "04 — Data & Research",
+          "description": "Controlled benchmark and data access"
+        }
+      ],
+      "branches_root": "Secondary opportunities",
+      "branches_children": [
+        "Education",
+        "Model selection",
+        "Benchmark sponsorship"
+      ]
+    },
+    "s10": {
+      "headline": "The game feeds the benchmark.",
+      "body": [
+        "The loop progressively accelerates. Consumer gameplay and B2B evaluation reinforce one another."
+      ],
+      "final": "Two products. One reinforcing system.",
+      "flow": [
+        "MORE PLAYERS",
+        "MORE HUMAN DATA",
+        "BETTER BASELINES",
+        "BETTER BENCHMARK",
+        "MORE AI INTEREST",
+        "B2B REVENUE",
+        "MORE CONTENT",
+        "MORE PLAYERS"
+      ]
+    },
+    "s11": {
+      "headline": "History is the starting point.",
+      "body": [
+        "The platform can expand from historical imagery into broader visual-reasoning evaluation categories."
+      ],
+      "final": "Human-grounded visual AI evaluation.",
+      "status_label": "Long-term platform opportunity",
+      "branches_root": "HISTORY",
+      "branches_children": [
+        "Geography",
+        "Architecture",
+        "Culture",
+        "Visual chronology",
+        "Maps",
+        "Documents",
+        "General visual reasoning"
+      ]
+    },
+    "s12": {
+      "headline": "We are building two businesses that strengthen each other.",
+      "body": [
+        "GUESS HISTORY: A game that attracts players and generates proprietary human intelligence.",
+        "GUESS HISTORY EVALUATION: A platform that measures AI performance against that intelligence."
+      ],
+      "statements": [
+        "Game → Data → Benchmark",
+        "Benchmark → Evaluation → Revenue",
+        "Revenue → More Data → Stronger Platform"
+      ],
+      "final": "Can AI understand history as well as humans?"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "Contact",
+    "footer_link_privacy": "Privacy",
+    "footer_link_terms": "Terms",
+    "footer_link_sources": "Sources",
+    "footer_link_disclaimer": "Legal disclaimer",
+    "footer_disclaimer": "This page is for informational purposes only and does not constitute an offer or solicitation to purchase securities. Forward-looking statements represent goals and opportunities, not guarantees or projections."
   }
 }

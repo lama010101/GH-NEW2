@@ -12,9 +12,9 @@ import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { createAsyncCompeteSession } from "@/core/competeCreate";
 import { calculateBadges } from "@/core/rules";
-import { rankForXp } from "@/core/rank";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
+import RankLadderCard from "@/components/RankLadderCard";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import AccuracySuffix from "@/components/AccuracySuffix";
@@ -22,14 +22,27 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { HelpCircle, Star, Trophy } from "lucide-react";
+import { BookOpen, Crosshair, Flame, HelpCircle, Home, Map as MapIcon, Play, RotateCcw, Timer, Trophy } from "lucide-react";
 import type { JourneyResultOverride } from "@/core/journeyResultTypes";
 import { JourneyBadge } from "@/app/journey/_components/JourneyBadge";
 import { JOURNEY_TOTAL_STAGES } from "@/core/journeyConstants";
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from "@/core/identity";
+import { useGlobalTotalXp } from "@/hooks/useGlobalTotalXp";
 import { GuestConversionModal } from "@/app/journey/_components/GuestConversionModal";
 import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import styles from "./SessionComplete.module.css";
+import { EventLearnModal } from "@/components/learn/EventLearnModal";
+import { learnModeForSession } from "@/core/learnTypes";
+
+// Same UUID shape the learn route requires (route.ts UUID_RE) — mock/prototype
+// snapshots carry non-UUID placeholders, so the row buttons never render there.
+const LEARN_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// HJ-UI-POLISH-STAGELIST-RESULT-035 — the journey result CTA reuses the
+// exact lobby "Start my game" class (cyan gradient, 52px, leading icon) so
+// the button style stays single-sourced; only the .cta-scoped overrides
+// live in SessionComplete.module.css.
+import lobbyStyles from "./LobbySection.module.css";
 
 const BADGE_DIMENSIONS: BadgeDimension[] = ["location", "year", "combo"];
 const BADGE_TIERS: BadgeTier[] = ["gold", "silver", "bronze"];
@@ -55,6 +68,14 @@ type DailyResultPlayer = {
   completed_at: string | null;
   best_round_accuracy: number | null;
 };
+
+export function resolveDailyRank(
+  rows: Pick<DailyResultPlayer, "player_id" | "rank">[] | null,
+  playerId: string | null,
+): number | null {
+  if (!rows || !playerId) return null;
+  return rows.find((row) => row.player_id === playerId)?.rank ?? null;
+}
 
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
@@ -83,7 +104,6 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
-  const tRank = useTranslations('rank');
   const tLobby = useTranslations('lobby');
   const tHelp = useTranslations('help');
   const tNav = useTranslations('nav');
@@ -92,12 +112,15 @@ export default function SessionComplete({
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
   const isAsync = snapshot.config.mode === "async";
+  // LEARN-WIRE-CTA-1015-004 — per-round "Learn" icon buttons (single modal).
+  const [learnEventId, setLearnEventId] = useState<string | null>(null);
+  const learnMode = learnModeForSession(snapshot.config.mode);
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
-  const [totalXp, setTotalXp] = useState<number | null>(null);
+  const { status: totalXpStatus, totalXp } = useGlobalTotalXp(playerId);
   const [linkCopied, setLinkCopied] = useState(false);
   const [dailyResults, setDailyResults] = useState<DailyResultPlayer[] | null>(null);
   const [dailyLoading, setDailyLoading] = useState(false);
@@ -142,25 +165,6 @@ export default function SessionComplete({
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [snapshot?.status]);
-
-  // Fetch viewer's global total XP for the rank title progress card
-  // (single source of truth: player_global_stats.total_xp → rankForXp → RankCard)
-  useEffect(() => {
-    if (!playerId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data: stats } = await supabaseBrowser
-          .from('player_global_stats')
-          .select('total_xp')
-          .eq('player_id', playerId)
-          .single();
-        if (cancelled) return;
-        if (stats) setTotalXp(Number(stats.total_xp));
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [playerId]);
 
   // Fetch the global all-players Daily leaderboard once the session completes.
   useEffect(() => {
@@ -304,7 +308,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={journeyResult ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
+    <section className={journeyResult || isDaily || isPractice ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId) return null;
         if (effectiveResults.length === 0) {
@@ -342,12 +346,12 @@ export default function SessionComplete({
         }
         const myStats = computePlayerStats(playerId);
         const overallAccuracy = myStats?.avgAccuracy ?? 0;
-        // HJ-FIX-RESULTRING-033 — display-safe journey ring/mark values that
-        // can never contradict the server-side pass/fail verdict.
+        // HJ-UI-POLISH-STAGELIST-RESULT-035 — display-safe journey
+        // ring/mark/margin values (whole integers) that can never contradict
+        // the server-side pass/fail verdict computed on raw accuracy.
         const journeyDisplay = journeyResult
           ? journeyResultDisplay(journeyResult.accuracyPct, journeyResult.minAccuracyPct, journeyResult.gatePassed)
-          : { accuracyPct: 0, markPct: 0 };
-        const overallXP = myStats?.totalScore ?? 0;
+          : { accuracyPct: 0, markPct: 0, marginPts: 0 };
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
 
@@ -399,6 +403,7 @@ export default function SessionComplete({
           });
 
         const myRank = leaderboard.findIndex(p => p.playerId === playerId) + 1;
+        const bannerRank = isDaily ? resolveDailyRank(dailyResults, playerId) : myRank;
         const wonRoundsByMe = leaderboard.find(p => p.playerId === playerId)?.wonRounds.length ?? 0;
         const rankSuffix = (n: number) => n === 1 ? tGame('rank_st') : n === 2 ? tGame('rank_nd') : n === 3 ? tGame('rank_rd') : tGame('rank_th');
 
@@ -527,6 +532,31 @@ export default function SessionComplete({
           BADGE_TIERS.filter((tier) => badgeCountsByTier[dim][tier] > 0)
             .map((tier) => ({ dim, tier, count: badgeCountsByTier[dim][tier] }))
         );
+        const badgeTotal = earnedBadges.reduce((sum, b) => sum + b.count, 0);
+
+        // MP-UIX-PORT-D2 — Highlights chips: min row per metric over MY rounds.
+        // A chip is omitted when no eligible row exists (null source fields);
+        // ties keep the first occurrence (strict < in the reduce).
+        const closestGuess = myRoundResults
+          .filter((r) => r.distanceKm != null)
+          .reduce<AllRoundResult | null>((best, r) =>
+            best === null || (r.distanceKm ?? Infinity) < (best.distanceKm ?? Infinity) ? r : best, null);
+        const sharpestYear = myRoundResults
+          .filter((r) => r.yearDiff != null)
+          .reduce<AllRoundResult | null>((best, r) =>
+            best === null || (r.yearDiff ?? Infinity) < (best.yearDiff ?? Infinity) ? r : best, null);
+        const toughestRound = myRoundResults
+          .filter((r) => r.locationScore != null && r.timeScore != null)
+          .reduce<AllRoundResult | null>((best, r) =>
+            best === null ||
+            ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2 < ((best.locationScore ?? 0) + (best.timeScore ?? 0)) / 2
+              ? r : best, null);
+        const toughestCombo = toughestRound !== null
+          ? ((toughestRound.locationScore ?? 0) + (toughestRound.timeScore ?? 0)) / 2
+          : null;
+        const toughestTitle = toughestRound !== null
+          ? (snapshot.rounds[toughestRound.roundIndex]?.title ?? null)
+          : null;
 
         // XP per era (for ExperienceAccuracy component)
         const byWhenMap = new Map<string, { totalXp: number; totalAcc: number; roundCount: number }>();
@@ -608,12 +638,12 @@ export default function SessionComplete({
                         ? tJourney('result_headline_passed', { number: journeyResult.stageNumber })
                         : tJourney('result_headline_failed', { number: journeyResult.stageNumber })}
                     </h1>
-                  ) : (
+                  ) : !isPractice && (
                     <h1 className={styles.bannerTitle}>
-                      {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
+                      {tGame('you_finished')} {bannerRank != null && <span className={styles.bannerRank}>{bannerRank}{rankSuffix(bannerRank)}</span>}
                     </h1>
                   )}
-                  {!journeyResult && (
+                  {!journeyResult && !isDaily && !isPractice && (
                     <div className={styles.bannerStats}>
                       {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
                     </div>
@@ -627,25 +657,27 @@ export default function SessionComplete({
                     <div
                       className={styles.heroRingWrap}
                       role="img"
-                      aria-label={tJourney('result_gauge_aria', { score: Math.round(journeyResult.accuracyPct), pct: journeyResult.minAccuracyPct })}
+                      aria-label={tJourney('result_gauge_aria', { score: journeyDisplay.accuracyPct, pct: journeyDisplay.markPct })}
                     >
                       <RainbowRing
                         value={journeyDisplay.accuracyPct}
-                        valueDecimals={1}
                         thresholdPct={journeyResult.minAccuracyPct}
+                        thresholdPassed={journeyResult.gatePassed}
                       />
                     </div>
-                    <span className={styles.journeyPassMark} data-testid="journey-pass-mark">
-                      {tJourney('result_pass_mark', { pct: journeyDisplay.markPct })}
-                    </span>
                     <span className={styles.journeyPassMargin} data-testid="journey-pass-margin">
                       {journeyResult.gatePassed
-                        ? tJourney('result_margin_above', { points: (journeyResult.accuracyPct - journeyResult.minAccuracyPct).toFixed(1) })
-                        : tJourney('result_margin_below', { points: (journeyResult.minAccuracyPct - journeyResult.accuracyPct).toFixed(1) })}
+                        ? tJourney('result_margin_above', { points: journeyDisplay.marginPts })
+                        : tJourney('result_margin_below', { points: journeyDisplay.marginPts })}
                     </span>
-                    {journeyResult.badgeAwarded && (
+                    {/* HJ-UI-POLISH-035 — the "Completion" pill is gone: the
+                        pass verdict is already in the headline + margin line
+                        and the % duplicated the ring number. Gold/silver/
+                        bronze tiers still render their badge (label only —
+                        no duplicated accuracy figure). */}
+                    {journeyResult.badgeAwarded && journeyResult.badgeAwarded !== "completion" && (
                       <div className={styles.journeyBadgeWrap} data-testid="journey-badge">
-                        <JourneyBadge badge={journeyResult.badgeAwarded} accuracyPct={journeyResult.accuracyPct} size="lg" />
+                        <JourneyBadge badge={journeyResult.badgeAwarded} size="lg" />
                       </div>
                     )}
                   </div>
@@ -738,6 +770,9 @@ export default function SessionComplete({
                           >
                             {displayName}
                           </span>
+                          {playerData?.leftAt != null && (
+                            <span className={styles.rankStatus}>{tGame('left')}</span>
+                          )}
                         </div>
                         <div className={styles.bar}>
                           {showAccuracy ? (
@@ -830,6 +865,122 @@ export default function SessionComplete({
               </section>
               )}
 
+              {/* RANK LADDER — global XP tier rail, right after the leaderboard
+                  (or the hero card in practice, where the leaderboard is hidden)
+                  and before the MVP-awards card. Gated on the async total_xp
+                  lookup so it never flashes a fabricated tier-1 with XP 0:
+                  'pending' → skeleton shell, 'ready' → RankLadderCard,
+                  'unavailable' → nothing. */}
+              {totalXpStatus === "pending" && (
+                <section className={`${styles.card} ${styles.rankLadderSkeleton}`} aria-busy="true" />
+              )}
+              {totalXpStatus === "ready" && totalXp !== null && (
+                <RankLadderCard totalXp={totalXp} variant="card" />
+              )}
+
+              {/* HIGHLIGHTS — best-score tiles + per-round chips (MP-UIX-PORT-D2,
+                  replaces the former "Your Best Scores" card; same 3 stats kept) */}
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('highlights')}</h2>
+                </div>
+                <div className={styles.achievementsBody}>
+                  <div className={styles.hlGrid}>
+                    <div className={styles.hlTile}>
+                      <span className={`${styles.mvpDisk} ${styles.mvpDiskLocation}`}><WhereIcon size={18} /></span>
+                      <div className={styles.hlTileText}>
+                        <span className={styles.hlVal}>{myStats ? Math.ceil(myStats.bestWhereRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                        <span className={styles.hlTileLabel}>{tGame('stat_where')}</span>
+                      </div>
+                    </div>
+                    <div className={styles.hlTile}>
+                      <span className={`${styles.mvpDisk} ${styles.mvpDiskYear}`}><WhenIcon size={18} /></span>
+                      <div className={styles.hlTileText}>
+                        <span className={styles.hlVal}>{myStats ? Math.ceil(myStats.bestWhenRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                        <span className={styles.hlTileLabel}>{tGame('stat_when')}</span>
+                      </div>
+                    </div>
+                    <div className={styles.hlTile}>
+                      <span className={`${styles.mvpDisk} ${styles.mvpDiskOrange}`}><Trophy size={18} /></span>
+                      <div className={styles.hlTileText}>
+                        <span className={styles.hlVal}>{myStats ? Math.ceil(myStats.bestRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                        <span className={styles.hlTileLabel}>{tGame('stat_combo')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {(closestGuess || sharpestYear || toughestRound) && (
+                    <div className={styles.hlRow}>
+                      {closestGuess && (
+                        <div className={styles.hlChip}>
+                          <span className={`${styles.hlDisk} ${styles.hlDiskClosest}`}><Crosshair size={15} /></span>
+                          <span className={styles.hlValue}>{formatDistance(closestGuess.distanceKm, distanceUnit)}</span>
+                          <span className={styles.hlLabel}>{tGame('hl_closest_guess')}</span>
+                          <span className={styles.hlFoot}>{`R${closestGuess.roundIndex + 1}`}</span>
+                        </div>
+                      )}
+                      {sharpestYear && (
+                        <div className={styles.hlChip}>
+                          <span className={`${styles.hlDisk} ${styles.hlDiskSharpest}`}><Timer size={15} /></span>
+                          <span className={styles.hlValue}>{tGame('hl_years_off', { n: Math.round(sharpestYear.yearDiff ?? 0) })}</span>
+                          <span className={styles.hlLabel}>{tGame('hl_sharpest_year')}</span>
+                          <span className={styles.hlFoot}>{`R${sharpestYear.roundIndex + 1}`}</span>
+                        </div>
+                      )}
+                      {toughestRound && toughestCombo !== null && (
+                        <div className={styles.hlChip}>
+                          <span className={`${styles.hlDisk} ${styles.hlDiskToughest}`}><Flame size={15} /></span>
+                          <span className={styles.hlValue}>{Math.ceil(toughestCombo)}<AccuracySuffix /></span>
+                          <span className={styles.hlLabel}>{tGame('hl_toughest_round')}</span>
+                          <span className={styles.hlFoot}>{`R${toughestRound.roundIndex + 1}${toughestTitle ? ` · ${toughestTitle}` : ''}`}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* BADGES — earned tiles only, unified for all modes (MP-UIX-PORT-D2).
+                  Prod calculateBadges (100/95/90) stays the single source; the
+                  prototype's 95/85/75 mock thresholds and "75% earns bronze"
+                  copy are intentionally not ported. */}
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('badges_won')}</h2>
+                  <span className={styles.bdCount}>{tGame('badges_count', { count: badgeTotal })}</span>
+                </div>
+                <div className={styles.achievementsBody}>
+                  {earnedBadges.length === 0 ? (
+                    <span className={styles.noBadges}>{tGame('no_badges')}</span>
+                  ) : (
+                    <div className={styles.bdRow}>
+                      {earnedBadges.map(({ dim, tier, count }) => (
+                        <div key={`${dim}-${tier}`} className={styles.bdTile}>
+                          <div className={styles.bdImgWrap}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={`/badges/${dim}_${tier}.webp`}
+                              alt={tGame('badge_alt', { tier: tGame(BADGE_TIER_LABEL_KEY[tier]), dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]) })}
+                              width={36}
+                              height={36}
+                              className={styles.bdImg}
+                              draggable={false}
+                            />
+                            <span className={styles.bdBubble}>×{count}</span>
+                          </div>
+                          <span className={styles.bdLabel}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
+                          <span className={styles.bdTier} data-tier={tier}>{tGame(BADGE_TIER_LABEL_KEY[tier])}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* MVP AWARDS — moved below Badges (MP-UIX-PORT-D2);
+                  markup/classes unchanged (relax-4player-results.spec.ts:609
+                  selects .mvpRow rows). */}
               {!isPractice && snapshot.players.length > 1 && mvpAwards.length > 0 && (
               <section className={styles.card}>
                 <div className={styles.cardHead}>
@@ -852,29 +1003,65 @@ export default function SessionComplete({
                       </span>
                       <span className={styles.mvpLabel}>{award.label}</span>
                       <span className={styles.mvpNames}>
-                        {award.winners.map((w, i) => (
-                          <span key={w.playerId} className={styles.mvpWinner}>
-                            <span className={styles.mvpAvatarWrap}>
-                              <PlayerAvatar
-                                avatarUrl={w.avatarUrl}
-                                displayName={w.displayName}
-                                playerId={w.playerId}
-                                size={24}
-                                isMe={w.isMe}
-                              />
+                        {award.winners.length === 1 ? (
+                          award.winners.map((w, i) => (
+                            <span key={w.playerId} className={styles.mvpWinner}>
+                              <span className={styles.mvpAvatarWrap}>
+                                <PlayerAvatar
+                                  avatarUrl={w.avatarUrl}
+                                  displayName={w.displayName}
+                                  playerId={w.playerId}
+                                  size={24}
+                                  isMe={w.isMe}
+                                />
+                              </span>
+                              <span className={styles.mvpName}>
+                                {w.displayName}
+                              </span>
+                              <span className={styles.mvpValue} style={{ color: getAccuracyColor(Math.ceil(award.getValue(w.stats))) }}>
+                                {Math.ceil(award.getValue(w.stats))}
+                                <AccuracySuffix />
+                              </span>
+                              {i < award.winners.length - 1 && (
+                                <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
+                              )}
                             </span>
-                            <span className={styles.mvpName}>
-                              {w.displayName}
-                            </span>
-                            <span className={styles.mvpValue} style={{ color: getAccuracyColor(Math.ceil(award.getValue(w.stats))) }}>
-                              {Math.ceil(award.getValue(w.stats))}
+                          ))
+                        ) : (
+                          /* Tie (2+ winners): avatars only, value once, no "&".
+                             Names stay in the DOM as visually-hidden text (and in
+                             each avatar's title/aria-label) — relax-4player spec
+                             asserts them in the row textContent. */
+                          <>
+                            {award.winners.map((w) => (
+                              <span key={w.playerId} className={styles.mvpWinner}>
+                                <span
+                                  className={styles.mvpAvatarWrap}
+                                  title={w.displayName}
+                                  aria-label={w.displayName}
+                                >
+                                  <PlayerAvatar
+                                    avatarUrl={w.avatarUrl}
+                                    displayName={w.displayName}
+                                    playerId={w.playerId}
+                                    size={24}
+                                    isMe={w.isMe}
+                                  />
+                                </span>
+                                <span className={styles.mvpHiddenName}>
+                                  {w.isMe ? tGame('mvp_you') : w.displayName}
+                                </span>
+                              </span>
+                            ))}
+                            <span
+                              className={styles.mvpValue}
+                              style={{ color: getAccuracyColor(Math.max(...award.winners.map((w) => Math.ceil(award.getValue(w.stats))))) }}
+                            >
+                              {Math.max(...award.winners.map((w) => Math.ceil(award.getValue(w.stats))))}
                               <AccuracySuffix />
                             </span>
-                            {i < award.winners.length - 1 && (
-                              <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
-                            )}
-                          </span>
-                        ))}
+                          </>
+                        )}
                       </span>
                     </div>
                   ))}
@@ -882,110 +1069,12 @@ export default function SessionComplete({
               </section>
               )}
 
-              {/* BADGES & STATS */}
-              <div className={styles.achievementsGroup}>
-                <section className={styles.card}>
-                  <div className={styles.cardHead}>
-                    <span className={styles.accentBar} />
-                    <h2 className={styles.cardTitle}>{tGame('badges_won')}</h2>
-                  </div>
-                  <div className={styles.achievementsBody}>
-                    {earnedBadges.length === 0 ? (
-                      <span className={styles.noBadges}>{tGame('no_badges')}</span>
-                    ) : (
-                      <div className={styles.badgeTally}>
-                        {earnedBadges.map(({ dim, tier, count }) => (
-                          <span key={`${dim}-${tier}`} className={styles.badgeTallyItem}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{count}</span>
-                            <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                <section className={styles.card}>
-                  <div className={styles.cardHead}>
-                    <span className={styles.accentBar} />
-                    <h2 className={styles.cardTitle}>{tGame('your_best_scores')}</h2>
-                  </div>
-                  <div className={styles.achievementsBody}>
-                    <div className={styles.gameStatsGrid}>
-                      <div className={styles.gameStatTile}>
-                        <span className={`${styles.mvpDisk} ${styles.mvpDiskLocation}`}><WhereIcon size={18} /></span>
-                        <div className={styles.gameStatText}>
-                          <span className={styles.gameStatVal}>{myStats ? Math.ceil(myStats.bestWhereRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                          <span className={styles.gameStatLabel}>{tGame('stat_where')}</span>
-                        </div>
-                      </div>
-                      <div className={styles.gameStatTile}>
-                        <span className={`${styles.mvpDisk} ${styles.mvpDiskYear}`}><WhenIcon size={18} /></span>
-                        <div className={styles.gameStatText}>
-                          <span className={styles.gameStatVal}>{myStats ? Math.ceil(myStats.bestWhenRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                          <span className={styles.gameStatLabel}>{tGame('stat_when')}</span>
-                        </div>
-                      </div>
-                      <div className={styles.gameStatTile}>
-                        <span className={`${styles.mvpDisk} ${styles.mvpDiskOrange}`}><Trophy size={18} /></span>
-                        <div className={styles.gameStatText}>
-                          <span className={styles.gameStatVal}>{myStats ? Math.ceil(myStats.bestRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                          <span className={styles.gameStatLabel}>{tGame('stat_combo')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              </div>
-
-              {/* EXPERIENCE & ACCURACY (shared component) — rank card rendered inside,
-                  before the when/where tabs */}
+              {/* EXPERIENCE & ACCURACY (shared component) — the rank ladder is a
+                  sibling card above (RankLadderCard), not rendered inside here. */}
               <ExperienceAccuracy
                 hideAccuracy
                 hideStatsRow
                 embedded
-                rankCard={(() => {
-                  const info = rankForXp(totalXp ?? 0);
-                  const title = tRank(info.titleKey);
-                  const nextTitle = info.nextTitleKey ? tRank(info.nextTitleKey) : null;
-                  return (
-                    <div className={styles.customRankCard}>
-                      <div className={styles.customRankMedallion}>
-                        <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
-                        <span className={styles.customRankStars}>
-                          {Array.from({ length: info.tier }, (_, i) => (
-                            <Star key={i} size={8} fill="var(--gh-gold)" color="var(--gh-gold)" />
-                          ))}
-                        </span>
-                      </div>
-                      <div className={styles.customRankBody}>
-                        <div className={styles.customRankHead}>
-                          <span className={styles.customRankTitle}>{title}</span>
-                          <span className={styles.customRankXpGroup}>
-                            <span className={styles.customRankSessionXp}>+{overallXP.toLocaleString()} XP</span>
-                            <span className={styles.customRankTotalXp}>{Math.floor(totalXp ?? 0).toLocaleString()} XP</span>
-                          </span>
-                        </div>
-                        <div className={styles.customRankNext}>
-                          <span className={styles.customRankNextLabel}>{tRank('next_label')}:</span>
-                          {info.isMaxRank ? (
-                            <span className={styles.customRankNextTitle}>{tRank('max_rank')}</span>
-                          ) : (
-                            <>
-                              <span className={styles.customRankNextTitle}>{nextTitle}</span>
-                              <span className={styles.customRankNextXp}>{info.xpToNext?.toLocaleString()} XP</span>
-                            </>
-                          )}
-                        </div>
-                        <div className={styles.customRankBar}>
-                          <div className={styles.customRankBarFill} style={{ width: `${info.progressPct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
                 data={{
                   byWhen,
                   byWhere,
@@ -1012,12 +1101,27 @@ export default function SessionComplete({
                   const bestPlayerData = roundStats.bestPlayerId ? snapshot.players.find(p => p.playerId === roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
-                  const myRoundAcc = hasResult(myRoundResult)
-                    ? ((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2
+                  // A round_results row exists for every round the player played, even
+                  // when no guess was committed (didSubmit false) — show its score and
+                  // the About icon (the learn API gates on the same row).
+                  const myRawResult = myRoundResult ?? (isAsyncResults
+                    ? (() => {
+                        const r = playerId ? round.playerRoundResults?.[playerId] : undefined;
+                        return r ? { locationScore: r.locationScore, timeScore: r.timeScore } : undefined;
+                      })()
+                    : (allRoundResults ?? []).find(r => r.roundIndex === i && r.playerId === playerId));
+                  const myRoundAcc = myRawResult
+                    ? ((myRawResult.locationScore ?? 0) + (myRawResult.timeScore ?? 0)) / 2
                     : null;
                   const open = openRounds.has(i);
+                  const canLearn =
+                    learnMode != null &&
+                    myRawResult != null &&
+                    LEARN_UUID_RE.test(round.eventId) &&
+                    LEARN_UUID_RE.test(snapshot.gameId);
                   return (
                     <div key={i} className={`${styles.roundItem} ${open ? styles.roundItemOpen : ""}`}>
+                      <div className={styles.roundTopRow}>
                       <button
                         type="button"
                         className={styles.roundTop}
@@ -1041,6 +1145,18 @@ export default function SessionComplete({
                         )}
                         <span className={styles.chev} style={{ transform: open ? "rotate(90deg)" : "none" }}>›</span>
                       </button>
+                      {canLearn && (
+                        <button
+                          type="button"
+                          className={styles.learnRoundBtn}
+                          aria-label={tGame('learn_cta')}
+                          data-testid={`learn-cta-round-${i}`}
+                          onClick={() => setLearnEventId(round.eventId)}
+                        >
+                          <BookOpen size={18} aria-hidden="true" />
+                        </button>
+                      )}
+                      </div>
 
                       {open && (
                         <div className={styles.roundDetail}>
@@ -1081,7 +1197,7 @@ export default function SessionComplete({
                             </div>
                           </div>
 
-                          {bestPlayerName && (
+                          {!isDaily && !isPractice && bestPlayerName && (
                             <div className={`${styles.bestRow} ${isCurrentBestPlayer ? styles.bestRowMe : ""}`}>
                               <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
                               <span className={styles.bestPlayerRight}>
@@ -1116,9 +1232,10 @@ export default function SessionComplete({
               <div className={styles.cta}>
                 <button
                   type="button"
-                  className={styles.homeBtn}
+                  className={journeyResult ? styles.journeyHomeBtn : styles.homeBtn}
                   onClick={() => router.push("/home")}
                 >
+                  {journeyResult && <Home size={18} aria-hidden="true" />}
                   {tGame('home')}
                 </button>
                 {journeyResult ? (
@@ -1195,6 +1312,16 @@ export default function SessionComplete({
             </div>
           </div>
         </div>
+      )}
+
+      {learnEventId && learnMode && (
+        <EventLearnModal
+          open={learnEventId != null}
+          onClose={() => setLearnEventId(null)}
+          eventId={learnEventId}
+          gameId={snapshot.gameId}
+          mode={learnMode}
+        />
       )}
     </section>
   );
@@ -1286,16 +1413,20 @@ function JourneyResultActions({ result, styles }: { result: JourneyResultOverrid
         : tJourney("result_play_stage", { number: nextStageNumber })
       : tJourney("result_retry_stage", { number: result.stageNumber });
 
+  // HJ-UI-POLISH-035 — leading icon matches the lobby CTA pattern:
+  // RotateCcw on retry, Map on "Stages" (journey complete), Play otherwise.
+  const PrimaryIcon = result.gatePassed ? (lastStage ? MapIcon : Play) : RotateCcw;
+
   return (
     <>
       <button
         type="button"
-        className={styles.playBtn}
+        className={`${lobbyStyles['lobbyReadyBtnNotReady']} ${styles.journeyPrimaryBtn}`}
         onClick={handlePrimary}
         disabled={starting}
         data-testid="journey-result-primary-btn"
       >
-        {label}
+        <PrimaryIcon size={18} aria-hidden="true" /> {label}
       </button>
       {startError && (
         <p className={styles.journeyStartError} role="alert">

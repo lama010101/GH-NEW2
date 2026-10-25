@@ -42,3 +42,28 @@ test-sync-run.log
 # Secret-bearing local files (SEC-BUILD-SECRETGUARD-042)
 .dev.vars.local
 *.pem
+# Secrets / local env overrides (SEC-BUILD-DEVVARSUNTRACK-1011-009)
+# PartyKit reads .env/.env.local only; .dev.vars is repo tooling only.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+/docs/google-services.json
+client_secret*.json
+GH-SECRETS/
+.tmp/
+*.pem
+*.key
+*.log
+.env.local.bak*
+
+# Android signing / local config (MOB-BUILD-FCMPUSH-ENDTOEND-1013-002)
+android/**/*.keystore
+android/**/*.jks
+android/**/*.p12
+android/**/local.properties
+android/**/key.properties
+
+# local scratch (INFRA-HOUSEKEEP-1021-011)
+tmp/
+.tmp-screens/
+supabase/.temp/

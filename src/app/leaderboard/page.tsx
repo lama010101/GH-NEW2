@@ -12,10 +12,37 @@ import { NavModal } from '@/components/NavModal';
 import AccuracySuffix from '@/components/AccuracySuffix';
 import PlayerAvatar from '@/components/compete/PlayerAvatar';
 import { getAccuracyColor } from '@/core/accuracyColor';
+import { partitionPodium } from './podium';
 import styles from './leaderboard.module.css';
 
-type LeaderboardTab = 'daily' | 'levelup' | 'overall';
+type LeaderboardTab = 'daily' | 'journey' | 'overall';
 type DailySubTab = 'today' | 'alltime';
+type SortOption = 'accuracy' | 'xp' | 'stage';
+type MetricKind = 'accuracy' | 'xp' | 'stage';
+
+const TAB_SORT_OPTIONS: Record<LeaderboardTab, readonly SortOption[]> = {
+  overall: ['accuracy', 'xp'],
+  daily: ['accuracy', 'xp'],
+  journey: ['stage', 'accuracy'],
+};
+const TAB_DEFAULT_SORT: Record<LeaderboardTab, SortOption> = {
+  overall: 'accuracy',
+  daily: 'accuracy',
+  journey: 'stage',
+};
+
+// `levelup` is kept as an accepted URL alias for `journey`.
+const resolveTabParam = (raw: string | null): LeaderboardTab => {
+  if (raw === 'daily' || raw === 'journey' || raw === 'overall') return raw;
+  if (raw === 'levelup') return 'journey';
+  return 'overall';
+};
+const resolveSubTabParam = (raw: string | null): DailySubTab =>
+  raw === 'alltime' ? 'alltime' : 'today';
+const resolveSortParam = (raw: string | null, tab: LeaderboardTab): SortOption =>
+  raw && TAB_SORT_OPTIONS[tab].includes(raw as SortOption)
+    ? (raw as SortOption)
+    : TAB_DEFAULT_SORT[tab];
 
 type LeaderboardEntry = {
   rank: number;
@@ -24,15 +51,17 @@ type LeaderboardEntry = {
   avatar_url: string | null;
   is_ai: boolean;
   avg_accuracy?: number;
+  total_xp?: number;
   games_played?: number;
   rounds_played?: number;
   rounds_won?: number;
-  current_level?: number;
-  best_accuracy?: number;
+  highest_stage?: number;
+  stages_completed?: number;
 };
 
 type LeaderboardResponse = {
   tab: string;
+  sort: string;
   filter: string;
   humans: boolean;
   ai: boolean;
@@ -48,8 +77,9 @@ function LeaderboardPageInner() {
   const { filter, toggleHumans, toggleAi, toggleFriends } = usePlayerFilter();
   const t = useTranslations('leaderboard');
 
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
-  const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>(() => resolveTabParam(searchParams.get('tab')));
+  const [activeSubTab, setActiveSubTab] = useState<DailySubTab>(() => resolveSubTabParam(searchParams.get('subtab')));
+  const [activeSort, setActiveSort] = useState<SortOption>(() => resolveSortParam(searchParams.get('sort'), resolveTabParam(searchParams.get('tab'))));
 
   const [currentData, setCurrentData] = useState<LeaderboardEntry[] | null>(null);
   const [ownEntry, setOwnEntry] = useState<LeaderboardEntry | null>(null);
@@ -61,7 +91,7 @@ function LeaderboardPageInner() {
   const [xp, setXp] = useState('--');
   const [showNavModal, setShowNavModal] = useState(false);
   const locale = useLocale();
-  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const initials = useMemo(() => {
     if (!displayName) return 'PL';
@@ -89,35 +119,33 @@ function LeaderboardPageInner() {
     })();
   }, [playerId]);
 
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'overall' || tab === 'daily' || tab === 'levelup') {
-      setActiveTab(tab as LeaderboardTab);
-    }
-    const subtab = searchParams.get('subtab');
-    if (subtab === 'today' || subtab === 'alltime') {
-      setActiveSubTab(subtab as DailySubTab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Sync activeTab + activeSubTab to URL so refresh restores the same view.
-  // Preserves any existing query params (e.g. filter chips).
+  // Sync activeTab + activeSubTab + activeSort to URL so refresh restores the
+  // same view. `sort` is omitted when it equals the tab's default. Preserves
+  // any existing query params (e.g. filter chips).
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     if (activeTab !== 'overall') params.set('tab', activeTab);
     else params.delete('tab');
     if (activeTab === 'daily' && activeSubTab === 'alltime') params.set('subtab', activeSubTab);
     else params.delete('subtab');
+    if (activeSort !== TAB_DEFAULT_SORT[activeTab]) params.set('sort', activeSort);
+    else params.delete('sort');
     const qs = params.toString();
     router.replace(qs ? `/leaderboard?${qs}` : '/leaderboard', { scroll: false });
-  }, [activeTab, activeSubTab, router, searchParams]);
+  }, [activeTab, activeSubTab, activeSort, router, searchParams]);
+
+  const selectTab = (tab: LeaderboardTab) => {
+    setActiveTab(tab);
+    if (!TAB_SORT_OPTIONS[tab].includes(activeSort)) {
+      setActiveSort(TAB_DEFAULT_SORT[tab]);
+    }
+  };
 
   const getApiTab = useCallback((): string => {
     if (activeTab === 'daily') {
       return activeSubTab === 'today' ? 'daily_today' : 'daily_alltime';
     }
-    if (activeTab === 'levelup') return 'levelup';
+    if (activeTab === 'journey') return 'journey';
     return 'overall';
   }, [activeTab, activeSubTab]);
 
@@ -129,6 +157,7 @@ function LeaderboardPageInner() {
       const params = new URLSearchParams();
       const apiTab = getApiTab();
       if (apiTab !== 'overall') params.set('tab', apiTab);
+      params.set('sort', activeSort);
       if (filter.humans) params.set('humans', 'true');
       if (filter.ai) params.set('ai', 'true');
       if (filter.friends) params.set('friends', 'true');
@@ -139,18 +168,34 @@ function LeaderboardPageInner() {
         throw new Error(body.error || 'Failed to load leaderboard');
       }
       const data = (await res.json()) as LeaderboardResponse;
-      setCurrentData(data.rows);
+      setCurrentData(
+        data.rows.map((e, i) => {
+          const rank = Number(e.rank);
+          return { ...e, rank: Number.isNaN(rank) ? i + 1 : rank };
+        })
+      );
       setOwnEntry(data.ownEntry);
     } catch {
       setError(t('err_load_failed'));
     } finally {
       setLoading(false);
     }
-  }, [getApiTab, filter, t]);
+  }, [getApiTab, activeSort, filter, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Centre the signed-in user's own row (podium card or list row) after every
+  // dataset change. Runs only when the user actually has a rendered row.
+  useEffect(() => {
+    if (!playerId || loading || error || !currentData || currentData.length === 0) return;
+    const raf = requestAnimationFrame(() => {
+      const row = rowRefs.current.get(playerId);
+      if (row) row.scrollIntoView({ block: 'center', behavior: 'auto' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [playerId, currentData, loading, error]);
 
   const handleRetry = () => {
     fetchData();
@@ -173,7 +218,7 @@ function LeaderboardPageInner() {
     if (activeTab === 'daily') {
       return `${t('daily')} ${t(activeSubTab === 'today' ? 'today' : 'all_time')}`;
     }
-    if (activeTab === 'levelup') return t('level_up');
+    if (activeTab === 'journey') return t('journey');
     return t('overall');
   };
 
@@ -189,11 +234,6 @@ function LeaderboardPageInner() {
     if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
-  const formatNumber = (num: number | undefined): string => {
-    if (num === undefined || num === null) return '—';
-    return num.toLocaleString();
-  };
-
   function AccuracyValue({ acc }: { acc: number | undefined }): ReactNode {
     if (acc === undefined || acc === null) return '—';
     return (
@@ -205,57 +245,57 @@ function LeaderboardPageInner() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  rowRefs.current = useMemo(() => new Map<string, HTMLTableRowElement>(), [currentData]);
+  rowRefs.current = useMemo(() => new Map<string, HTMLDivElement>(), [currentData]);
 
   const podiumSlots = useMemo(() => {
-    const data = currentData ?? [];
-    if (data.length < 3) return [];
-    return [
-      { entry: data[1], place: 2, className: styles.podiumSilver, height: '85%' },
-      { entry: data[0], place: 1, className: styles.podiumGold, height: '100%' },
-      { entry: data[2], place: 3, className: styles.podiumBronze, height: '85%' },
+    const { podium } = partitionPodium(currentData ?? []);
+    const byPosition = [
+      { position: 1, column: 1, className: styles.podiumSilver, rankClassName: styles.podiumRankSilver, height: '88%' },
+      { position: 0, column: 2, className: styles.podiumGold, rankClassName: styles.podiumRankGold, height: '100%' },
+      { position: 2, column: 3, className: styles.podiumBronze, rankClassName: styles.podiumRankBronze, height: '78%' },
     ];
+    return byPosition
+      .filter((slot) => slot.position < podium.length)
+      .map((slot) => ({
+        entry: podium[slot.position],
+        place: slot.position + 1,
+        column: slot.column,
+        className: slot.className,
+        rankClassName: slot.rankClassName,
+        height: slot.height,
+      }));
   }, [currentData]);
 
-  const renderRank = (rank: number) => {
-    if (rank === 1) return <span className={styles.medalGold}>🥇</span>;
-    if (rank === 2) return <span className={styles.medalSilver}>🥈</span>;
-    if (rank === 3) return <span className={styles.medalBronze}>🥉</span>;
-    return <span className={styles.rankNumber}>{rank}</span>;
+  const listRows = useMemo(
+    () => partitionPodium(currentData ?? []).list,
+    [currentData]
+  );
+
+  const getRowSubtitle = (entry: LeaderboardEntry): string => {
+    if (activeTab === 'overall') {
+      return `${t('rounds_won', { n: entry.rounds_won ?? 0 })} · ${t('games_played_subtitle', { n: entry.games_played ?? 0 })}`;
+    }
+    if (activeTab === 'daily') {
+      return t('games_played_subtitle', { n: entry.games_played ?? 1 });
+    }
+    return t('journey_stages_completed', { n: entry.stages_completed ?? 0 });
   };
 
-  const renderPlayerCell = (entry: LeaderboardEntry) => {
-    let subtitle: string;
-    if (activeTab === 'overall') {
-      const roundsWon = entry.rounds_won ?? 0;
-      const gamesPlayed = entry.games_played ?? 0;
-      subtitle = `${t('rounds_won', { n: roundsWon })} · ${t('games_played_subtitle', { n: gamesPlayed })}`;
-    } else if (activeTab === 'daily') {
-      const gamesPlayed = entry.games_played ?? 1;
-      subtitle = t('games_played_subtitle', { n: gamesPlayed });
-    } else if (activeTab === 'levelup') {
-      subtitle = t('level_subtitle', { n: entry.current_level ?? 0 });
-    } else {
-      subtitle = '';
-    }
+  const primaryMetric: MetricKind =
+    activeTab === 'journey'
+      ? activeSort === 'stage' ? 'stage' : 'accuracy'
+      : activeSort === 'xp' ? 'xp' : 'accuracy';
+  const secondaryMetric: MetricKind =
+    activeTab === 'journey'
+      ? primaryMetric === 'stage' ? 'accuracy' : 'stage'
+      : primaryMetric === 'xp' ? 'accuracy' : 'xp';
 
-    const name = entry.display_name ?? t('unknown_player');
-
-    return (
-      <div className={styles.playerCell}>
-        <PlayerAvatar
-          avatarUrl={entry.avatar_url}
-          displayName={name}
-          playerId={entry.player_id}
-          size={32}
-          initials={entry.is_ai ? 'AI' : getInitials(entry.display_name)}
-        />
-        <div className={styles.playerInfo}>
-          <span className={styles.playerName}>{name}{entry.is_ai ? <span className={styles.aiBadge}>{t('filter_ai')}</span> : null}</span>
-          <span className={styles.playerSubtitle}>{subtitle}</span>
-        </div>
-      </div>
-    );
+  const renderMetric = (entry: LeaderboardEntry, metric: MetricKind): ReactNode => {
+    if (metric === 'accuracy') return <AccuracyValue acc={entry.avg_accuracy} />;
+    if (metric === 'xp') return t('xp_amount', { n: entry.total_xp ?? 0 });
+    return (entry.highest_stage ?? 0) > 0
+      ? t('journey_stage', { n: entry.highest_stage })
+      : t('journey_no_stage');
   };
 
   return (
@@ -281,22 +321,22 @@ function LeaderboardPageInner() {
       {/* Main Tabs */}
       <div className={styles.tabRow}>
         <button
-          onClick={() => setActiveTab('overall')}
+          onClick={() => selectTab('overall')}
           className={`${styles.tab} ${activeTab === 'overall' ? styles.tabActive : ''}`}
         >
           {t('overall')}
         </button>
         <button
-          onClick={() => setActiveTab('daily')}
+          onClick={() => selectTab('daily')}
           className={`${styles.tab} ${activeTab === 'daily' ? styles.tabActive : ''}`}
         >
           {t('daily')}
         </button>
         <button
-          onClick={() => setActiveTab('levelup')}
-          className={`${styles.tab} ${activeTab === 'levelup' ? styles.tabActive : ''}`}
+          onClick={() => selectTab('journey')}
+          className={`${styles.tab} ${activeTab === 'journey' ? styles.tabActive : ''}`}
         >
-          {t('level_up')}
+          {t('journey')}
         </button>
       </div>
 
@@ -346,6 +386,20 @@ function LeaderboardPageInner() {
         </button>
       </div>
 
+      {/* Sort control */}
+      <div className={styles.subTabRow}>
+        {TAB_SORT_OPTIONS[activeTab].map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => setActiveSort(opt)}
+            className={`${styles.subTab} ${activeSort === opt ? styles.subTabActive : ''}`}
+          >
+            {t(`sort_${opt}`)}
+          </button>
+        ))}
+      </div>
+
       {/* Summary */}
       {!loading && !error && ownRank !== null && ownRank > 0 && (
         <div
@@ -355,34 +409,6 @@ function LeaderboardPageInner() {
           tabIndex={0}
         >
           {t('summary_line', { rank: ownRank, suffix: getOrdinalSuffix(ownRank), tab: getSummaryTabLabel() })}
-        </div>
-      )}
-
-      {/* Podium */}
-      {!loading && !error && podiumSlots.length === 3 && (
-        <div className={styles.podium}>
-          {podiumSlots.map((slot) => (
-            <div
-              key={slot.entry.player_id}
-              className={`${styles.podiumItem} ${slot.className}`}
-              style={{ height: slot.height }}
-            >
-              <span className={styles.podiumRank}>{slot.place}</span>
-              <PlayerAvatar
-                avatarUrl={slot.entry.avatar_url}
-                displayName={slot.entry.display_name ?? t('unknown_player')}
-                playerId={slot.entry.player_id}
-                size={40}
-                initials={slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
-              />
-              <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
-              <span className={styles.podiumValue}>
-                {activeTab === 'levelup'
-                  ? (slot.entry.current_level ?? '—')
-                  : <AccuracyValue acc={slot.entry.avg_accuracy} />}
-              </span>
-            </div>
-          ))}
         </div>
       )}
 
@@ -405,103 +431,80 @@ function LeaderboardPageInner() {
 
         {!loading && !error && currentData && currentData.length === 0 && (
           <div className={styles.emptyState}>
-            <p>{t('no_results_today')}</p>
+            <p>{t(activeTab === 'journey' ? 'no_results_journey' : 'no_results_today')}</p>
           </div>
         )}
 
         {!loading && !error && currentData && currentData.length > 0 && (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>#</th>
-                  <th className={styles.th}>{t('col_player')}</th>
-                  {activeTab === 'daily' && activeSubTab === 'today' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={styles.th}>{t('col_games')}</th>
-                    </>
-                  )}
-                  {activeTab === 'daily' && activeSubTab === 'alltime' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
-                    </>
-                  )}
-                  {activeTab === 'levelup' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={styles.th}>{t('col_level')}</th>
-                    </>
-                  )}
-                  {activeTab === 'overall' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.map((entry) => {
+          <>
+            {podiumSlots.length > 0 && (
+              <div className={styles.card}>
+                <div className={styles.podium}>
+                  {podiumSlots.map((slot) => (
+                    <div
+                      key={slot.entry.player_id}
+                      ref={(el) => { if (el) rowRefs.current.set(slot.entry.player_id, el); }}
+                      className={`${styles.podiumItem} ${slot.className}`}
+                      style={{ height: slot.height, gridColumn: slot.column }}
+                    >
+                      <span className={`${styles.podiumRank} ${slot.rankClassName}`}>{slot.entry.rank}</span>
+                      {slot.place === 1 && <span className={styles.crown}>👑</span>}
+                      <PlayerAvatar
+                        avatarUrl={slot.entry.avatar_url}
+                        displayName={slot.entry.display_name ?? t('unknown_player')}
+                        playerId={slot.entry.player_id}
+                        size={slot.place === 1 ? 64 : 48}
+                        initials={slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
+                        isMe={playerId === slot.entry.player_id}
+                      />
+                      <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
+                      <span className={styles.podiumScore}>{renderMetric(slot.entry, primaryMetric)}</span>
+                      <span className={styles.podiumAcc}>{renderMetric(slot.entry, secondaryMetric)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className={`${styles.card} ${styles.list}`}>
+              {listRows.length === 0 ? (
+                <div className={styles.listEmpty}>{t('no_more_players')}</div>
+              ) : (
+                listRows.map((entry) => {
                   const isCurrentPlayer = playerId === entry.player_id;
+                  const name = entry.display_name ?? t('unknown_player');
                   return (
-                    <tr
+                    <div
                       key={entry.player_id}
                       ref={(el) => { if (el) rowRefs.current.set(entry.player_id, el); }}
-                      className={`${styles.row} ${isCurrentPlayer ? styles.rowHighlight : ''}`}
+                      className={`${styles.listRow} ${isCurrentPlayer ? styles.listRowMe : ''}`}
                     >
-                      <td className={styles.rankCell}>{renderRank(entry.rank)}</td>
-                      <td className={styles.playerCell}>{renderPlayerCell(entry)}</td>
-
-                      {activeTab === 'daily' && activeSubTab === 'today' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
-                          </td>
-                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
-                            {formatNumber(entry.games_played ?? 1)}
-                          </td>
-                        </>
-                      )}
-
-                      {activeTab === 'daily' && activeSubTab === 'alltime' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
-                          </td>
-                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
-                            {formatNumber(entry.games_played)}
-                          </td>
-                        </>
-                      )}
-
-                      {activeTab === 'levelup' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <AccuracyValue acc={entry.best_accuracy} />
-                          </td>
-                          <td className={styles.levelCell}>
-                            <span className={styles.levelValue}>{t('lvl_prefix', { n: entry.current_level ?? 0 })}</span>
-                          </td>
-                        </>
-                      )}
-                      {activeTab === 'overall' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
-                          </td>
-                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
-                            {formatNumber(entry.games_played)}
-                          </td>
-                        </>
-                      )}
-                    </tr>
+                      <span className={styles.listRank}>{entry.rank}</span>
+                      <PlayerAvatar
+                        avatarUrl={entry.avatar_url}
+                        displayName={name}
+                        playerId={entry.player_id}
+                        size={38}
+                        initials={entry.is_ai ? 'AI' : getInitials(entry.display_name)}
+                        isMe={isCurrentPlayer}
+                      />
+                      <div className={styles.listNameCol}>
+                        <span className={styles.listName}>
+                          {name}
+                          {entry.is_ai ? <span className={styles.aiBadge}>{t('filter_ai')}</span> : null}
+                        </span>
+                        <span className={styles.listMeta}>{getRowSubtitle(entry)}</span>
+                      </div>
+                      <div className={styles.listScoreCol}>
+                        <span className={styles.listScore}>{renderMetric(entry, primaryMetric)}</span>
+                        <span className={styles.listAcc}>{renderMetric(entry, secondaryMetric)}</span>
+                      </div>
+                    </div>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
+                })
+              )}
+            </div>
+          </>
         )}
       </div>
 

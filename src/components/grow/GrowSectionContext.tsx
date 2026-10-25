@@ -1,22 +1,25 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { investorContent, type InvestorSection } from '@/lib/investorContent'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
+import { getInvestorContent, type InvestorContent } from '@/lib/investorContent'
 
 type GrowSectionContextValue = {
   current: number
   setCurrent: (index: number) => void
-  sections: readonly InvestorSection[]
+  content: InvestorContent
 }
 
 const GrowSectionContext = createContext<GrowSectionContextValue | null>(null)
 
 export function GrowSectionProvider({ children }: { children: ReactNode }) {
   const [current, setCurrent] = useState(0)
+  const t = useTranslations('grow_deck')
+  const content = useMemo(() => getInvestorContent(t), [t])
 
   return (
     <GrowSectionContext.Provider
-      value={{ current, setCurrent, sections: investorContent.sections }}
+      value={{ current, setCurrent, content }}
     >
       {children}
     </GrowSectionContext.Provider>

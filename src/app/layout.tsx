@@ -6,10 +6,12 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { defaultLocale, LOCALE_COOKIE, locales, rtlLocales, type Locale } from '@/i18n/config';
 import { THEME_COOKIE, type Theme, resolveTheme } from '@/lib/theme';
+import { BRAND_PRIMARY_HEX } from '@/core/brand';
 import { HapticFeedback } from '@/components/HapticFeedback';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { Analytics } from '@/components/Analytics';
 import FullscreenPwaModal from '@/components/FullscreenPwaModal';
+import BrandSplash from '@/components/brand/BrandSplash';
 import "./globals.css";
 
 /**
@@ -50,6 +52,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  themeColor: BRAND_PRIMARY_HEX,
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -58,6 +61,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t('meta_title'),
     description: t('meta_description'),
     manifest: '/manifest.json',
+    icons: { apple: '/icons/apple-touch-icon.png' },
     openGraph: {
       images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
     },
@@ -89,12 +93,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
+          <BrandSplash />
           {children}
+          <FullscreenPwaModal />
         </NextIntlClientProvider>
         <HapticFeedback />
         <ServiceWorkerRegistration />
         <Analytics />
-        <FullscreenPwaModal />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>

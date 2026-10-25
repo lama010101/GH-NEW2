@@ -14,6 +14,7 @@ import TopBar from '@/components/layout/TopBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
+import NotificationPreferencesSection from '@/components/NotificationPreferencesSection'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
 
@@ -356,6 +357,11 @@ export default function AccountPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Notification preferences — per-type channel picker (API-backed) */}
+      <div className={styles.settingsSection}>
+        <NotificationPreferencesSection />
       </div>
 
       {/* Sign out */}

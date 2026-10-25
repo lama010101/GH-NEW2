@@ -6,17 +6,17 @@ concurrency:
 
 on:
   schedule:
-    - cron: '0 10 * * *'
+    - cron: '17 10 * * *'
   workflow_dispatch:
 
 jobs:
   daily-autoplay:
     name: Run active AI players against today's Daily challenge
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      SUPABASE_DB_CONNECTION: ${{ secrets.SUPABASE_DB_CONNECTION }}
+      SUPABASE_DB_CONNECTION: ${{ secrets.GH_SUPABASE_DB_CONNECTION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

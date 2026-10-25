@@ -4,6 +4,8 @@ import { resolve } from "path";
 import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
+import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
+import { preflightRoster } from "./rosterPreflight";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -14,6 +16,16 @@ const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 const PLAYER_CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000];
+// AIP-FIX-DAILY-429SWEEP-1024-001: cooldown before the single transient-failure
+// sweep. AI_DAILY_SWEEP_COOLDOWN_MS is a test seam only; the workflow never
+// sets it, so production always waits the full 120000ms.
+const SWEEP_COOLDOWN_MS = Number(process.env.AI_DAILY_SWEEP_COOLDOWN_MS ?? 120000);
+
+// AIP-FIX-AITIMERKILL-1011-008: the previous 120s budget (timer + 30s) could
+// SIGKILL a worker that used the full 90s answer timer and was still inside
+// its 30s critique turn or writing rows — silently losing the answer. The
+// budget is now answer timer + critique cap + DB-write grace (= 150s).
+const WORKER_HARD_KILL_MS = AI_PLAYER_TIMER_MS + AI_WORKER_CRITIQUE_CAP_MS + AI_WORKER_DB_GRACE_MS;
 
 type AiPlayer = {
   id: string;
@@ -30,6 +42,12 @@ type WorkItem = {
 type PlayerWork = {
   player: AiPlayer;
   missing: string[];
+};
+
+export type ItemResult = {
+  item: WorkItem;
+  ok: boolean;
+  lastFailureTransient: boolean;
 };
 
 function todayUtcIso(): string {
@@ -68,6 +86,11 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     let stdout = "";
     let stderr = "";
 
+    const killTimer = setTimeout(() => {
+      stderr += `\nHARD_KILL: worker exceeded ${WORKER_HARD_KILL_MS}ms`;
+      child.kill("SIGKILL");
+    }, WORKER_HARD_KILL_MS);
+
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString();
     });
@@ -77,11 +100,13 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     });
 
     child.on("error", (err) => {
+      clearTimeout(killTimer);
       stderr += `\nSPAWN_ERROR: ${err.message}`;
       resolve({ code: -1, stdout, stderr });
     });
 
     child.on("close", (code) => {
+      clearTimeout(killTimer);
       resolve({ code, stdout, stderr });
     });
   });
@@ -117,6 +142,14 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     /Socket timeout/i,
     /socket hang up/i,
     /SPAWN_ERROR:/,
+    // AIP-FIX-AITIMERKILL-1011-008: a SIGKILLed worker may have died before
+    // writing its row — treat the kill as transient so the item is retried
+    // instead of silently dropped.
+    /HARD_KILL:/,
+    /PROVIDER_ERROR:/,
+    // AIP-FIX-DAILY-RETRY-PARSEERRORS-1022-A04: nondeterministic model-output failures; a retry usually succeeds.
+    /Failed to parse AI final guess response/,
+    /Final guess response missing finalGuess/,
   ];
   for (const pattern of transientNetworkPatterns) {
     if (pattern.test(output)) return true;
@@ -125,17 +158,18 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
   return false;
 }
 
-async function processOne(item: WorkItem): Promise<boolean> {
+async function processOne(item: WorkItem): Promise<{ ok: boolean; lastFailureTransient: boolean }> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const { code, stdout, stderr } = await runWorker(item);
 
     if (code === 0) {
       console.log(`[OK] ${item.player.id} ${item.eventId}`);
-      return true;
+      return { ok: true, lastFailureTransient: false };
     }
 
+    const transient = await isTransientFailure(stderr, stdout);
     const lastAttempt = attempt === MAX_RETRIES;
-    if (!lastAttempt && (await isTransientFailure(stderr, stdout))) {
+    if (!lastAttempt && transient) {
       const delay = RETRY_DELAYS_MS[attempt];
       console.log(`[RETRY] ${item.player.id} ${item.eventId} transient failure (attempt ${attempt + 1}/${MAX_RETRIES + 1}), retrying in ${delay}ms`);
       await sleep(delay);
@@ -144,10 +178,16 @@ async function processOne(item: WorkItem): Promise<boolean> {
 
     console.error(`[ERROR] ${item.player.id} ${item.eventId} worker exited ${code}:`);
     console.error(stderr || stdout);
-    return false;
+    return { ok: false, lastFailureTransient: transient };
   }
 
-  return false;
+  return { ok: false, lastFailureTransient: false };
+}
+
+// AIP-FIX-DAILY-429SWEEP-1024-001: items eligible for the one cooldown sweep —
+// final failure classified transient by isTransientFailure in processOne.
+export function selectSweepItems(results: ItemResult[]): ItemResult[] {
+  return results.filter((r) => !r.ok && r.lastFailureTransient);
 }
 
 async function main(): Promise<void> {
@@ -170,7 +210,7 @@ async function main(): Promise<void> {
   console.log(`[DAILY] Challenge events: ${eventIds.length}`);
 
   const playersResult = await pool.query<AiPlayer>(
-    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active_daily = true"
+    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active_daily = true AND is_active = true AND deleted_at IS NULL"
   );
   const players = playersResult.rows;
   console.log(`[DAILY] Active AI players: ${players.length}`);
@@ -181,10 +221,25 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  const preflight = await preflightRoster(players);
+  for (const skipped of preflight.skipped) {
+    console.log(`[PREFLIGHT] SKIP ${skipped.player.name} (${skipped.player.model_id}): ${skipped.reason}`);
+  }
+  for (const warning of preflight.warnings) {
+    console.log(`[PREFLIGHT] WARN ${warning}`);
+  }
+  console.log(`[PREFLIGHT] keep=${preflight.keep.length} skipped=${preflight.skipped.length}`);
+  if (players.length > 0 && preflight.keep.length === 0) {
+    console.log("[PREFLIGHT] every roster player was skipped");
+    await pool.end();
+    process.exit(1);
+  }
+  const keptPlayers = preflight.keep;
+
   const playerQueue: PlayerWork[] = [];
   let totalWorkItems = 0;
 
-  for (const player of players) {
+  for (const player of keptPlayers) {
     const doneResult = await pool.query<{ event_id: string }>(
       `SELECT event_id
        FROM ai_answer_bank
@@ -219,6 +274,7 @@ async function main(): Promise<void> {
   let queuePointer = 0;
   let succeeded = 0;
   let failed = 0;
+  const results: ItemResult[] = [];
 
   async function playerWorker(): Promise<void> {
     while (queuePointer < playerQueue.length) {
@@ -226,8 +282,10 @@ async function main(): Promise<void> {
       let playerSucceeded = 0;
       let playerFailed = 0;
       for (const eventId of pw.missing) {
-        const ok = await processOne({ player: pw.player, eventId });
-        if (ok) {
+        const item: WorkItem = { player: pw.player, eventId };
+        const res = await processOne(item);
+        results.push({ item, ok: res.ok, lastFailureTransient: res.lastFailureTransient });
+        if (res.ok) {
           playerSucceeded++;
         } else {
           playerFailed++;
@@ -241,6 +299,29 @@ async function main(): Promise<void> {
   const workers = Array.from({ length: Math.min(PLAYER_CONCURRENCY, playerQueue.length) }, playerWorker);
   await Promise.all(workers);
 
+  const sweepItems = selectSweepItems(results);
+  let recoveredInSweep = 0;
+  if (sweepItems.length > 0) {
+    console.log(`[SWEEP] ${sweepItems.length} transient failures, cooling down ${SWEEP_COOLDOWN_MS}ms`);
+    await sleep(SWEEP_COOLDOWN_MS);
+
+    let sweepPointer = 0;
+    async function sweepWorker(): Promise<void> {
+      while (sweepPointer < sweepItems.length) {
+        const r = sweepItems[sweepPointer++];
+        const res = await processOne(r.item);
+        if (res.ok) recoveredInSweep++;
+        r.ok = res.ok;
+        r.lastFailureTransient = res.lastFailureTransient;
+      }
+    }
+    const sweepWorkers = Array.from({ length: Math.min(PLAYER_CONCURRENCY, sweepItems.length) }, sweepWorker);
+    await Promise.all(sweepWorkers);
+
+    succeeded += recoveredInSweep;
+    failed -= recoveredInSweep;
+  }
+
   await pool.end();
 
   console.log("\n=== Daily autoplay summary ===");
@@ -249,6 +330,9 @@ async function main(): Promise<void> {
   console.log(`Work items: ${totalWorkItems}`);
   console.log(`Succeeded: ${succeeded}`);
   console.log(`Failed: ${failed}`);
+  console.log(`Recovered in sweep: ${recoveredInSweep}`);
+  console.log(`Failed after sweep: ${failed}`);
+  console.log(`Skipped (preflight): ${preflight.skipped.length}`);
 
   if (failed > 0) {
     process.exit(1);

@@ -680,36 +680,102 @@ export default class GameServer {
     if (isRuntimeState(this.snapshot) && isRuntimeState(snapshot)) {
       const prev = this.snapshot;
       const next = snapshot;
-      const prevStatus = prev.status;
-      const nextStatus = next.status;
-      const prevRoundIndex = prev.currentRoundIndex;
-      const nextRoundIndex = next.currentRoundIndex;
+      const isAsyncMode =
+        (prev.config as { mode?: string } | undefined)?.mode === "async" ||
+        (next.config as { mode?: string } | undefined)?.mode === "async";
 
-      // Explicit allowed same-or-forward transitions only. Do NOT replace with
-      // a generic numeric status ordinal: ROUND_COMPLETE→ROUND_ACTIVE is
-      // conditionally valid depending on currentRoundIndex and a simple
-      // ordinal comparison cannot express that correctly.
-      const sameStatus = prevStatus === nextStatus;
-      const lobbyToRoundActive = prevStatus === "LOBBY" && nextStatus === "ROUND_ACTIVE";
-      const roundActiveToComplete = prevStatus === "ROUND_ACTIVE" && nextStatus === "ROUND_COMPLETE";
-      const roundCompleteToSessionComplete = prevStatus === "ROUND_COMPLETE" && nextStatus === "SESSION_COMPLETE";
-      const roundCompleteToRoundActiveAdvance =
-        prevStatus === "ROUND_COMPLETE" &&
-        nextStatus === "ROUND_ACTIVE" &&
-        nextRoundIndex > prevRoundIndex;
+      if (isAsyncMode) {
+        // Async sessions carry per-player views: the incoming top-level status
+        // is the APPLYING viewer's view (e.g. a late joiner's LOBBY), while
+        // other players may already be ROUND_ACTIVE. Comparing top-level to
+        // top-level would reject valid join applies. Instead compare each
+        // asserted per-player entry — the incoming playerSnapshots map plus the
+        // viewer's top-level view — against the STORED per-player status
+        // (stored map entry, or stored top-level when the stored viewer is the
+        // same player). Entries with no stored counterpart are new players —
+        // nothing to regress — and a missing playerSnapshots map on either
+        // side is allowed.
+        const prevMap = (prev as { playerSnapshots?: Record<string, { status?: string; currentRoundIndex?: number }> }).playerSnapshots;
+        const nextMap = (next as { playerSnapshots?: Record<string, { status?: string; currentRoundIndex?: number }> }).playerSnapshots;
+        const prevViewer = (prev as { viewerPlayerId?: string | null }).viewerPlayerId;
+        const nextViewer = (next as { viewerPlayerId?: string | null }).viewerPlayerId;
 
-      const allowed =
-        sameStatus ||
-        lobbyToRoundActive ||
-        roundActiveToComplete ||
-        roundCompleteToSessionComplete ||
-        roundCompleteToRoundActiveAdvance;
+        const prevEntryFor = (pid: string): { status?: string; currentRoundIndex?: number } | undefined =>
+          prevMap?.[pid] ??
+          (prevViewer === pid
+            ? { status: prev.status, currentRoundIndex: prev.currentRoundIndex }
+            : undefined);
 
-      if (!allowed) {
-        console.log(
-          `[SNAPSHOT_REGRESSION_REJECTED] prevStatus=${prevStatus} nextStatus=${nextStatus} prevRoundIndex=${prevRoundIndex} nextRoundIndex=${nextRoundIndex}`
-        );
-        return;
+        const asserted: Array<[string, { status?: string; currentRoundIndex?: number }]> = [];
+        if (nextMap) {
+          for (const [pid, ps] of Object.entries(nextMap)) {
+            asserted.push([pid, ps]);
+          }
+        }
+        if (nextViewer && !(nextMap && nextViewer in nextMap)) {
+          asserted.push([nextViewer, { status: next.status, currentRoundIndex: next.currentRoundIndex }]);
+        }
+
+        for (const [pid, nextEntry] of asserted) {
+          const prevEntry = prevEntryFor(pid);
+          const prevStatus = prevEntry?.status;
+          const nextStatus = nextEntry.status;
+          if (prevStatus === undefined || nextStatus === undefined) continue;
+          const prevRoundIndex = prevEntry?.currentRoundIndex;
+          const nextRoundIndex = nextEntry.currentRoundIndex;
+          const sameStatus = prevStatus === nextStatus;
+          const lobbyToRoundActive = prevStatus === "LOBBY" && nextStatus === "ROUND_ACTIVE";
+          const roundActiveToComplete = prevStatus === "ROUND_ACTIVE" && nextStatus === "ROUND_COMPLETE";
+          const roundCompleteToSessionComplete = prevStatus === "ROUND_COMPLETE" && nextStatus === "SESSION_COMPLETE";
+          const roundCompleteToRoundActiveAdvance =
+            prevStatus === "ROUND_COMPLETE" &&
+            nextStatus === "ROUND_ACTIVE" &&
+            (nextRoundIndex ?? -1) > (prevRoundIndex ?? -1);
+          const allowed =
+            sameStatus ||
+            lobbyToRoundActive ||
+            roundActiveToComplete ||
+            roundCompleteToSessionComplete ||
+            roundCompleteToRoundActiveAdvance;
+          if (!allowed) {
+            console.log(
+              `[SNAPSHOT_REGRESSION_REJECTED] playerId=${pid.slice(0, 8)} prevStatus=${prevStatus} nextStatus=${nextStatus} prevRoundIndex=${prevRoundIndex} nextRoundIndex=${nextRoundIndex} (async per-player)`
+            );
+            return;
+          }
+        }
+      } else {
+        const prevStatus = prev.status;
+        const nextStatus = next.status;
+        const prevRoundIndex = prev.currentRoundIndex;
+        const nextRoundIndex = next.currentRoundIndex;
+
+        // Explicit allowed same-or-forward transitions only. Do NOT replace with
+        // a generic numeric status ordinal: ROUND_COMPLETE→ROUND_ACTIVE is
+        // conditionally valid depending on currentRoundIndex and a simple
+        // ordinal comparison cannot express that correctly.
+        const sameStatus = prevStatus === nextStatus;
+        const lobbyToRoundActive = prevStatus === "LOBBY" && nextStatus === "ROUND_ACTIVE";
+        const roundActiveToComplete = prevStatus === "ROUND_ACTIVE" && nextStatus === "ROUND_COMPLETE";
+        const roundCompleteToSessionComplete = prevStatus === "ROUND_COMPLETE" && nextStatus === "SESSION_COMPLETE";
+        const roundCompleteToRoundActiveAdvance =
+          prevStatus === "ROUND_COMPLETE" &&
+          nextStatus === "ROUND_ACTIVE" &&
+          nextRoundIndex > prevRoundIndex;
+
+        const allowed =
+          sameStatus ||
+          lobbyToRoundActive ||
+          roundActiveToComplete ||
+          roundCompleteToSessionComplete ||
+          roundCompleteToRoundActiveAdvance;
+
+        if (!allowed) {
+          console.log(
+            `[SNAPSHOT_REGRESSION_REJECTED] prevStatus=${prevStatus} nextStatus=${nextStatus} prevRoundIndex=${prevRoundIndex} nextRoundIndex=${nextRoundIndex}`
+          );
+          return;
+        }
       }
     }
 
@@ -1777,15 +1843,30 @@ export default class GameServer {
           this.snapshot.players.find(p => p.playerId === verifiedUid && p.leftAt === null);
         if (activePlayer) {
           await this.sendPlayerSnapshot(connection, verifiedUid);
-        } else if (isRuntimeState(this.snapshot) && this.snapshot.status !== "LOBBY") {
-          console.log("[PartyKit] Rejecting unjoined viewer for started async session:", verifiedUid);
-          this.sendError(connection, "Game already in progress");
         } else {
-          connection.send(JSON.stringify({
-            type: "STATE_UPDATE",
-            snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
-            results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
-          }));
+          // Unjoined viewer. The client always sends JOIN_ROOM right after
+          // connect, so the DB join API is the authority on eligibility
+          // (deadline, kicked, full). Only a passed session deadline earns an
+          // immediate error here — the client maps it to the game-ended state.
+          // A started-but-alive session sends NOTHING and waits for JOIN_ROOM;
+          // sending "Game already in progress" here would lock out valid
+          // late joiners.
+          const deadlineRaw = isRuntimeState(this.snapshot)
+            ? (this.snapshot.config as { sessionDeadline?: string | null } | undefined)?.sessionDeadline
+            : undefined;
+          const deadlinePassed = typeof deadlineRaw === "string" &&
+            new Date(deadlineRaw).getTime() < Date.now();
+          if (deadlinePassed) {
+            this.sendError(connection, "Session deadline has passed");
+          } else if (isRuntimeState(this.snapshot) && this.snapshot.status !== "LOBBY") {
+            console.log("[PartyKit] Unjoined viewer connected to started async session — deferring to JOIN_ROOM:", verifiedUid);
+          } else {
+            connection.send(JSON.stringify({
+              type: "STATE_UPDATE",
+              snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
+              results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+            }));
+          }
         }
       } else {
         connection.send(JSON.stringify({
@@ -2027,7 +2108,17 @@ export default class GameServer {
           let senderStatus = this.snapshot.status;
           if (isAsync && senderPlayerId) {
             const playerSnapshots = (this.snapshot as { playerSnapshots?: Record<string, { status?: string }> }).playerSnapshots;
-            senderStatus = playerSnapshots?.[senderPlayerId]?.status ?? this.snapshot.status;
+            const playerEntryStatus = playerSnapshots?.[senderPlayerId]?.status;
+            if (typeof playerEntryStatus === "string") {
+              senderStatus = playerEntryStatus;
+            } else if (this.snapshot.players.some(p => p.playerId === senderPlayerId && p.leftAt === null)) {
+              // Active member with no stored per-player entry — the DB
+              // start-player API is authoritative and idempotent for an
+              // already-started member (no second ROUND_STARTED row, no
+              // deadline/timer reset), so the sender is LOBBY-eligible rather
+              // than borrowing the last applying viewer's top-level status.
+              senderStatus = "LOBBY";
+            }
           }
           if (senderStatus !== "LOBBY") {
             this.sendError(sender, "START_GAME only allowed in LOBBY phase");
@@ -2122,7 +2213,17 @@ export default class GameServer {
           let senderStatus = this.snapshot.status;
           if (isAsync && senderPlayerId) {
             const playerSnapshots = (this.snapshot as { playerSnapshots?: Record<string, { status?: string }> }).playerSnapshots;
-            senderStatus = playerSnapshots?.[senderPlayerId]?.status ?? this.snapshot.status;
+            const playerEntryStatus = playerSnapshots?.[senderPlayerId]?.status;
+            if (typeof playerEntryStatus === "string") {
+              senderStatus = playerEntryStatus;
+            } else if (this.snapshot.players.some(p => p.playerId === senderPlayerId && p.leftAt === null)) {
+              // Active member with no stored per-player entry — the DB
+              // start-player API is authoritative and idempotent for an
+              // already-started member (no second ROUND_STARTED row, no
+              // deadline/timer reset), so the sender is LOBBY-eligible rather
+              // than borrowing the last applying viewer's top-level status.
+              senderStatus = "LOBBY";
+            }
           }
           if (senderStatus !== "LOBBY") {
             this.sendError(sender, "START_PLAYER only allowed in LOBBY phase");
@@ -2346,9 +2447,16 @@ export default class GameServer {
           // full resultsAutoAdvanceSec, or forever when it is 0). READY_NEXT
           // events remain human-written; nothing is fabricated for the AI.
           const readyRequiredCount = activePlayers.filter(p => p.isAi !== true).length;
+          // MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001: count READY_NEXT only from
+          // players still ACTIVE — a left player's stale READY_NEXT (sent
+          // before leaving, or replayed from DB events on cold load) must not
+          // satisfy the sync quorum.
+          const readyActiveCount = activePlayers
+            .filter(p => p.isAi !== true && this.readyForNext.has(p.playerId))
+            .length;
           const shouldAdvance = isAsyncReadyNext
             ? this.readyForNext.size >= 1
-            : readyRequiredCount > 0 && this.readyForNext.size >= readyRequiredCount;
+            : readyRequiredCount > 0 && readyActiveCount >= readyRequiredCount;
           if (shouldAdvance) {
             console.log(`[PartyKit] ${isAsyncReadyNext ? "Async" : "Sync"} advance triggered — ready: ${this.readyForNext.size}/${activePlayers.length}`);
             // Clear any existing result timer

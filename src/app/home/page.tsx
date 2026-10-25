@@ -1,27 +1,24 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, Suspense, Fragment } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { PushSoftAsk } from '@/components/PushSoftAsk'
-import { DailyPanel, type DailyStatusPayload } from '@/components/home/DailyPanel'
-import { CompetePanel } from '@/components/home/CompetePanel'
-import { StageCard } from '@/components/home/StageCard'
-import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
+import { JourneyCard } from '@/components/home/JourneyCard'
+import { DailyCard } from '@/components/home/DailyCard'
+import { ChallengeCard } from '@/components/home/ChallengeCard'
+import { PracticeCard } from '@/components/home/PracticeCard'
+import { useHomeCardOrder, useIsMobileViewport } from '@/components/home/useHomeCardOrder'
+import { HOME_CARD_DESKTOP_ORDER } from '@/core/homeCardOrder'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
-import { createAsyncCompeteSession } from '@/core/competeCreate'
-import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
-import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
-import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
-import { Trophy } from 'lucide-react'
 
 function HomePageInner() {
   const router = useRouter()
@@ -31,6 +28,13 @@ function HomePageInner() {
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
   const [kickedMessage, setKickedMessage] = useState<string | null>(null)
   const currentPlayerId = (identity as { status: string; playerId?: string }).playerId
+
+  // State-aware card order on single-column viewports (UIX-HOME-DYNORDER-
+  // 1022-001). Must stay above the early returns below (rules of hooks); the
+  // settle clock starts on the first card signal, not at hook mount.
+  const { order: homeCardOrder, reportDaily, reportJourney, reportChallenge } =
+    useHomeCardOrder(currentPlayerId)
+  const isMobileViewport = useIsMobileViewport()
 
   useEffect(() => {
     if (searchParams.get('kicked') === '1') {
@@ -216,10 +220,6 @@ function HomePageInner() {
     return () => clearTimeout(timer)
   }, [identity.status])
 
-  const handleNav = (path: string) => {
-    router.push(path)
-  }
-
   const handlePracticeStart = (settings: PracticeModalSettings) => {
     savePracticeSettings(settings)
     if (currentPlayerId && typeof window !== 'undefined') {
@@ -342,6 +342,32 @@ function HomePageInner() {
   const playerId = identity.playerId
   const displayName = identity.displayName
 
+  // Keyed lookup so React MOVES the card DOM nodes when the order changes
+  // (no remount → no state loss, no refetch). Desktop (>= 1024px) keeps the
+  // fixed order; single-column uses the settled signal-based order.
+  const homeCards = {
+    journey: <JourneyCard key="journey" playerId={playerId} onOrderSignal={reportJourney} />,
+    challenge: (
+      <ChallengeCard
+        key="challenge"
+        playerId={playerId}
+        displayName={displayName}
+        onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+        onOrderSignal={reportChallenge}
+      />
+    ),
+    daily: <DailyCard key="daily" playerId={playerId} onOrderSignal={reportDaily} />,
+    practice: (
+      <PracticeCard
+        key="practice"
+        playerId={playerId}
+        onCtaClick={handlePracticeTileClick}
+        ctaLoading={practiceTileLoading}
+      />
+    ),
+  }
+  const visibleHomeOrder = isMobileViewport ? homeCardOrder : HOME_CARD_DESKTOP_ORDER
+
   return (
     <div className={styles.pageRoot}>
 
@@ -378,34 +404,18 @@ function HomePageInner() {
 
       {/* Scrollable content area */}
       <div className={styles['page-scroll']}>
-        {/* Tagline */}
-        <div className={styles.tagline}>
-          {t('home.tagline')}
-        </div>
+        <div className={styles['hv2-wrap']}>
+          {/* Tagline */}
+          <div className={styles.tagline}>
+            {t('home.tagline')}
+          </div>
 
-        {/* Vertical card stack — Stage card (Historian's Journey progress) is first */}
-        <div className={styles['cards-stack']}>
-          {VERTICAL_CARD_ORDER.map(mode => (
-            <Fragment key={mode}>
-              {mode === 'stage' ? (
-                <StageCard
-                  playerId={playerId}
-                  onNavigate={handleNav}
-                />
-              ) : (
-                <ModeCard
-                  mode={mode}
-                  playerId={playerId}
-                  displayName={displayName}
-                  onRequireAuth={() => {}}
-                  onNavigate={handleNav}
-                  onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-                  onPracticeStart={handlePracticeTileClick}
-                  practiceLoading={practiceTileLoading}
-                />
-              )}
-            </Fragment>
-          ))}
+          {/* Home v2 four-card grid — Journey / Challenge / Daily / Practice
+              (port of prototype/home-v2; flex column on mobile, 7fr/5fr grid
+              at >= 1024px) */}
+          <div className={styles['hv2-grid']}>
+            {visibleHomeOrder.map((id) => homeCards[id])}
+          </div>
         </div>
       </div>
 
@@ -456,230 +466,6 @@ function HomePageInner() {
         }}
       />
     </div>
-  )
-}
-
-function ModeCard({
-  mode,
-  playerId,
-  displayName,
-  onRequireAuth,
-  onNavigate,
-  onLobby,
-  onPracticeStart,
-  practiceLoading
-}: {
-  mode: Mode
-  playerId: string
-  displayName: string
-  onRequireAuth: () => void
-  onNavigate: (path: string) => void
-  onLobby: (gameId: string) => void
-  onPracticeStart: () => void
-  practiceLoading?: boolean
-}) {
-  const t = useTranslations()
-  const gradient = MODE_CARD_GRADIENT[mode]
-  const title = t(`home.${mode}_name`)
-  const desc = t(`home.${mode}_desc`)
-  const isCompete = mode === 'compete'
-  const [navigating, setNavigating] = useState(false)
-  const [competeLoading, setCompeteLoading] = useState(false)
-  const [competeError, setCompeteError] = useState<string | null>(null)
-  const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
-  const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
-  const [relaxNudgePending, setRelaxNudgePending] = useState<null | (() => void)>(null)
-  const relaxNudgePendingRef = useRef<null | (() => void)>(null)
-  useEffect(() => { relaxNudgePendingRef.current = relaxNudgePending }, [relaxNudgePending])
-
-  const runCompeteCreate = async () => {
-    if (!playerId) { onRequireAuth(); return }
-    setCompeteLoading(true)
-    setCompeteError(null)
-    try {
-      const gameId = await createAsyncCompeteSession(playerId, displayName)
-      onLobby(gameId)
-    } catch (e) {
-      setCompeteError(e instanceof Error ? e.message : t('game.error_creating_game'))
-    } finally {
-      setCompeteLoading(false)
-    }
-  }
-
-  const handleCompeteCreate = () => {
-    if (shouldShowRelaxPwaInterstitial()) {
-      setPwaInterstitialPending(() => () => setRelaxNudgePending(() => runCompeteCreate))
-      return
-    }
-    setRelaxNudgePending(() => runCompeteCreate)
-  }
-
-  const handlePwaInterstitialSkip = () => {
-    markRelaxPwaInterstitialSkipped()
-    const pending = pwaInterstitialPending
-    setPwaInterstitialPending(null)
-    if (pending) pending()
-  }
-
-  const handleRelaxNudgeComplete = useCallback(() => {
-    const pending = relaxNudgePendingRef.current
-    relaxNudgePendingRef.current = null
-    setRelaxNudgePending(null)
-    if (pending) void pending()
-  }, [])
-
-  const getIconSrc = () => {
-    switch (mode) {
-      case 'compete': return '/icons/compete_large.webp'
-      case 'daily': return '/icons/daily_large.webp'
-      case 'practice': return '/icons/practice_large.webp'
-      default: return '/icons/daily_large.webp'
-    }
-  }
-
-  const handlePlay = () => {
-    if (mode === 'daily') { setNavigating(true); onNavigate('/daily') }
-    else if (mode === 'practice') { onPracticeStart() }
-  }
-
-  // Compete card: icon+text row, then full CompetePanel below
-  if (isCompete) {
-    return (
-      <div className={styles['mode-card']}>
-        <div className={styles['card-bg']} style={{ background: gradient }}>
-          <div className={styles.cardInnerHorizontal}>
-            {/* Icon thumbnail on the LEFT */}
-            <div className={styles.cardIconThumb} aria-hidden="true">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
-            </div>
-
-            {/* Title + description in the MIDDLE */}
-            <div className={styles.cardTextCol}>
-              <h2 className={styles.cardTitleLeft}>{title}</h2>
-              <p className={styles.cardDescLeft}>
-                {desc.split('\n').map((line, i) => (
-                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-                ))}
-              </p>
-            </div>
-
-            {/* CREATE pill button on the RIGHT (plus icon + i18n create label) */}
-            <button
-              type="button"
-              className={styles.playPill}
-              onClick={handleCompeteCreate}
-              disabled={competeLoading}
-              aria-label={t('home.play_mode_aria', { mode: title })}
-            >
-              {competeLoading ? (
-                <span className={styles.playPillSpinner} aria-hidden="true" />
-              ) : (
-                <>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {t('home.compete_create_game')}
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Compete panel below the icon+text row */}
-          <div className={styles.competePanelWrap}>
-            <CompetePanel
-              playerId={playerId}
-              onLobby={onLobby}
-            />
-          </div>
-          {competeError && (
-            <div style={{ color: 'var(--gh-danger)', fontSize: 'var(--font-2xs)', padding: '4px 20px 12px' }}>
-              {competeError}
-            </div>
-          )}
-          {pwaInterstitialPending && (
-            <RelaxPwaInterstitialModal onClose={handlePwaInterstitialSkip} />
-          )}
-          {relaxNudgePending && (
-            <RelaxPushNudge onComplete={handleRelaxNudgeComplete} />
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // Non-compete card: icon-left, text-middle, play-right
-  return (
-    <>
-      <div className={styles['mode-card']}>
-        <div className={styles['card-bg']} style={{ background: gradient }}>
-          <div className={styles.cardInnerHorizontal}>
-            {/* Icon thumbnail on the LEFT */}
-            <div className={styles.cardIconThumb} aria-hidden="true">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
-            </div>
-
-            {/* Title + description in the MIDDLE */}
-            <div className={styles.cardTextCol}>
-              <h2 className={styles.cardTitleLeft}>{title}</h2>
-              <p className={styles.cardDescLeft}>
-                {desc.split('\n').map((line, i) => (
-                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-                ))}
-              </p>
-              {/* Daily card: timer inline below description */}
-              {mode === 'daily' && (
-                <DailyPanel onStatusChange={setDailyStatus} />
-              )}
-            </div>
-
-            {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
-            {mode === 'daily' && (dailyStatus?.status === 'completed' || dailyStatus?.status === 'expired') ? (
-              <button
-                type="button"
-                className={styles.playPill}
-                onClick={() => {
-                  setNavigating(true)
-                  onNavigate(`/daily/game/${dailyStatus?.gameId}/results`)
-                }}
-                disabled={navigating}
-                aria-label={t('home.daily_view_results')}
-              >
-                {navigating ? (
-                  <span className={styles.playPillSpinner} aria-hidden="true" />
-                ) : (
-                  <>
-                    <Trophy width={22} height={22} aria-hidden="true" />
-                    {`${Math.round(Number(dailyStatus?.avgAccuracy ?? 0))}%`}
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={styles.playPill}
-                data-testid={mode === 'practice' ? 'home-practice-play-btn' : undefined}
-                onClick={handlePlay}
-                disabled={navigating || (mode === 'practice' && practiceLoading)}
-                aria-label={t('home.play_mode_aria', { mode: title })}
-              >
-                {navigating || (mode === 'practice' && practiceLoading) ? (
-                  <span className={styles.playPillSpinner} aria-hidden="true" />
-                ) : (
-                  <>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M8 5v14l11-7z" fill="currentColor" />
-                    </svg>
-                    {t('home.compete_play')}
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
   )
 }
 

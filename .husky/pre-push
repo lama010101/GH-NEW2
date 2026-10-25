@@ -47,7 +47,10 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     *[!0]*) ;;  # contains a non-zero char → real commit, proceed
     *) continue ;;  # all zeros → deletion, skip
   esac
-  REF_FILES=$(git diff --name-only "$DIFF_BASE".."$local_sha" 2>/dev/null)
+  # INFRA-FIX-PREPUSH-MERGEBASE-1022-014 — use merge-base (three-dot) diff so a stale branch is not gated on upstream-only changes; if three-dot fails, fall back to the old two-dot diff (fail-closed: a failed diff never yields a silently-empty file list).
+  REF_FILES=$(git diff --name-only "$DIFF_BASE"..."$local_sha" 2>/dev/null) || \
+    REF_FILES=$(git diff --name-only "$DIFF_BASE".."$local_sha" 2>/dev/null) || \
+    { echo "PRE-PUSH: FAILED — cannot diff $DIFF_BASE against $local_sha (fail-closed)"; exit 1; }
   if [ -n "$REF_FILES" ]; then
     PUSHED_FILES="${PUSHED_FILES}${REF_FILES}
 "

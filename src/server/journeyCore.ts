@@ -19,10 +19,10 @@ import {
 } from "@/server/sessionCore";
 import { appendEvent } from "@/server/eventStore";
 import { fetchRandomEventsForSession } from "@/server/events";
-import { MAX_ROUNDS } from "@/core/types";
 import {
   journeyMaxEventAgeYears,
   journeyMinEventYear,
+  journeyRoundCount,
   journeyRoundTimerSec,
 } from "@/core/journeyRules";
 
@@ -62,10 +62,13 @@ function assertJourneyDisplayName(displayName: string): string {
 const JOURNEY_RESULTS_AUTO_ADVANCE_SEC = 90;
 const ROOM_CODE_MAX_ATTEMPTS = 5;
 
-// Stage draw shape (HJ-BUILD-STAGE100-NOAPPROVAL-001): every stage draws
-// exactly MAX_ROUNDS events — the same 5-round session shape
-// Compete/Practice/Daily produce — via fetchRandomEventsForSession.
-const JOURNEY_DRAW_SIZE = MAX_ROUNDS;
+// Stage draw shape (HJ-BUILD-STAGE100-NOAPPROVAL-001): every stage draws its
+// events via fetchRandomEventsForSession — the same shared draw
+// Compete/Practice/Daily use. The draw SIZE is per-stage since
+// HJ-UI-STAGELIST-CONTRAST-ROUNDS-050: journeyRoundCount(stage_number) in
+// src/core/journeyRules.ts (single source — 5 rounds through stage 40, then
+// +1 every 12 stages, capped at 10; NOT MAX_ROUNDS, which stays the 5-round
+// shape Compete/Practice/Daily produce).
 // Recency window (single source: src/core/journeyRules.ts): stage N is
 // eligible for events from the last N*40 years (stage 1 → 40y, stage 100 →
 // 4000y). Implemented as minYear/maxYear on the shared draw function via
@@ -73,12 +76,13 @@ const JOURNEY_DRAW_SIZE = MAX_ROUNDS;
 // time.
 // No-repeat horizon (Journey-only — NOT shared with Compete/Practice/Daily):
 // exclude event IDs shown in this player's last 100 Journey rounds. Each
-// journey_playthroughs row stores its drawn set in drawn_event_ids
-// (JOURNEY_DRAW_SIZE events per playthrough), so 100 rounds = the 20 most
-// recent playthroughs.
+// journey_playthroughs row stores its drawn set in drawn_event_ids. The
+// horizon counts ROUNDS, and playthrough size is now per-stage (5-10), so
+// the number of recent playthroughs needed to cover 100 rounds is derived
+// per stage at draw time: ceil(100 / journeyRoundCount(stage_number)) —
+// 20 playthroughs at 5 rounds each, down to 10 at 10 rounds each. (Stored
+// history may mix sizes; rounding up keeps the horizon at >= 100 rounds.)
 const JOURNEY_NO_REPEAT_ROUNDS = 100;
-const JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT =
-  JOURNEY_NO_REPEAT_ROUNDS / JOURNEY_DRAW_SIZE;
 
 // Per-stage round timer, ramp-then-flat — single source is
 // journeyRoundTimerSec in src/core/journeyRules.ts (imported above; 300s at
@@ -115,14 +119,16 @@ export type StartJourneyPlaythroughResult = {
  *   2. Unlock rule (spec §2 linear unlock, no skipping): stage 1 is always
  *      unlocked; stage N>1 requires journey_player_progress.status='completed'
  *      on stage N-1.
- *   3. Draw JOURNEY_DRAW_SIZE (5) event_ids via fetchRandomEventsForSession —
- *      the same draw Compete/Practice/Daily use — over the stage's absolute
- *      recency window: event_year >= current_year - stage_number * 40, with
- *      current_year computed live. There is NO per-stage approval gate:
- *      every status='validated' event is eligible. Journey-only no-repeat:
- *      events shown in this player's last 100 Journey rounds are excluded,
- *      falling back to allowing repeats if exclusion starves the pool.
- *      Fewer than 5 eligible → throw (never silently short the round count).
+ *   3. Draw journeyRoundCount(stage_number) event_ids via
+ *      fetchRandomEventsForSession — the same draw Compete/Practice/Daily
+ *      use — over the stage's absolute recency window:
+ *      event_year >= current_year - stage_number * 40, with current_year
+ *      computed live. There is NO per-stage approval gate: every
+ *      status='validated' event is eligible. Journey-only no-repeat: events
+ *      shown in this player's last 100 Journey rounds are excluded, falling
+ *      back to allowing repeats if exclusion starves the pool. Fewer than
+ *      the stage's round count eligible → throw (never silently short the
+ *      round count).
  *   4. Create a practice-shaped session (mode='practice', pinned eventIds).
  *   5. Insert journey_playthroughs (session_id, drawn_event_ids).
  *   6. Upsert journey_player_progress: attempts_count+1, last_played_at=now(),
@@ -212,15 +218,24 @@ export async function startJourneyPlaythrough(
     // fetchRandomEventsForSession call sites in sessionCore.ts pass
     // excludeEventIds). Source of "shown" history:
     // journey_playthroughs.drawn_event_ids — each playthrough row records its
-    // own drawn set (JOURNEY_DRAW_SIZE events), so the last
-    // JOURNEY_NO_REPEAT_ROUNDS rounds = the last
-    // JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT playthroughs' drawn_event_ids.
-    // If exclusion leaves fewer than JOURNEY_DRAW_SIZE eligible events the
-    // draw retries WITHOUT exclusion — repeats are allowed rather than
-    // failing the draw — and the fallback is logged.
+    // own drawn set (journeyRoundCount(stage_number) events for this stage),
+    // so the last JOURNEY_NO_REPEAT_ROUNDS rounds are covered by the last
+    // noRepeatPlaythroughLimit playthroughs' drawn_event_ids
+    // (ceil(100 / roundCount) — larger playthroughs need fewer rows to span
+    // the same 100-round horizon; stored history may mix sizes).
+    // If exclusion leaves fewer than roundCount eligible events the draw
+    // retries WITHOUT exclusion — repeats are allowed rather than failing
+    // the draw — and the fallback is logged.
     const currentYear = new Date().getFullYear();
     const minYear = journeyMinEventYear(stage.stage_number, currentYear);
     const maxYear = currentYear;
+    // Per-stage session shape — single source journeyRoundCount in
+    // src/core/journeyRules.ts (5 through stage 40 → +1/12 stages → max 10).
+    // Drives the draw size AND the sessions.total_rounds written below.
+    const roundCount = journeyRoundCount(stage.stage_number);
+    const noRepeatPlaythroughLimit = Math.ceil(
+      JOURNEY_NO_REPEAT_ROUNDS / roundCount
+    );
 
     const recentDrawnResult = await client.query<{ event_id: string }>(
       `SELECT DISTINCT t.event_id::text AS event_id
@@ -232,34 +247,34 @@ export async function startJourneyPlaythrough(
          LIMIT $2
        ) recent
        CROSS JOIN LATERAL unnest(recent.drawn_event_ids) AS t(event_id)`,
-      [playerId, JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT]
+      [playerId, noRepeatPlaythroughLimit]
     );
     const excludeEventIds = recentDrawnResult.rows.map((r) => r.event_id);
 
-    let drawnEvents = await fetchRandomEventsForSession(JOURNEY_DRAW_SIZE, {
+    let drawnEvents = await fetchRandomEventsForSession(roundCount, {
       minYear,
       maxYear,
       excludeEventIds,
     });
-    if (drawnEvents.length < JOURNEY_DRAW_SIZE && excludeEventIds.length > 0) {
+    if (drawnEvents.length < roundCount && excludeEventIds.length > 0) {
       console.warn(
         `[journey] no-repeat exclusion left ${drawnEvents.length}/` +
-        `${JOURNEY_DRAW_SIZE} eligible events for stage ` +
+        `${roundCount} eligible events for stage ` +
         `${stage.stage_number} (player ${playerId}) — retrying draw ` +
         `without exclusion`
       );
-      drawnEvents = await fetchRandomEventsForSession(JOURNEY_DRAW_SIZE, {
+      drawnEvents = await fetchRandomEventsForSession(roundCount, {
         minYear,
         maxYear,
       });
     }
-    if (drawnEvents.length < JOURNEY_DRAW_SIZE) {
+    if (drawnEvents.length < roundCount) {
       throw new Error(
         `Insufficient content within the recency window for journey ` +
         `stage ${stage.stage_number} (events younger than ` +
         `${journeyMaxEventAgeYears(stage.stage_number)} years ` +
         `required): ${drawnEvents.length} available, ` +
-        `${JOURNEY_DRAW_SIZE} required`
+        `${roundCount} required`
       );
     }
     const drawnEventIds = drawnEvents.map((e) => e.id);
@@ -288,7 +303,7 @@ export async function startJourneyPlaythrough(
           [
             gameId,
             journeyRoundTimerSec(stage.stage_number),
-            drawnEventIds.length,
+            roundCount,
             yearMin,
             yearMax,
             JOURNEY_RESULTS_AUTO_ADVANCE_SEC,

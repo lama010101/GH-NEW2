@@ -4,6 +4,7 @@ import { TEST_USERS, fetchAccessToken } from '../fixtures/auth';
 import { authenticatePage } from '../helpers/auth-cookie';
 import { ensureLoggedIn } from '../helpers/auth-ui';
 import { CompeteWSClient, type CompeteSnapshot } from '../orchestrator/websocketClient';
+import pg from 'pg';
 
 // ═════════════════════════════════════════════════════════════════════
 // MP-BUILD-RELAX-GOLDEN-PATH-002
@@ -26,6 +27,15 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_DB_CONNECTION = process.env.SUPABASE_DB_CONNECTION || '';
+const { Pool } = pg;
+
+// MP-BUILD-RELAXSPEC-CLEANUP-1020-070 — every gameId is captured into this
+// Set the moment a create response is parsed; the afterAll teardown deletes
+// those sessions AND any session hosted by this run's test users (a create
+// that times out client-side can still commit server-side, in which case the
+// spec never learns the gameId but the host session_players row exists).
+const createdGameIds = new Set<string>();
 
 const DESKTOP_PRESET = {
   viewport: { width: 1280, height: 800 },
@@ -132,7 +142,15 @@ async function ensureWelcomeCompleted(userId: string) {
 }
 
 async function openYourTurnTab(page: Page) {
-  await page.getByRole('button', { name: /YOUR TURN/i }).click({ timeout: STATE_TIMEOUT });
+  // Idempotent: ChallengeCard auto-expands your_turn on >=1024px viewports,
+  // so a blind click can toggle it CLOSED. Check aria-expanded first and
+  // only click when collapsed; the mount effect only ever adds the tab.
+  const tab = page.getByRole('button', { name: /YOUR TURN/i });
+  await tab.waitFor({ state: 'visible', timeout: STATE_TIMEOUT });
+  if ((await tab.getAttribute('aria-expanded')) !== 'true') {
+    await tab.click({ timeout: STATE_TIMEOUT });
+  }
+  await expect(tab).toHaveAttribute('aria-expanded', 'true', { timeout: 10000 });
 }
 
 async function openCompletedTab(page: Page) {
@@ -183,7 +201,7 @@ async function expectCompeteCardGame(page: Page, gameId: string, expectedRound: 
   // Wait for the active-games list to render the expected row before asserting text.
   // Some locales/translations omit ` / {total}`, so make the total optional.
   await expect(
-    page.locator('[class*="gameRow"]').filter({
+    page.locator('[data-cap-row]').filter({
       hasText: new RegExp(`Round ${expectedRound}(?: / ${game!.round_total})?`),
     }).first(),
   ).toBeVisible({ timeout: STATE_TIMEOUT });
@@ -196,7 +214,7 @@ async function expectCompletedGame(page: Page, gameId: string) {
   expect(game!.status, 'status is completed').toBe('completed');
   // Wait for the active-games list to render the expected completed row.
   await expect(
-    page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) }).first(),
+    page.locator('[data-cap-row]').filter({ hasText: new RegExp(game!.opponent_name) }).first(),
   ).toBeVisible({ timeout: STATE_TIMEOUT });
 }
 
@@ -283,6 +301,7 @@ test('Relax golden path A0–A13', async () => {
     const sessionData = await createRes.json();
     const gameId = sessionData.gameId || sessionData.id;
     expect(gameId, 'Create game returned no gameId').toBeTruthy();
+    createdGameIds.add(gameId);
     console.log(`[RELAX-GOLDEN] Game created: ${gameId}`);
 
     await Promise.all([
@@ -670,6 +689,7 @@ test('Relax final round shows own RoundCompleteSection before explicit SessionCo
     const sessionData = await createRes.json();
     const gameId = sessionData.gameId || sessionData.id;
     expect(gameId, 'Create game returned no gameId').toBeTruthy();
+    createdGameIds.add(gameId);
 
     await Promise.all([
       hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
@@ -745,5 +765,167 @@ test('Relax final round shows own RoundCompleteSection before explicit SessionCo
     await expectRosterStatus(guestPage, HOST_USER.id, 'finished');
   } finally {
     await browser.close();
+  }
+});
+
+test('Relax late joiner enters after host started — MP-FIX-RELAXLATEJOINER-1019-065 regression', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const hostCtx = await browser.newContext(DESKTOP_PRESET);
+    const guestCtx = await browser.newContext(DESKTOP_PRESET);
+    const hostPage = await hostCtx.newPage();
+    const guestPage = await guestCtx.newPage();
+
+    await Promise.all([
+      hostPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+      guestPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+    ]);
+    await Promise.all([
+      ensureLoggedIn(hostPage, HOST_USER),
+      ensureLoggedIn(guestPage, GUEST_B_USER),
+    ]);
+
+    const createRes = await hostPage.request.post(`${BASE_URL}/api/compete/create`, {
+      data: {
+        displayName: HOST_USER.displayName,
+        playerId: HOST_USER.id,
+        mode: 'async',
+        roundTimerSec: 0,
+        resultsAutoAdvanceSec: 0,
+      },
+      timeout: NAV_TIMEOUT,
+    });
+    expect(createRes.ok(), 'Create late-join test game failed').toBeTruthy();
+    const sessionData = await createRes.json();
+    const gameId = sessionData.gameId || sessionData.id;
+    expect(gameId, 'Create game returned no gameId').toBeTruthy();
+    createdGameIds.add(gameId);
+
+    // Host enters the lobby and STARTS ITS OWN RUN before the guest even opens the URL.
+    await hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+    await waitForSection(hostPage, 'lobby-shell');
+    const hostToken = await fetchAccessToken(HOST_USER);
+    const hostErrors: string[] = [];
+    const hostWS = createWS(gameId, HOST_USER, hostToken, hostErrors, []);
+    await hostWS.connect();
+    await hostWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 1, STATE_TIMEOUT);
+    await hostPage.getByTestId('lobby-ready-btn').first().click();
+    await hostWS.waitForState((s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === 0, STATE_TIMEOUT, true);
+    await waitForSection(hostPage, 'round-active-section', { roundIndex: 0 });
+    console.log('[LATE-JOIN] host ROUND_ACTIVE; guest joining now');
+
+    // The guest opens the game URL AFTER the host started its run (the 065 lockout case).
+    const guestErrors: string[] = [];
+    const guestToken = await fetchAccessToken(GUEST_B_USER);
+    const guestWS = createWS(gameId, GUEST_B_USER, guestToken, guestErrors, []);
+    const wsConnectPromise = guestWS.connect();
+    await guestPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+    await wsConnectPromise;
+
+    // (1) No lockout screen / error frame for the late joiner.
+    await guestPage.waitForTimeout(3000);
+    const guestBody = (await guestPage.locator('body').innerText({ timeout: 5000 }).catch(() => '')).toLowerCase();
+    expect(guestBody, 'late joiner must not see "already started" screen').not.toContain('already started');
+    expect(guestBody, 'late joiner must not see "already in progress"').not.toContain('already in progress');
+    expect(
+      guestErrors.some((e) => /already (started|in progress)/i.test(e)),
+      `late joiner got banned ERROR frame: ${JSON.stringify(guestErrors)}`,
+    ).toBe(false);
+
+    // (2) Guest reaches the lobby and sees itself in the roster.
+    await waitForSection(guestPage, 'lobby-shell');
+    await expect(
+      guestPage.locator('[data-testid^="lobby-player-"]').filter({ hasText: GUEST_B_USER.displayName }).first(),
+      'late joiner sees own roster row',
+    ).toBeVisible({ timeout: STATE_TIMEOUT });
+    await guestWS.waitForState(
+      (s) => s.status === 'LOBBY' && s.players.some((p) => p.playerId === GUEST_B_USER.id),
+      STATE_TIMEOUT,
+      true,
+    );
+    await assertNoBannedLobbyText(guestPage, 'LATE-JOIN-guest');
+
+    // (3) Guest can start its own run and reaches an active round.
+    await guestPage.getByTestId('lobby-ready-btn').first().click();
+    await guestWS.waitForState(
+      (s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === 0,
+      STATE_TIMEOUT,
+      true,
+    );
+    await waitForSection(guestPage, 'round-active-section', { roundIndex: 0 });
+    console.log('[LATE-JOIN] passed: guest joined after host start, reached ROUND_ACTIVE');
+  } finally {
+    await browser.close();
+  }
+});
+
+// MP-BUILD-RELAXSPEC-CLEANUP-1020-070 — prod-residue teardown.
+// Runs after every test in this file, pass or fail, BEFORE the global
+// fixtures/auth.ts teardown deletes the auth users. Deletes the sessions this
+// run created (exact game_ids only — never LIKE, never time windows), their
+// child rows first (no FK constraints exist on the child tables, so they
+// orphan otherwise), then the sessions row. Deletion never masks the test
+// result: failures are logged, not rethrown.
+test.afterAll(async () => {
+  const runUserIds = TEST_USERS.map((u) => u.id).filter((id) => id.length > 0);
+  if (!SUPABASE_DB_CONNECTION || runUserIds.length === 0) {
+    console.warn(
+      `[RELAX-TEARDOWN] skipped: SUPABASE_DB_CONNECTION set=${SUPABASE_DB_CONNECTION.length > 0} runUserIds=${runUserIds.length}`,
+    );
+    return;
+  }
+  const pool = new Pool({ connectionString: SUPABASE_DB_CONNECTION });
+  try {
+    // Clause (b): sessions hosted by one of this run's exact test user ids —
+    // catches creates that committed server-side after the client timed out
+    // (createCompeteSession inserts the host session_players row atomically).
+    const hosted = await pool.query<{ game_id: string }>(
+      `SELECT DISTINCT game_id FROM session_players WHERE is_host = true AND player_id = ANY($1::uuid[])`,
+      [runUserIds],
+    );
+    const gameIds = new Set<string>(createdGameIds);
+    for (const row of hosted.rows) gameIds.add(row.game_id);
+    const ids = [...gameIds];
+    if (ids.length === 0) {
+      console.log('[RELAX-TEARDOWN] no sessions found for this run');
+      return;
+    }
+    console.log(`[RELAX-TEARDOWN] sessions to delete: ${ids.join(', ')}`);
+
+    // Safety gate: ABORT if any row to be deleted belongs to a non-run user.
+    for (const table of ['session_players', 'player_round_events', 'round_commits', 'round_results', 'round_hints']) {
+      const foreign = await pool.query<{ player_id: string }>(
+        `SELECT DISTINCT player_id FROM ${table} WHERE game_id = ANY($1::uuid[]) AND NOT (player_id = ANY($2::uuid[]))`,
+        [ids, runUserIds],
+      );
+      if (foreign.rows.length > 0) {
+        console.error(
+          `[RELAX-TEARDOWN] ABORT: ${table} contains rows for non-run users ` +
+            `[${foreign.rows.map((r) => r.player_id).join(', ')}] in game_ids [${ids.join(', ')}] — nothing deleted`,
+        );
+        return;
+      }
+    }
+
+    // Child rows first, sessions last. Counts are SELECTed and logged before
+    // and after every DELETE.
+    for (const table of ['round_hints', 'round_commits', 'round_results', 'player_round_events', 'round_events', 'session_players', 'sessions']) {
+      const before = await pool.query<{ c: number }>(
+        `SELECT count(*)::int AS c FROM ${table} WHERE game_id = ANY($1::uuid[])`,
+        [ids],
+      );
+      const del = await pool.query(`DELETE FROM ${table} WHERE game_id = ANY($1::uuid[])`, [ids]);
+      const after = await pool.query<{ c: number }>(
+        `SELECT count(*)::int AS c FROM ${table} WHERE game_id = ANY($1::uuid[])`,
+        [ids],
+      );
+      console.log(
+        `[RELAX-TEARDOWN] ${table}: before=${before.rows[0].c} deleted=${del.rowCount ?? 0} after=${after.rows[0].c}`,
+      );
+    }
+  } catch (err) {
+    console.error('[RELAX-TEARDOWN] session cleanup failed (does not mask test result):', err);
+  } finally {
+    await pool.end().catch(() => {});
   }
 });

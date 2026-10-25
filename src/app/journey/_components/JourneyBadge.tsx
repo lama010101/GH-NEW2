@@ -2,8 +2,10 @@
 
 // Journey-local badge display (HJ-BUILD-JOURNEYUI-001).
 // Plain tier display for the Historian's Journey gold/silver/bronze/completion
-// badges + accuracy%. Deliberately NOT the compete BadgePopup (per-round
-// location/year/combo tiers + XP-bar animation — protected-baseline path).
+// badges. Deliberately NOT the compete BadgePopup (per-round location/year/
+// combo tiers + XP-bar animation — protected-baseline path). No accuracy%
+// here (HJ-UI-STAGELIST-CONTRAST-ROUNDS-050) — the circular ring already
+// carries the score.
 
 import { useTranslations } from "next-intl";
 import type { JourneyBadge as JourneyBadgeTier } from "@/server/journeyCore";
@@ -18,11 +20,9 @@ const TIER_CLASS: Record<JourneyBadgeTier, string> = {
 
 export function JourneyBadge({
   badge,
-  accuracyPct,
   size = "sm",
 }: {
   badge: JourneyBadgeTier | null;
-  accuracyPct?: number | null;
   size?: "sm" | "lg";
 }) {
   const t = useTranslations("journey");
@@ -34,9 +34,6 @@ export function JourneyBadge({
     >
       <span className={styles.disc} aria-hidden="true" />
       <span className={styles.label}>{badge ? t(`badge_${badge}`) : t("badge_none")}</span>
-      {typeof accuracyPct === "number" && (
-        <span className={styles.accuracy}>{accuracyPct.toFixed(1)}%</span>
-      )}
     </span>
   );
 }

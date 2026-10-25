@@ -1,0 +1,327 @@
+'use client'
+
+// Home v2 Journey card (MP-UIX-PORT-C-HOME-001) — port of
+// src/app/prototype/home-v2 JourneyCard onto real data. Reads the same two
+// tables as /journey (journey_stages + journey_player_progress, both
+// authenticated-SELECT per RLS) via supabaseBrowser. nextStage = lowest
+// non-completed stage. Tier path uses rank-NN.png icons via journeyRules
+// (single source for tier math); badges come from
+// journey_player_progress.best_badge. Resume state comes from
+// findAnyActivePlaythrough() + GET /api/compete/{gameId}.
+
+import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { Play } from 'lucide-react'
+import { supabaseBrowser } from '@/core/supabaseBrowser'
+import {
+  journeyRoundCount,
+  journeyStageEraKey,
+  journeyStageIconFile,
+} from '@/core/journeyRules'
+import {
+  findAnyActivePlaythrough,
+  type JourneyProgressRow,
+  type JourneyStageRow,
+} from '@/app/journey/_components/journeyStorage'
+import { startJourneyStage } from '@/app/journey/_components/journeyStart'
+import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal'
+import { useIdentity } from '@/hooks/useIdentity'
+import styles from './JourneyCard.module.css'
+
+interface JourneyCardProps {
+  playerId: string | undefined
+  onOrderSignal?: (s: { settled: boolean; resume: boolean }) => void
+}
+
+export function JourneyCard({ playerId, onOrderSignal }: JourneyCardProps) {
+  const t = useTranslations()
+  const tGame = useTranslations('game')
+  const router = useRouter()
+
+  const [stages, setStages] = useState<JourneyStageRow[] | null>(null)
+  const [progressRows, setProgressRows] = useState<JourneyProgressRow[]>([])
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [resume, setResume] = useState<{
+    stageId: string
+    gameId: string
+    roundIndex: number
+    totalRounds: number
+  } | null>(null)
+  const [resumeChecked, setResumeChecked] = useState(false)
+  const [starting, setStarting] = useState(false)
+  const [startError, setStartError] = useState<string | null>(null)
+  const [gateStageNumber, setGateStageNumber] = useState<number | null>(null)
+  const [hasConverted, setHasConverted] = useState(false)
+  const { state: identityState } = useIdentity()
+  const isAnonymous = identityState.status === 'ready' && identityState.isAnonymous
+
+  useEffect(() => {
+    if (!playerId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [stageRes, progressRes] = await Promise.all([
+          supabaseBrowser
+            .from('journey_stages')
+            .select('id,stage_number,title,theme,difficulty_rating,min_accuracy_pct,pool_size,status')
+            .order('stage_number', { ascending: true }),
+          supabaseBrowser
+            .from('journey_player_progress')
+            .select('id,player_id,stage_id,status,best_accuracy_pct,best_badge,attempts_count,first_completed_at,last_played_at')
+            .eq('player_id', playerId),
+        ])
+        if (cancelled) return
+        if (stageRes.error) throw stageRes.error
+        if (progressRes.error) throw progressRes.error
+        setStages((stageRes.data ?? []) as JourneyStageRow[])
+        setProgressRows((progressRes.data ?? []) as JourneyProgressRow[])
+      } catch {
+        if (!cancelled) setLoadFailed(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [playerId])
+
+  // Active playthrough marker → live round index for the resume block.
+  useEffect(() => {
+    if (!playerId) return
+    const pending = findAnyActivePlaythrough()
+    if (!pending) {
+      setResumeChecked(true)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/compete/${pending.gameId}?playerId=${playerId}`, { cache: 'no-store' })
+        if (!res.ok) {
+          if (!cancelled) setResumeChecked(true)
+          return
+        }
+        const snap = (await res.json()) as {
+          status?: string
+          currentRoundIndex?: number
+          config?: { totalRounds?: number }
+        }
+        if (cancelled) return
+        if (snap.status !== 'SESSION_COMPLETE') {
+          const roundIndex = typeof snap.currentRoundIndex === 'number' ? snap.currentRoundIndex : 0
+          const totalRounds = typeof snap.config?.totalRounds === 'number' ? snap.config.totalRounds : 0
+          setResume({ stageId: pending.stageId, gameId: pending.gameId, roundIndex, totalRounds })
+        }
+        setResumeChecked(true)
+      } catch {
+        // Snapshot unreachable — the card renders without the resume block.
+        if (!cancelled) setResumeChecked(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [playerId])
+
+  // Order signal for useHomeCardOrder: settled once the stages fetch finished
+  // (loaded or failed) AND the resume verification finished (including the
+  // no-playthrough and failure paths). resume = a resumable playthrough exists.
+  useEffect(() => {
+    onOrderSignal?.({
+      settled: (stages !== null || loadFailed) && resumeChecked,
+      resume: resume !== null,
+    })
+  }, [onOrderSignal, stages, loadFailed, resumeChecked, resume])
+
+  const stageList = stages ?? []
+  const progressByStageId = new Map<string, JourneyProgressRow>()
+  for (const row of progressRows) progressByStageId.set(row.stage_id, row)
+  const stageNumberById = new Map<string, number>()
+  for (const s of stageList) stageNumberById.set(s.id, s.stage_number)
+
+  const completedByNumber = new Map<number, JourneyProgressRow>()
+  for (const row of progressRows) {
+    if (row.status !== 'completed') continue
+    const n = stageNumberById.get(row.stage_id)
+    if (typeof n === 'number') completedByNumber.set(n, row)
+  }
+  const doneCount = completedByNumber.size
+
+  // Lowest non-completed stage; null when every stage is done.
+  const nextStageRow = stageList.find((s) => !completedByNumber.has(s.stage_number)) ?? null
+  const isNew = doneCount === 0
+  const allDone = stageList.length > 0 && nextStageRow === null
+
+  const gate = nextStageRow ? Math.round(Number(nextStageRow.min_accuracy_pct)) : null
+  const rounds = nextStageRow ? journeyRoundCount(nextStageRow.stage_number) : null
+  const difficulty =
+    nextStageRow && typeof nextStageRow.difficulty_rating === 'number'
+      ? nextStageRow.difficulty_rating
+      : null
+
+  const currentYear = new Date().getFullYear()
+  const stageTitle = nextStageRow
+    ? nextStageRow.title ?? t('journey.stage_default_title', { number: nextStageRow.stage_number })
+    : null
+  const stageTheme = nextStageRow
+    ? nextStageRow.theme ?? tGame(journeyStageEraKey(nextStageRow.stage_number, currentYear))
+    : null
+
+  const cta = isNew
+    ? t('home.journey_start')
+    : resume
+      ? t('journey.resume_attempt')
+      : nextStageRow
+        ? t('journey.result_play_stage', { number: nextStageRow.stage_number })
+        : t('home.journey_view')
+
+  // Direct stage start — same flow /journey's handleStart uses:
+  // guest gate (anonymous player on stage >= 2 → conversion modal), then
+  // startJourneyStage (POST /api/journey/start + sessionStorage marker) →
+  // /practice/{gameId}. The server-side gate in startJourneyPlaythrough
+  // stays authoritative.
+  const handleStart = async () => {
+    if (starting || !nextStageRow) return
+    setStartError(null)
+    if (nextStageRow.stage_number >= 2 && isAnonymous && !hasConverted) {
+      setGateStageNumber(nextStageRow.stage_number)
+      return
+    }
+    setStarting(true)
+    try {
+      const started = await startJourneyStage(nextStageRow.id)
+      router.push(`/practice/${started.gameId}`)
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : t('journey.load_error'))
+      setStarting(false)
+    }
+  }
+
+  const openStage = () => {
+    if (!nextStageRow) {
+      router.push('/journey')
+      return
+    }
+    if (resume !== null) {
+      router.push(`/practice/${resume.gameId}`)
+      return
+    }
+    void handleStart()
+  }
+
+  return (
+    <section className={styles.journey} aria-labelledby="hv2j-title">
+      {/* Header */}
+      <div className={styles.head}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icons/levels_large.webp" alt="" width={64} height={64} decoding="async" className={styles.headIcon} />
+        <div className={styles.headTxt}>
+          <span className={styles.kicker}>{t('journey.title')}</span>
+          <h2 id="hv2j-title" className={styles.sub}>{t('journey.subtitle')}</h2>
+        </div>
+        <div className={styles.prog}>
+          <MiniRing44 done={doneCount} total={stageList.length || 100} />
+          <span className={styles.progNum}>{doneCount}/{stageList.length || 100}</span>
+        </div>
+      </div>
+
+      {loadFailed && (
+        <p className={styles.loadError} role="alert">{t('journey.load_error')}</p>
+      )}
+
+      {!loadFailed && stages === null && (
+        <p className={styles.loading}>{t('common.loading')}</p>
+      )}
+
+      {/* Up next — links to /journey (UIX-JC-TIERPATH-MOVE-1022-001) */}
+      {!loadFailed && nextStageRow && (
+        <Link href="/journey" className={`${styles.up} ${styles.upLink}`}>
+          <div className={styles.iconWrap}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={journeyStageIconFile(nextStageRow.stage_number)} alt="" width={96} height={96} decoding="async" className={styles.icon} />
+          </div>
+          <div className={styles.upInfo}>
+            <div className={styles.upTop}>
+              <span className={styles.upKicker}>{t('home.journey_up_next')}</span>
+              <span className={styles.stageLabel}>{t('journey.stage_label', { number: nextStageRow.stage_number })}</span>
+            </div>
+            <span className={styles.stageTitle}>{stageTitle}</span>
+            <span className={styles.theme}>{stageTheme}</span>
+            <div className={styles.chips}>
+              {rounds !== null && (
+                <span className={styles.chip}>{t('journey.rounds', { count: rounds })}</span>
+              )}
+              {gate !== null && Number.isFinite(gate) && (
+                <span className={styles.chip}>{t('home.journey_pass_chip', { pct: gate })}</span>
+              )}
+              {difficulty !== null && (
+                <span className={styles.chip}>{t('home.journey_difficulty_chip', { rating: difficulty })}</span>
+              )}
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {!loadFailed && allDone && (
+        <div className={styles.up}>
+          <div className={styles.upInfo}>
+            <span className={styles.stageTitle}>{t('journey.result_journey_complete_title')}</span>
+            <span className={styles.theme}>{t('journey.result_journey_complete_body')}</span>
+          </div>
+        </div>
+      )}
+
+      {resume !== null && (
+        <div className={styles.resume}>
+          <span className={styles.dots}>
+            {Array.from({ length: Math.max(0, resume.totalRounds) }, (_, i) => (
+              <span key={i} className={`${styles.dot} ${i < resume.roundIndex ? styles.dotDone : i === resume.roundIndex ? styles.dotCur : ''}`} />
+            ))}
+          </span>
+          <span className={styles.resumeTxt}>
+            {t('home.round_of', { current: resume.roundIndex + 1, total: resume.totalRounds })}
+          </span>
+        </div>
+      )}
+
+      {!loadFailed && (nextStageRow || allDone) && (
+        <div className={styles.ctaRow}>
+          <button type="button" className={styles.cta} onClick={openStage} disabled={starting}>
+            {starting ? t('common.loading') : (<><Play size={16} strokeWidth={2.5} /> {cta}</>)}
+          </button>
+        </div>
+      )}
+
+      {startError && (
+        <p className={styles.loadError} role="alert">{startError}</p>
+      )}
+
+      <GuestConversionModal
+        isOpen={gateStageNumber !== null}
+        stageNumber={gateStageNumber ?? 2}
+        onClose={() => setGateStageNumber(null)}
+        onConverted={() => {
+          setGateStageNumber(null)
+          setHasConverted(true)
+          void handleStart()
+        }}
+      />
+    </section>
+  )
+}
+
+function MiniRing44({ done, total }: { done: number; total: number }) {
+  const size = 44
+  const sw = 5
+  const r = (size - sw) / 2
+  const c = 2 * Math.PI * r
+  const pct = total > 0 ? done / total : 0
+  return (
+    <span className={styles.ring} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#fff" strokeWidth={sw}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - pct * c}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      </svg>
+      <span className={styles.ringVal}>{Math.round(pct * 100)}%</span>
+    </span>
+  )
+}

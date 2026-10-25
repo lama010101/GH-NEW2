@@ -130,10 +130,11 @@ export async function POST(request: NextRequest) {
 
       if (sendPush) {
         await sendPushToUser(invitee_id, {
-          title: "Guess History",
           body: `${inviterName} invited you to a game`,
           url: `/compete/${game_id}`,
           tag: `lobby_invite:${game_id}:${invitee_id}`,
+          ttl: 900,
+          urgency: 'high',
         });
       }
     }

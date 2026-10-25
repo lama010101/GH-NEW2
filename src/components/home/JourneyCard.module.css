@@ -1,0 +1,100 @@
+/* Journey card — port of prototype/home-v2 .hv2-journey / .hv2j-* rules
+   (MP-UIX-PORT-C-HOME-001). Font sizes use var(--font-*) tokens only
+   (ENFORCE-CSS-NO-HARDCODED-TOKENS-001). Badge colors via data-badge. */
+
+.journey {
+  container-type: inline-size;
+  container-name: hv2journey;
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3b0764 0%, #6b21a8 55%, #9333ea 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(59, 7, 100, 0.45);
+  display: flex;
+  flex-direction: column;
+}
+
+.head { display: flex; align-items: center; gap: 12px; }
+.headIcon { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35)); box-sizing: border-box; padding: 6px; border-radius: 16px; background: rgba(255,255,255,0.15); }
+.headTxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.kicker { font-size: var(--font-xl); font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--gh-text-primary, #fff); }
+.sub { margin: 3px 0 0; font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }
+.prog { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.progNum { font-size: var(--font-2xs); font-weight: 800; color: rgba(255,255,255,0.75); }
+.ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.ringVal { position: absolute; font-size: var(--font-2xs); font-weight: 800; color: #fff; }
+
+.loading,
+.loadError { margin: 14px 0 0; font-size: var(--font-sm); font-weight: 600; color: rgba(255,255,255,0.7); }
+.loadError { color: #fecaca; }
+
+.up {
+  display: flex; align-items: center; gap: 16px; margin-top: 18px;
+  padding: 14px; border-radius: 16px;
+  background: rgba(0,0,0,0.16); border: 1px solid rgba(255,255,255,0.10);
+}
+/* Up-next link variant (next/link anchor) — UIX-JC-TIERPATH-MOVE-1022-001 */
+.upLink { cursor: pointer; color: inherit; text-decoration: none; }
+.upLink:focus-visible { outline: 2px solid var(--gh-text-primary, #fff); outline-offset: 2px; }
+.upTop { display: flex; align-items: baseline; gap: 8px; }
+.upKicker { font-size: var(--font-2xs); font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase; color: #d8b4fe; }
+.iconWrap {
+  position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 88px; height: 88px;
+}
+.iconWrap::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 70%);
+}
+.icon { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4)); }
+.upInfo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.stageLabel { font-size: var(--font-2xs); font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.stageTitle { font-size: var(--font-2xl); font-weight: 800; line-height: 1.1; color: #fff; }
+.theme { font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip {
+  font-size: var(--font-2xs); font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.resume { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.dots { display: flex; gap: 4px; }
+.dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+}
+.dotDone { background: #fff; border-color: #fff; }
+.dotCur { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
+.resumeTxt { font-size: var(--font-2xs); font-weight: 800; color: #fff; }
+
+.ctaRow { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 22px; border-radius: 999px; border: 0; cursor: pointer;
+  background: #fff; color: #6b21a8; font-size: var(--font-sm); font-weight: 900; flex: 1;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.explainer { margin: 10px 0 0; font-size: var(--font-2xs); color: rgba(255,255,255,0.6); }
+
+/* Tier-path rules (path, seg, node and ghost classes) moved verbatim to
+   src/app/journey/_components/TierPath.module.css (UIX-JC-TIERPATH-MOVE-1022-001). */
+
+@container hv2journey (min-width: 560px) {
+  .icon { width: 96px; height: 96px; }
+  .iconWrap { width: 112px; height: 112px; }
+  .cta { width: auto; }
+}
+
+@media (max-width: 1023px) {
+  .cta { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey *, .journey *::before, .journey *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

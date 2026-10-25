@@ -3,15 +3,20 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve, join, relative } from "node:path";
 
 /**
- * GUARD TEST — single rank display component (RankCard) everywhere.
+ * GUARD TEST — single rank display component per surface.
  *
  * Task ref: UNIFY-RANK-DISPLAY-001
+ * Updated: MP-UIX-PORT-D1-RANKLADDER-001 — rank surfaces now render
+ * RankLadderCard (profile, compete session complete, TopBar rank modal).
  *
- * The home page RankCard (image medallion + title + XP + next-rank line +
- * progress bar) is the ONE rank display used on:
- *   - home (src/app/home/page.tsx)
- *   - profile (src/app/profile/page.tsx)
- *   - compete session complete (src/components/compete/SessionComplete.tsx)
+ * Rank display surfaces:
+ *   - profile (src/app/profile/page.tsx) → RankLadderCard
+ *   - compete session complete (src/components/compete/SessionComplete.tsx) → RankLadderCard
+ *   - home (src/app/home/page.tsx) → rank is intentionally shown ONLY
+ *     through the TopBar rank pill modal (src/components/RankModal.tsx →
+ *     RankLadderCard); the home page itself renders no rank card. That absence
+ *     is owned by src/app/home/home-layout.guard.test.ts, which forbids
+ *     <RankCard on home.
  *
  * The rank card is intentionally NOT shown on compete round complete,
  * account, leaderboard, or help pages.
@@ -106,11 +111,11 @@ describe("rank display — single source (RankCard only, no RankProgressBar/Rank
     ).toHaveLength(0);
   });
 
-  it("all rank surfaces render RankCard", () => {
+  it("all rank surfaces render the shared rank component", () => {
     const surfaces: Record<string, string> = {
-      "src/app/home/page.tsx": "<RankCard",
-      "src/app/profile/page.tsx": "<RankCard",
-      "src/components/compete/SessionComplete.tsx": "<RankCard",
+      "src/app/profile/page.tsx": "<RankLadderCard",
+      "src/components/compete/SessionComplete.tsx": "<RankLadderCard",
+      "src/components/RankModal.tsx": "<RankLadderCard",
     };
     const missing: string[] = [];
     for (const [file, marker] of Object.entries(surfaces)) {
@@ -122,7 +127,7 @@ describe("rank display — single source (RankCard only, no RankProgressBar/Rank
     expect(
       missing,
       missing.length
-        ? "Surface(s) no longer render RankCard:\n" + missing.join("\n")
+        ? "Surface(s) no longer render their rank component:\n" + missing.join("\n")
         : ""
     ).toHaveLength(0);
   });

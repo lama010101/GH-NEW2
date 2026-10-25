@@ -8,14 +8,14 @@
 // icon — single source).
 //
 // Flow (intermediate /journey/[stageId] screen removed — it is now a thin
-// redirect): Play/Retry POST /api/journey/start → sessionStorage marker →
+// redirect): Play POST /api/journey/start → sessionStorage marker →
 // /practice/{gameId} directly. /practice/[gameId] is the single owner of
 // journey completion+result — this page never calls /api/journey/complete.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, Clock, Layers, Lock, Target } from "lucide-react";
 import { useIdentity } from "@/hooks/useIdentity";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import {
@@ -27,6 +27,7 @@ import {
 import { getAccuracyColor } from "@/core/accuracyColor";
 import {
   journeyMinEventYear,
+  journeyRoundCount,
   journeyRoundTimerSec,
   journeyStageEraKey,
   journeyStageIconFile,
@@ -36,6 +37,7 @@ import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import { JourneyBadge } from "./_components/JourneyBadge";
+import { TierPath } from "./_components/TierPath";
 import { GuestConversionModal } from "./_components/GuestConversionModal";
 import { startJourneyStage } from "./_components/journeyStart";
 import {
@@ -76,6 +78,8 @@ export default function JourneyPage() {
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const markerCheckedRef = useRef(false);
   const currentCardRef = useRef<HTMLLIElement | null>(null);
+  const [jumpFabVisible, setJumpFabVisible] = useState(false);
+  const currentInViewRef = useRef(true);
 
   // Auth gate — mirrors src/app/home/page.tsx: unauthenticated → /login.
   useEffect(() => {
@@ -247,6 +251,50 @@ export default function JourneyPage() {
     currentCardRef.current?.scrollIntoView({ block: "center" });
   }, [currentStageNumber, stages]);
 
+  // UIX-JOURNEY-20261005-001 — jump-to-current FAB. Visibility rules: shown
+  // only when the user scrolls UP while the current card is off-screen;
+  // hidden on scroll down or as soon as the current card is visible.
+  useEffect(() => {
+    const el = currentCardRef.current;
+    if (!el) {
+      currentInViewRef.current = true;
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries[0]?.isIntersecting ?? true;
+        currentInViewRef.current = visible;
+        if (visible) setJumpFabVisible(false);
+      },
+      { threshold: 0.15 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [currentStageNumber, stages]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+      if (currentInViewRef.current || delta > 2) setJumpFabVisible(false);
+      else if (delta < -2) setJumpFabVisible(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollToCurrentStage = () => {
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    currentCardRef.current?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+      block: "center",
+    });
+  };
+
   const isAnonymous =
     identity.status === "ready" && identity.isAnonymous;
   // Once the guest converted via the modal this session, skip the client-side
@@ -254,7 +302,7 @@ export default function JourneyPage() {
   // and would still reject an unconverted caller).
   const [hasConverted, setHasConverted] = useState(false);
 
-  // Play/Retry: guest tapping stage >=2 → registration modal (the server-side
+  // Play: guest tapping stage >=2 → registration modal (the server-side
   // gate in startJourneyPlaythrough stays authoritative); otherwise POST
   // /api/journey/start → marker → /practice/{gameId} directly.
   const handleStart = async (stage: JourneyStageRow) => {
@@ -371,6 +419,17 @@ export default function JourneyPage() {
           )}
         </header>
 
+        {/* Tier path — moved from the home JourneyCard
+            (UIX-JC-TIERPATH-MOVE-1022-001); currentStageNumber is identical to
+            the card's nextStageRow.stage_number (lowest non-completed stage). */}
+        {allStages.length > 0 && (
+          <TierPath
+            stages={allStages}
+            progressRows={progressRows}
+            currentStageNumber={currentStageNumber}
+          />
+        )}
+
         {loadError && (
           <div className={pageStyles.errorCard} role="alert">
             {loadError}
@@ -417,14 +476,16 @@ export default function JourneyPage() {
                 timerSec % 60
               ).padStart(2, "0")}`;
               const yearFrom = journeyYearLabel(
-                journeyMinEventYear(stage.stage_number, currentYear),
-                tGame("bc_suffix")
+                journeyMinEventYear(stage.stage_number, currentYear)
               );
-              const yearTo = journeyYearLabel(currentYear, tGame("bc_suffix"));
-              const stageSubtitle =
-                stage.title ??
-                stage.theme ??
-                tGame(journeyStageEraKey(stage.stage_number, currentYear));
+              const yearTo = journeyYearLabel(currentYear);
+              // HJ-UI-POLISH-035 — title is "Stage N · <era name>"; the
+              // curated stage title/theme (when one exists) drops to the
+              // subtitle line instead of duplicating the era.
+              const stageEra = tGame(
+                journeyStageEraKey(stage.stage_number, currentYear)
+              );
+              const stageSubtitle = stage.title ?? stage.theme ?? null;
               const bestPct =
                 progress?.best_accuracy_pct != null
                   ? Number(progress.best_accuracy_pct)
@@ -452,45 +513,81 @@ export default function JourneyPage() {
                     }`}
                     data-testid={`journey-stage-${stage.stage_number}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={journeyStageIconFile(stage.stage_number)}
-                      alt=""
-                      className={pageStyles.stageIcon}
-                      draggable={false}
-                    />
+                    <span className={pageStyles.stageIconWrap}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={journeyStageIconFile(stage.stage_number)}
+                        alt=""
+                        className={pageStyles.stageIcon}
+                        draggable={false}
+                      />
+                      {completed && (
+                        <span
+                          className={pageStyles.doneCheck}
+                          role="img"
+                          aria-label={t("list_completed")}
+                        >
+                          <Check size={12} strokeWidth={3.5} aria-hidden="true" />
+                        </span>
+                      )}
+                    </span>
                     <span className={pageStyles.stageBody}>
                       <span className={pageStyles.stageTitle}>
-                        {t("stage_label", { number: stage.stage_number })}
-                      </span>
-                      <span className={pageStyles.stageSubtitle}>
-                        {stageSubtitle}
-                      </span>
-                      <span className={pageStyles.stageMeta}>
-                        {t("min_accuracy", {
-                          pct: Number(stage.min_accuracy_pct).toFixed(1),
+                        {t("list_stage_title", {
+                          number: stage.stage_number,
+                          era: stageEra,
                         })}
-                        {" · "}
-                        {t("list_timer_label", { time: timerLabel })}
-                        {" · "}
+                      </span>
+                      <span className={pageStyles.yearRange}>
                         {t("list_years", { from: yearFrom, to: yearTo })}
-                        {" · "}
-                        {t("rounds", { count: stage.pool_size })}
+                      </span>
+                      {stageSubtitle && (
+                        <span className={pageStyles.stageSubtitle}>
+                          {stageSubtitle}
+                        </span>
+                      )}
+                      {/* HJ-UI-POLISH-035 — stats as a compact icon-chip row
+                          (pass mark rounded to a whole %), not a sentence. */}
+                      <span className={pageStyles.chipRow}>
+                        <span className={pageStyles.chip}>
+                          <Target size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {t("list_pass_chip", {
+                            pct: Math.round(Number(stage.min_accuracy_pct)),
+                          })}
+                        </span>
+                        <span className={pageStyles.chip}>
+                          <Clock size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {timerLabel}
+                        </span>
+                        <span className={pageStyles.chip}>
+                          <Layers size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {t("rounds", {
+                            count: journeyRoundCount(stage.stage_number),
+                          })}
+                        </span>
                       </span>
                       {locked && (
                         <span className={pageStyles.lockHint}>
+                          <Lock size={11} aria-hidden="true" className={pageStyles.lockHintIcon} />
                           {t("unlock_hint", { number: stage.stage_number - 1 })}
                         </span>
                       )}
                     </span>
                     <span className={pageStyles.stageAside}>
+                      {locked && (
+                        <Lock
+                          size={18}
+                          aria-hidden="true"
+                          className={pageStyles.lockIcon}
+                        />
+                      )}
                       {completed && (
                         <>
                           <span
                             className={pageStyles.bestRing}
                             role="img"
                             aria-label={t("list_best_aria", {
-                              pct: (bestPct ?? 0).toFixed(1),
+                              pct: Math.round(bestPct ?? 0),
                             })}
                           >
                             <MiniRing
@@ -498,20 +595,10 @@ export default function JourneyPage() {
                               color={getAccuracyColor(bestPct ?? 0)}
                             />
                           </span>
-                          <JourneyBadge
-                            badge={progress?.best_badge ?? "completion"}
-                            accuracyPct={bestPct}
-                          />
-                          <button
-                            type="button"
-                            className={pageStyles.retryBtn}
-                            disabled={startingStageId !== null}
-                            onClick={() => void handleStart(stage)}
-                          >
-                            {startingStageId === stage.id
-                              ? tCommon("loading")
-                              : t("list_retry")}
-                          </button>
+                          {progress?.best_badge != null &&
+                            progress.best_badge !== "completion" && (
+                              <JourneyBadge badge={progress.best_badge} />
+                            )}
                         </>
                       )}
                       {isCurrent && (
@@ -538,9 +625,6 @@ export default function JourneyPage() {
                                 : t("list_play")}
                             </button>
                           )}
-                          <span className={pageStyles.currentPill}>
-                            {t("list_current")}
-                          </span>
                         </>
                       )}
                     </span>
@@ -551,6 +635,21 @@ export default function JourneyPage() {
           </ol>
         )}
       </div>
+
+      {currentStageNumber !== null && (
+        <button
+          type="button"
+          className={`${pageStyles.jumpFab} ${
+            jumpFabVisible ? pageStyles.jumpFabVisible : ""
+          }`}
+          onClick={scrollToCurrentStage}
+          aria-hidden={!jumpFabVisible}
+          tabIndex={jumpFabVisible ? 0 : -1}
+        >
+          <ArrowUp size={16} aria-hidden="true" />
+          <span>{t("in_progress")}</span>
+        </button>
+      )}
 
       <GuestConversionModal
         isOpen={gateStageNumber !== null}

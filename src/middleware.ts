@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyPartyKitSecret } from "@/server/partykitAuth";
+import { AUTH_COOKIE_DOMAIN } from "@/core/authCookie";
 
 /**
  * Routes that do NOT require authentication.
@@ -9,7 +10,8 @@ import { verifyPartyKitSecret } from "@/server/partykitAuth";
 // /sw.js is a self-unregistering kill-switch service worker served as a static
 // file from public/. It must be reachable without auth so stale SWs from prior
 // deployments can update/unregister instead of receiving a /login HTML redirect.
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow"];
+// BRAND-BUILD-PURPLEICONS-1015-003: manifest must be fetchable pre-login (installs from the public landing page).
+const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow", "/manifest.json"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
@@ -22,6 +24,7 @@ const PUBLIC_API_ROUTES = [
   "/api/leaderboard",
   "/api/image-proxy",
   "/api/push/subscribe",
+  "/api/push/fcm-token",
 ];
 
 // PartyKit DO routes that carry their own x-partykit-secret validation. They must
@@ -68,6 +71,17 @@ function isStaticOrInfraPath(pathname: string): boolean {
   return false;
 }
 
+// The PKCE code-verifier cookie (sb-<ref>-auth-token-code-verifier) is written
+// by signInWithOAuth() before redirect and read by /auth/callback during
+// exchangeCodeForSession. It shares the "sb-" prefix with auth-token cookies
+// but must NEVER be cleared by the poisoned-cookie breaker — deleting it
+// mid-flow makes the OAuth callback fail with "PKCE code verifier not found"
+// and lands the user back on "/" with error=auth_failed. The suffix matches
+// @supabase/ssr's own check (cookies.js: key.endsWith("-code-verifier")).
+function isPkceVerifierCookie(name: string): boolean {
+  return name.startsWith("sb-") && name.endsWith("-code-verifier");
+}
+
 // Edge-Middleware equivalent of supabaseBrowser.ts forceClearAuthStorage()
 // (MP-FIX-MIDDLEWARE-AUTHCIRCUITBREAKER-001). Module-level in-memory state is
 // NOT reliable across Edge Middleware isolates (see Step 1 findings), so the
@@ -80,12 +94,9 @@ function clearPoisonedAuthCookies(
   response: NextResponse,
   requestCookies: { name: string; value: string }[]
 ): void {
-  const cookieDomain =
-    process.env.NODE_ENV === "production"
-      ? { domain: ".guess-history.com" }
-      : {};
+  const cookieDomain = AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {};
   for (const { name } of requestCookies) {
-    if (name.startsWith("sb-")) {
+    if (name.startsWith("sb-") && !isPkceVerifierCookie(name)) {
       response.cookies.set(name, "", {
         ...cookieDomain,
         path: "/",
@@ -124,10 +135,7 @@ export async function middleware(request: NextRequest) {
           // share auth cookies across apex and www in production so the
           // vercel.json apex→www 308 does not drop the session on
           // soft-navigation RSC fetches. Omitted in dev for localhost.
-          const cookieDomain =
-            process.env.NODE_ENV === "production"
-              ? { domain: ".guess-history.com" }
-              : {};
+          const cookieDomain = AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {};
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, { ...options, ...cookieDomain })
           );
@@ -181,7 +189,9 @@ export async function middleware(request: NextRequest) {
   const poisonedAuthCookie =
     !sessionTimedOut &&
     (sessionAuthError || !user) &&
-    requestCookies.some(({ name }) => name.startsWith("sb-"));
+    requestCookies.some(
+      ({ name }) => name.startsWith("sb-") && !isPkceVerifierCookie(name)
+    );
   if (poisonedAuthCookie) {
     clearPoisonedAuthCookies(response, requestCookies);
   }

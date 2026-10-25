@@ -9,14 +9,14 @@ description: End-to-end smoke testing of Guess-History (GH-NEW2) in a local dev 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `PARTYKIT_SECRET` (from `.dev.vars` or secrets store)
+- `PARTYKIT_SECRET` (from `.env.local` or secrets store)
 
 ## One-time setup
-1. Start the dev stack. The repo blueprint's `dev` command is a good baseline, but also source `.dev.vars` so `NEXT_PUBLIC_APP_URL`, `NEXTJS_BASE_URL`, and `PARTYKIT_SECRET` are set:
+1. Start the dev stack. The repo blueprint's `dev` command is a good baseline, but also source `.env.local` so `NEXT_PUBLIC_APP_URL`, `NEXTJS_BASE_URL`, and `PARTYKIT_SECRET` are set:
    ```bash
    set -a
    source /run/repo_secrets/lama010101/GH-NEW2/.env.secrets
-   source .dev.vars
+   source .env.local
    set +a
    export NEXT_PUBLIC_PARTY_KIT_HOST=localhost:1999
    export NEXT_PUBLIC_APP_URL=http://localhost:3000

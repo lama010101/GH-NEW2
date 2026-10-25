@@ -33,6 +33,7 @@ import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
+import { LeaveNotices } from "@/components/compete/LeaveNotices";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
@@ -803,6 +804,17 @@ export default function CompeteGamePage() {
         <div className={pageStyles.playerSubmittedToast} data-testid="player-submitted-toast">
           {playerSubmittedToast}
         </div>
+      )}
+      {/* Leave toast + solo banner — sync only (MP-BUILD-LEFTPLAYER-NOTICE-1021-004) */}
+      {snapshot && (
+        <LeaveNotices
+          players={snapshot.players}
+          status={snapshot.status}
+          mode={snapshot.config.mode}
+          localPlayerId={playerId}
+          connectionState={connectionState}
+          sessionId={gameId}
+        />
       )}
       {/* Post-submission overlay: shown to self only, persists until round ends */}
       {localSubmitted && snapshot?.status === 'ROUND_ACTIVE' && (

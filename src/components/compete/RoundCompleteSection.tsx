@@ -33,6 +33,15 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import type { ConnectionState } from "@/core/competeWebSocket";
 import { rankForXp } from "@/core/rank";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { EventLearnModal } from "@/components/learn/EventLearnModal";
+import { learnModeForSession } from "@/core/learnTypes";
+import { BookOpen } from "lucide-react";
+
+// Same shape check the learn route applies (src/app/api/learn/event/[eventId]
+// /route.ts UUID_RE) — the CTA renders only when the snapshot carries ids the
+// route can serve (mock/prototype snapshots hold non-UUID placeholders).
+const LEARN_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RoundCompleteSectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -128,6 +137,15 @@ export default function RoundCompleteSection({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [leaderboardTab, setLeaderboardTab] = useState<'thisRound' | 'allRounds'>('thisRound');
   const [whereWhenTab, setWhereWhenTab] = useState<'where' | 'when'>('where');
+  // LEARN-WIRE-CTA-1015-004 — post-round "Learn about this event" CTA.
+  const [learnOpen, setLearnOpen] = useState(false);
+  const learnMode = learnModeForSession(snapshot.config.mode);
+  const learnEventId = snapshot.rounds[snapshot.currentRoundIndex]?.eventId ?? null;
+  const learnEligible =
+    learnMode != null &&
+    learnEventId != null &&
+    LEARN_UUID_RE.test(learnEventId) &&
+    LEARN_UUID_RE.test(snapshot.gameId);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [homeNavigating, setHomeNavigating] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -282,12 +300,13 @@ export default function RoundCompleteSection({
         // already used in SessionComplete.tsx for the final leaderboard.
         // Rush (non-async) is untouched: it uses roundResults directly below.
         const asyncBaseRows = isAsync
-          ? (snapshot.players as Array<{ playerId: string; displayName: string; avatarUrl: string | null }>)
+          ? (snapshot.players as Array<{ playerId: string; displayName: string; avatarUrl: string | null; leftAt: string | null }>)
               .concat(
                 (snapshot.pendingInvitees ?? []).map(pi => ({
                   playerId: pi.playerId,
                   displayName: pi.displayName,
                   avatarUrl: pi.avatarUrl,
+                  leftAt: null as string | null,
                 }))
               )
               .map(p => {
@@ -302,6 +321,7 @@ export default function RoundCompleteSection({
                   cumulativeScore: r?.cumulativeScore ?? 0,
                   cumulativeAccuracy: r?.cumulativeAccuracy ?? 0,
                   didSubmit: r ? hasSubmitted(r) : false,
+                  leftAt: p.leftAt ?? null,
                 };
               })
           : [];
@@ -340,6 +360,7 @@ export default function RoundCompleteSection({
                 cumulativeScore: r.cumulativeScore,
                 cumulativeAccuracy: r.cumulativeAccuracy,
                 didSubmit: r.didSubmit,
+                leftAt: snapshot.players.find(p => p.playerId === r.playerId)?.leftAt ?? null,
               }));
 
         const allRoundsLeaderboardRows = isAsync
@@ -360,6 +381,7 @@ export default function RoundCompleteSection({
                 cumulativeScore: r.cumulativeScore,
                 cumulativeAccuracy: r.cumulativeAccuracy,
                 didSubmit: r.didSubmit,
+                leftAt: snapshot.players.find(p => p.playerId === r.playerId)?.leftAt ?? null,
               }));
         return (
           <>
@@ -379,7 +401,29 @@ export default function RoundCompleteSection({
                 <div className={styles.eventImagePlaceholder}>{t('no_image')}</div>
               )}
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
-              {round.description && (
+              {/* LEARN-FIX-REPLACEHIST-1015-006 — when the learn route can serve
+                  this round (real UUID ids), the Learn CTA takes the Historical
+                  Context slot in the event card; the description moved into the
+                  learn modal (description prop). Mock/prototype snapshots
+                  (non-UUID ids -> !learnEligible) keep the toggle unchanged. */}
+              {learnEligible ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.learnCta}
+                    onClick={() => setLearnOpen(true)}
+                    data-testid="learn-cta"
+                  >
+                    <BookOpen size={16} aria-hidden="true" />
+                    {t('learn_cta')}
+                  </button>
+                  {round.description && (
+                    <div className={styles.sourceButtonWrap}>
+                      <RatingControl eventId={round.eventId} />
+                    </div>
+                  )}
+                </>
+              ) : round.description && (
                 <>
                   <button
                     className={styles.histContextTrigger}
@@ -575,7 +619,8 @@ export default function RoundCompleteSection({
                           {row.displayName}
                         </span>
                       </span>
-                      {isThisRoundNoGuess && <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
+                      {isThisRoundNoGuess && row.leftAt == null && <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
+                      {row.leftAt != null && <span className={styles.lbNoGuessTag}>{t('left')}</span>}
                     </span>
                     {isThisRoundNoGuess ? (
                       <span className={styles.lbAccEmpty}>—</span>
@@ -603,7 +648,9 @@ export default function RoundCompleteSection({
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
                         </span>
-                        <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>
+                        {p.leftAt != null
+                          ? <span className={styles.lbNoGuessTag}>{t('left')}</span>
+                          : <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
                       </span>
                       <span className={styles.lbAccEmpty}>—</span>
                     </div>
@@ -827,6 +874,17 @@ export default function RoundCompleteSection({
               </div>
             </div>
 
+            {learnOpen && learnEligible && learnEventId && learnMode && (
+              <EventLearnModal
+                open={learnOpen}
+                onClose={() => setLearnOpen(false)}
+                eventId={learnEventId}
+                gameId={snapshot.gameId}
+                mode={learnMode}
+                description={round.description}
+              />
+            )}
+
             {/* BADGE POPUPS — sequential (combo → location → year, whatever is
                 present in myResult.badges), triggered after the ring animation.
                 Every popup bursts confetti; the FIRST one also shows the XP
@@ -912,7 +970,7 @@ export default function RoundCompleteSection({
             </p>
             <button
               type="button"
-              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
+              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; window.setTimeout(() => setHomeNavigating(false), 3000); }}
               disabled={homeNavigating}
               className={activeStyles.settingsHomeBtn}
             >

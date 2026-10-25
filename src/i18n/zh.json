@@ -173,8 +173,8 @@
     "compete_invite_sent": "发送于 {time}",
     "compete_round_label": "第 {current} 回合",
     "compete_play": "开始",
-    "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_rush": "实时",
+    "compete_mode_relax": "随时",
     "compete_completed": "已结束",
     "compete_win": "胜",
     "compete_loss": "负",
@@ -184,10 +184,10 @@
     "compete_create_game": "创建",
     "tagline": "它发生在哪里，何时？",
     "daily_new_challenge": "下次：",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "还剩:",
+    "daily_next_in": "下次:",
+    "daily_finished": "已完成",
+    "daily_view": "查看",
     "compete_desc": "与好友一起玩。\n实时或回合制。",
     "daily_desc": "相同事件。\n全球排名",
     "levelup_desc": "升级。\n赚取经验值XP。",
@@ -196,7 +196,29 @@
     "compete_play_aria": "播放",
     "compete_delete_aria": "删除",
     "coming_up_soon": "即将上线",
-    "daily_view_results": "查看结果"
+    "daily_view_results": "查看结果",
+    "journey_up_next": "接下来",
+    "journey_pass_chip": "达标 ≥ {pct}%",
+    "journey_difficulty_chip": "难度 {rating}/10",
+    "journey_start": "开启旅程",
+    "journey_explainer": "每关5轮。达到准确率门槛解锁下一关。",
+    "journey_view": "查看旅程",
+    "round_of": "第 {current}/{total} 轮",
+    "daily_tagline": "所有人同一难度",
+    "daily_status_new": "新",
+    "daily_status_in_progress": "进行中",
+    "daily_status_done": "已完成",
+    "daily_play_today": "玩今日挑战",
+    "daily_resume": "继续挑战",
+    "daily_streak": "连胜",
+    "daily_playing_today": "今日 {count} 人在玩",
+    "daily_rank_line": "全球 #{rank} · 前 {pct}%",
+    "daily_xp_gained": "+{xp} XP",
+    "daily_load_error": "今日状态加载失败",
+    "challenge_sub": "与好友一起玩",
+    "practice_tagline": "单人 · 不限量",
+    "practice_eras_chip": "{selected}/{total} 时代",
+    "practice_regions_chip": "{selected}/{total} 地区"
   },
   "common": {
     "next_round": "下一回合",
@@ -271,10 +293,10 @@
     "n_days": "{n}天",
     "ready_waiting": "已准备 — 等待其他人",
     "im_ready": "我准备好了",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "开始游戏",
+    "relax_playing": "游戏中",
+    "relax_finished": "已结束",
+    "relax_joined": "已加入",
     "pwa_install_title": "安装应用以接收回合通知",
     "pwa_install_desc": "Relax 游戏是回合制的。在 iPhone 上，只有将此网站添加到主屏幕后，回合通知才会生效。",
     "pwa_step_share": "点按 Safari 工具栏中的<strong>分享</strong>图标。",
@@ -336,7 +358,7 @@
     "vibrate": "振动",
     "distance_unit": "距离单位",
     "settings": "设置",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "可随时离开,稍后继续。",
     "submit": "提交",
     "hint_select_both": "请先选择 {where} 和 {when}",
     "and": "和",
@@ -373,7 +395,7 @@
     "round_label": "第 {current} 回合",
     "round_label_compact": "第{current}/{total}回合",
     "source_link": "来源 ↗",
-    "rate": "Rate Image Realism",
+    "rate": "评价图片真实感",
     "rate_saved": "已保存",
     "this_round": "本回合",
     "total_penalty": "总惩罚",
@@ -433,6 +455,12 @@
     "when_badges": "时间",
     "where_badges": "地点",
     "no_badges": "本局未获得徽章",
+    "highlights": "亮点",
+    "hl_closest_guess": "最接近",
+    "hl_sharpest_year": "年份最准",
+    "hl_toughest_round": "最难一轮",
+    "hl_years_off": "±{n}年",
+    "badges_count": "{count, plural, other {# 徽章}}",
     "era_ancient": "古代",
     "era_medieval": "中世纪",
     "era_earlymodern": "近代早期",
@@ -567,7 +595,24 @@
     "taking_too_long": "耗时太长？",
     "retry": "重试",
     "region_oceania_antarctica": "大洋洲与南极洲",
-    "game_accuracy_pct": "游戏准确度 (%)"
+    "game_accuracy_pct": "游戏准确度 (%)",
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "关于此事件",
+    "learn_close": "关闭",
+    "learn_find_year": "如何推断年份",
+    "learn_find_location": "如何推断地点",
+    "learn_what_happened": "事件经过",
+    "learn_related_events": "相关事件",
+    "learn_related_to": "邻近",
+    "learn_related_location": "相关地点",
+    "learn_this_event": "此事件",
+    "learn_error": "无法加载事件详情",
+    "learn_cta": "关于此事件",
+    "left": "已离开",
+    "player_left_toast": "{name} 离开了游戏",
+    "solo_banner_title": "只剩下你一名玩家了",
+    "solo_continue": "独自继续",
+    "solo_exit": "退出游戏"
   },
   "auth": {
     "sign_in": "登录",
@@ -612,6 +657,14 @@
     "overall": "总览",
     "daily": "每日",
     "level_up": "升级",
+    "journey": "旅程",
+    "sort_accuracy": "准确度",
+    "sort_xp": "XP",
+    "sort_stage": "关卡",
+    "journey_stage": "第 {n} 关",
+    "journey_stages_completed": "{n, plural, other {已完成 {n} 关}}",
+    "journey_no_stage": "尚未完成任何关卡",
+    "no_results_journey": "暂无旅程结果。",
     "today": "今天",
     "all_time": "历史",
     "err_load_failed": "数据加载失败。请重试。",
@@ -629,7 +682,9 @@
     "rank_suffix_two": "",
     "rank_suffix_few": "",
     "rank_suffix_many": "",
-    "rank_suffix_other": ""
+    "rank_suffix_other": "",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "没有更多排名玩家"
   },
   "profile": {
     "accuracy_breakdown": "准确度明细",
@@ -639,8 +694,6 @@
     "score_distribution": "得分分布",
     "history_collection": "历史收藏",
     "accuracy_by_century": "各世纪准确度",
-    "account": "账户",
-    "email": "邮箱",
     "member_since": "注册于",
     "events_seen": "已看事件",
     "by_century": "按世纪",
@@ -658,7 +711,6 @@
     "games_played": "已玩游戏",
     "rounds_played": "已玩回合",
     "no_games_yet": "暂无游戏",
-    "sign_out": "退出登录",
     "experience": "经验值",
     "accuracy": "准确度",
     "era": "时代",
@@ -672,7 +724,10 @@
     "countries": "国家",
     "practice": "练习",
     "daily_all_time": "每日（所有时间）",
-    "level": "等级"
+    "level": "等级",
+    "era_region": "时代与地区",
+    "rounds": "回合",
+    "stats": "统计"
   },
   "account": {
     "title": "账户",
@@ -687,7 +742,16 @@
     "settings": "设置",
     "sound": "声音",
     "vibrate": "振动",
-    "distance_unit": "距离单位"
+    "distance_unit": "距离单位",
+    "notif_prefs": "通知",
+    "notif_prefs_lobby_invite": "游戏邀请",
+    "notif_prefs_session_complete": "有玩家完成了游戏",
+    "notif_channel_none": "无",
+    "notif_channel_push": "仅推送",
+    "notif_channel_in_app": "仅应用内",
+    "notif_channel_both": "两者",
+    "notif_push_hint": "此浏览器已关闭推送通知——请开启通知以接收推送。",
+    "notif_save_error": "保存失败，请重试。"
   },
   "avatar_picker": {
     "title": "选择头像",
@@ -716,7 +780,14 @@
     "turn_desc": "在 Relax 游戏中轮到你时收到通知。你可以随时在设置中更改。",
     "not_now": "暂不",
     "enable": "开启",
-    "someone": "某人"
+    "someone": "某人",
+    "push_enable": "启用推送通知",
+    "push_disable": "关闭推送通知",
+    "push_enabled_msg": "推送通知已开启",
+    "push_disabled_msg": "推送通知已关闭",
+    "push_failed_enable": "启用失败",
+    "push_failed_disable": "关闭失败",
+    "push_unexpected": "发生意外错误"
   },
   "welcome": {
     "title": "欢迎来到 Guess-History！",
@@ -725,9 +796,9 @@
     "your_username": "你的用户名",
     "lets_play": "开始游戏！",
     "skip_for_now": "暂时跳过",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME"
+    "username_label_1": "输入你的用户名",
+    "username_label_2": "选一个独特的名字",
+    "username_label_3": "其他人会看到此名字"
   },
   "landing": {
     "meta_title": "Guess-History — 测试你的历史知识",
@@ -748,6 +819,7 @@
   },
   "rank": {
     "rank_label": "段位",
+    "your_rank": "你的段位",
     "tier_prefix": "T",
     "next_label": "下一个",
     "rank_1": "漫游者",
@@ -761,14 +833,17 @@
     "rank_9": "学者",
     "rank_10": "皇家制图师",
     "next_rank": "{xp} XP 到 {title}",
-    "max_rank": "已达到最高段位"
+    "max_rank": "已达到最高段位",
+    "badge_aria": "段位 {tier} 徽章",
+    "rail_hint_swipe": "滑动",
+    "tier_of_10": "等级 {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "一起成长 — Guess-History",
+    "meta_description": "了解 Guess-History 的使命、愿景与未来,以及如何参与。",
     "hero": {
       "tagline": "待定",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "玩 Guess-History",
       "secondary_cta": "探索该项目"
     },
     "mission": {
@@ -1051,7 +1126,9 @@
         "principle_1": "最大补偿比例。",
         "principle_2": "投资者回报上限。",
         "principle_3": "再投资政策。",
-        "principle_4": "使命第一的治理。"
+        "principle_4": "使命第一的治理。",
+        "purpose_title": "目的",
+        "principles_title": "原则"
       }
     },
     "partnerships": {
@@ -1218,9 +1295,26 @@
       "sources": "来源",
       "references": "参考文献",
       "legal": "法律免责声明",
-      "privacy": "隐私"
+      "privacy": "隐私",
+      "nav_aria": "投资人页脚"
     },
-    "nav_aria_label": "成长页面部分"
+    "nav_aria_label": "成长页面部分",
+    "nav": {
+      "slides_aria": "章节",
+      "toc_expand": "展开目录",
+      "toc_collapse": "收起目录",
+      "toc_aria": "目录",
+      "chapters": "章节",
+      "toc_close": "关闭目录",
+      "go_beginning": "到开头",
+      "go_end": "到末尾",
+      "prev": "上一页",
+      "prev_disabled": "上一页(不可用)",
+      "next": "下一页",
+      "next_disabled": "下一页(不可用)",
+      "beginning_disabled": "开头(已是第一页)",
+      "end_disabled": "末尾(已是最后页)"
+    }
   },
   "practice": {
     "title": "练习游戏进行中",
@@ -1266,7 +1360,7 @@
     "badge_gold": "金牌",
     "badge_silver": "银牌",
     "badge_bronze": "铜牌",
-    "badge_completion": "通关",
+    "badge_completion": "已完成",
     "badge_none": "无徽章",
     "load_error": "无法加载你的旅程，请重试。",
     "result_pass_mark": "及格线 {pct}%",
@@ -1291,7 +1385,10 @@
     "list_current": "当前",
     "list_timer_label": "每轮 {time}",
     "list_years": "{from}–{to}",
-    "list_best_aria": "最佳成绩：{pct}%"
+    "list_best_aria": "最佳成绩：{pct}%",
+    "list_stage_title": "第 {number} 关 · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "已完成"
   },
   "legal": {
     "privacy": {
@@ -1376,5 +1473,293 @@
       "section10_title": "10. 联系我们",
       "contact_text": "如对这些条款有任何疑问，请联系我们：appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "全屏与安装",
+    "tagline": "选择本设备上的打开方式",
+    "install_app": "安装应用",
+    "ios_intro": "<strong>添加到主屏幕</strong>即可安装:",
+    "install_unavailable": "此浏览器不支持安装",
+    "remember_choice": "记住我的选择"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — 投资人甲板",
+    "meta_description": "一场电影化的投资人演示:从历史游戏到以人类为基准的视觉AI评测。",
+    "meta_image_alt": "Guess History 投资人甲板",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "登记意向",
+    "cta_play": "玩 Guess History",
+    "cta_test": "登记意向",
+    "status_verified": "已验证",
+    "status_illustrative": "示意",
+    "status_roadmap": "路线图",
+    "status_conceptual": "概念",
+    "model_tag": "模型",
+    "s01": {
+      "headline": "如果一款游戏能成为AI基准呢?",
+      "body": [
+        "Guess History 让玩家重建历史事件发生的地点与年代。",
+        "但这款游戏能创造更大的东西:以人类为基准的视觉AI基准。"
+      ],
+      "statements": [
+        "游戏只是起点。"
+      ],
+      "alt": "具有纵深、人物与模糊线索的电影化历史场景"
+    },
+    "s02": {
+      "headline": "一款简单游戏,一个不同寻常的数据引擎。",
+      "body": [
+        "访客应无需阅读说明即可理解玩法。"
+      ],
+      "alt": "用于何地·何时迷你演示的历史场景",
+      "steps": [
+        "历史场景",
+        "何地?",
+        "何时?",
+        "揭晓"
+      ]
+    },
+    "s03": {
+      "headline": "玩家不只是玩家。",
+      "subheadline": "他们在创造人类基准。",
+      "body": [
+        "每一次回答都让基准更有信息量。"
+      ],
+      "final": "每一次回答都让基准更有信息量。",
+      "alt": "同一幅历史图像,锚定不断累积的人类观测",
+      "items": [
+        {
+          "label": "人类尝试",
+          "value": "10,281"
+        },
+        {
+          "label": "年份误差中位数",
+          "value": "8年"
+        },
+        {
+          "label": "地点误差中位数",
+          "value": "74 公里"
+        },
+        {
+          "label": "难度",
+          "value": "困难"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "把同样的挑战交给AI。",
+      "body": [
+        "人类与AI得到同一图像和同样两个问题,结果可直接对比。"
+      ],
+      "final": "现在可以直接比较。",
+      "alt": "分屏画面:同一图像分别由人类与AI模型测试",
+      "status_label": "规划中的评估能力",
+      "columns": [
+        {
+          "title": "人类",
+          "items": [
+            "何地?",
+            "何时?",
+            "结果"
+          ]
+        },
+        {
+          "title": "AI 模型",
+          "items": [
+            "何地?",
+            "何时?",
+            "结果"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "AI评估的新一层。",
+      "body": [
+        "一份干净的评估报告。基准不只是「对与错」。"
+      ],
+      "final": "不只是「对与错」。",
+      "metrics": [
+        {
+          "label": "时间推理",
+          "value": "中位误差:8 年"
+        },
+        {
+          "label": "空间推理",
+          "value": "中位距离:182 公里"
+        },
+        {
+          "label": "校准",
+          "value": "高置信误差:9%"
+        },
+        {
+          "label": "延迟",
+          "value": "P95:3.1 秒"
+        },
+        {
+          "label": "成本",
+          "value": "$0.014/次评估"
+        }
+      ],
+      "flow": [
+        "模型",
+        "基准",
+        "人类基线",
+        "性能"
+      ]
+    },
+    "s06": {
+      "headline": "有价值的资产不是图像。",
+      "body": [
+        "护城河随使用加深。",
+        "人类观测越多 → 基准越强。",
+        "模型评估越多 → 对比越丰富。",
+        "历史越多 → 纵向数据集越强。"
+      ],
+      "final": "是环绕图像的数据集。",
+      "alt": "数据层逐渐变密的历史图像",
+      "stack": [
+        "已验证的真值",
+        "人类观测",
+        "人类难度",
+        "置信度",
+        "AI回答",
+        "模型版本",
+        "评估方法论"
+      ]
+    },
+    "s07": {
+      "headline": "测试你的模型。",
+      "body": [
+        "模型方提交视觉模型、跑完基准,并获得可复现、以人类为基准的评估。"
+      ],
+      "final": "独立。人类基准。可复现。",
+      "status_label": "规划中的评估能力",
+      "steps": [
+        "视觉模型 v4.2",
+        "运行基准"
+      ],
+      "metrics": [
+        {
+          "label": "时间",
+          "value": "72%"
+        },
+        {
+          "label": "位置",
+          "value": "81%"
+        },
+        {
+          "label": "校准",
+          "value": "0.11"
+        },
+        {
+          "label": "人类获胜",
+          "value": "64%"
+        },
+        {
+          "label": "P95延迟",
+          "value": "2.4秒"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "别只测一次模型。",
+      "subheadline": "追踪每个版本。",
+      "body": [
+        "三个模型版本跑同一基准。曲线演进。指标改善或回退。"
+      ],
+      "final": "你的模型真的变好了吗?",
+      "steps": [
+        "模型 v1 → 基准",
+        "模型 v2 → 基准",
+        "模型 v3 → 基准"
+      ]
+    },
+    "s09": {
+      "headline": "基准变现的四种方式。",
+      "body": [
+        "不展示假设收入数字。介绍四大主营产品与次级机会。"
+      ],
+      "nodes": [
+        {
+          "label": "01 — 基准API",
+          "description": "自动化模型评估"
+        },
+        {
+          "label": "02 — 企业监控",
+          "description": "持续版本测试"
+        },
+        {
+          "label": "03 — 定制基准",
+          "description": "客户专属评估项目"
+        },
+        {
+          "label": "04 — 数据与研究",
+          "description": "受控数据访问"
+        }
+      ],
+      "branches_root": "次级机会",
+      "branches_children": [
+        "教育",
+        "模型选型",
+        "基准赞助"
+      ]
+    },
+    "s10": {
+      "headline": "游戏反哺基准。",
+      "body": [
+        "循环逐渐加速。消费级玩法与B2B评估相互强化。"
+      ],
+      "final": "两个产品。一个强化系统。",
+      "flow": [
+        "更多玩家",
+        "更多人类数据",
+        "更好基线",
+        "更强基准",
+        "更多AI关注",
+        "B2B收入",
+        "更多内容",
+        "更多玩家"
+      ]
+    },
+    "s11": {
+      "headline": "历史只是起点。",
+      "body": [
+        "平台可从历史图像扩展到更广泛的视觉推理评估类别。"
+      ],
+      "final": "以人类为基准的视觉AI评估。",
+      "status_label": "长期平台机会",
+      "branches_root": "历史",
+      "branches_children": [
+        "地理",
+        "建筑",
+        "文化",
+        "视觉年表",
+        "地图",
+        "文献",
+        "通用视觉推理"
+      ]
+    },
+    "s12": {
+      "headline": "我们在打造两个相互强化的业务。",
+      "body": [
+        "GUESS HISTORY: 一款吸引玩家并产生人类专有智能的游戏。",
+        "GUESS HISTORY EVALUATION: 一个以该智能衡量AI表现的平台。"
+      ],
+      "statements": [
+        "游戏 → 数据 → 基准",
+        "基准 → 评估 → 收入",
+        "收入 → 更多数据 → 更强平台"
+      ],
+      "final": "AI能像人类一样理解历史吗?"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "联系",
+    "footer_link_privacy": "隐私",
+    "footer_link_terms": "条款",
+    "footer_link_sources": "来源",
+    "footer_link_disclaimer": "法律声明",
+    "footer_disclaimer": "本页面仅供信息参考,不构成证券购买要约。前瞻性陈述仅为目标,不构成保证。"
   }
 }

@@ -1,10 +1,11 @@
 'use client'
 
-import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 import StatusBadge from './StatusBadge'
 
 export default function Section08RecurringRevenue() {
-  const section = investorContent.sections[7]
+  const { content } = useGrowSection()
+  const section = content.sections[7]
 
   return (
     <section
@@ -49,7 +50,7 @@ export default function Section08RecurringRevenue() {
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--gh-text-muted)]">
               Score per model version
             </span>
-            <StatusBadge status="illustrative" label="ILLUSTRATIVE" />
+            <StatusBadge status="illustrative" />
           </div>
           <div className="h-32 w-full rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-elevated)] p-4">
             <div className="flex h-full items-end gap-2">

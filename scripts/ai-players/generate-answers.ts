@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import { getDbPool } from "@/server/db";
 import { evaluateRound } from "@/core/rules";
 import type { EventRecord, Location } from "@/core/types";
+import { AI_PLAYER_TIMER_MS as DAILY_TIMER_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -39,9 +40,7 @@ const MODEL_ID = parsedArgs.modelId;
 const PROVIDER = parsedArgs.provider;
 const AI_PLAYER_NAME = parsedArgs.playerName;
 
-// Live Daily default timer (seconds). Confirmed in src/server/sessionCore.ts createDailySession.
-const DAILY_TIMER_SECONDS = 90;
-const DAILY_TIMER_MS = DAILY_TIMER_SECONDS * 1000;
+// Live Daily default timer — single-sourced in src/core/aiPlayers.ts.
 
 // Test-only override: if set, use this as the cumulative timer deadline (ms).
 // If unset, behavior is identical to current (90s). Stored timeout rows still

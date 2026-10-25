@@ -17,22 +17,6 @@
   background: var(--gh-bg-base);
 }
 
-.statColorOrange {
-  color: var(--gh-orange);
-}
-
-.statColorGold {
-  color: var(--gh-gold);
-}
-
-.statColorViolet {
-  color: var(--gh-violet);
-}
-
-.statColorTeal {
-  color: var(--gh-teal);
-}
-
 .barFillViolet {
   background: var(--gh-violet);
 }
@@ -190,29 +174,6 @@
   margin: 0 auto;
 }
 
-/* ── Section header (accent bar + title) ── */
-.sectionHead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.sectionAccentBar {
-  width: 4px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--gh-teal);
-  flex-shrink: 0;
-}
-
-.sectionTitle {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: 0.3px;
-}
-
 /* ── Badge collection ── */
 
 
@@ -233,46 +194,6 @@
 
 
 
-
-/* ── Performance by mode ── */
-.modeRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.modeCard {
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px;
-  padding: 16px 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.modeAccent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-}
-
-.modeName {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.modeAcc {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.modeGames {
-  font-size: 11px;
-  color: var(--gh-text-muted);
-}
 
 /* ── Tabs (era / region) ── */
 .tabBar {
@@ -411,3 +332,208 @@
   color: var(--gh-text-muted);
   font-size: 13px;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v2 cards (ported from prototype/profile-v2, tokenized to --gh-* /
+   --font-* / --radius-* variables). Shared by Stats / Modes /
+   Era&Region / Account sections below the hero.
+   ══════════════════════════════════════════════════════════════════ */
+.card {
+  padding: 16px;
+  text-align: left;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: var(--gh-glass-radius);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
+}
+
+.cardTitle {
+  margin: 0 0 12px;
+  font-size: var(--font-xs);
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--gh-text-secondary);
+}
+
+.cardTitleFlush {
+  margin-bottom: 0;
+}
+
+/* ── Stats: 4 tiles ── */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  border-radius: var(--radius-md);
+  background: var(--gh-mini-card-bg);
+  border: 1px solid var(--gh-mini-card-border);
+}
+
+.statVal {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--gh-text-muted);
+  text-align: center;
+}
+
+/* ── Modes: Daily / Level Up / Practice mini rings ── */
+.mdRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mdTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 6px 10px;
+  border-radius: var(--gh-radius-sm);
+}
+
+.mdName {
+  font-size: var(--font-2xs);
+  font-weight: 800;
+}
+
+.mdSub {
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  color: var(--gh-text-muted);
+}
+
+.tinyRing {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tinyRingVal {
+  position: absolute;
+  font-size: var(--font-2xs);
+  font-weight: 800;
+}
+
+/* ── Era & Region: merged card with segmented toggles ── */
+.erHead {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.erToggles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--gh-mini-card-bg);
+  border: 1px solid var(--gh-mini-card-border);
+}
+
+.segBtn {
+  border: 0;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  color: var(--gh-text-secondary);
+  background: transparent;
+}
+
+.segBtnOn {
+  background: rgba(var(--gh-orange-rgb), 0.2);
+  color: var(--gh-orange);
+}
+
+.erRows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.erRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.erLabelWrap {
+  width: 92px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.erLabel {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.erBar {
+  flex: 1;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--gh-border-subtle);
+  overflow: hidden;
+}
+
+.erBarFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.erVal {
+  width: 76px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--font-2xs);
+  font-weight: 800;
+}
+
+.erDim {
+  font-weight: 600;
+  color: var(--gh-text-muted);
+}
+
+.erEmpty {
+  padding: 12px 0;
+  text-align: center;
+  color: var(--gh-text-muted);
+  font-size: var(--font-xs);
+}
+

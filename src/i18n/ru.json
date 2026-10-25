@@ -173,8 +173,8 @@
     "compete_invite_sent": "отправлено {time}",
     "compete_round_label": "Раунд {current}",
     "compete_play": "ИГРАТЬ",
-    "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_rush": "Лайв",
+    "compete_mode_relax": "Всегда",
     "compete_completed": "Завершено",
     "compete_win": "П",
     "compete_loss": "В",
@@ -184,10 +184,10 @@
     "compete_create_game": "СОЗДАТЬ",
     "tagline": "Где и когда это произошло?",
     "daily_new_challenge": "Далее:",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "До конца:",
+    "daily_next_in": "След.:",
+    "daily_finished": "Готово",
+    "daily_view": "Открыть",
     "compete_desc": "Играй с друзьями.\nРеальное время или по ходам.",
     "daily_desc": "Те же события.\nМировой рейтинг",
     "levelup_desc": "Поднимайся по уровням.\nЗарабатывай XP.",
@@ -196,7 +196,29 @@
     "compete_play_aria": "Играть",
     "compete_delete_aria": "Удалить",
     "coming_up_soon": "Скоро появится",
-    "daily_view_results": "Посмотреть результаты"
+    "daily_view_results": "Посмотреть результаты",
+    "journey_up_next": "Далее",
+    "journey_pass_chip": "Цель ≥ {pct}%",
+    "journey_difficulty_chip": "Сложность {rating}/10",
+    "journey_start": "Начать путь",
+    "journey_explainer": "В каждом этапе 5 раундов. Набери порог точности для следующего.",
+    "journey_view": "Открыть путь",
+    "round_of": "Раунд {current} из {total}",
+    "daily_tagline": "одна сложность для всех",
+    "daily_status_new": "НОВЫЙ",
+    "daily_status_in_progress": "В ИГРЕ",
+    "daily_status_done": "ГОТОВО",
+    "daily_play_today": "Играть сегодняшний вызов",
+    "daily_resume": "Продолжить",
+    "daily_streak": "серия",
+    "daily_playing_today": "{count} играют сегодня",
+    "daily_rank_line": "#{rank} в мире · Топ {pct}%",
+    "daily_xp_gained": "+{xp} XP",
+    "daily_load_error": "Статус дня не загружен",
+    "challenge_sub": "Играй с друзьями",
+    "practice_tagline": "Соло · Без лимита",
+    "practice_eras_chip": "{selected}/{total} эпох",
+    "practice_regions_chip": "{selected}/{total} регионов"
   },
   "common": {
     "next_round": "Следующий раунд",
@@ -271,10 +293,10 @@
     "n_days": "{n} дней",
     "ready_waiting": "Готов — ждём других",
     "im_ready": "Я готов",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "Начать игру",
+    "relax_playing": "Играет",
+    "relax_finished": "Завершил",
+    "relax_joined": "В игре",
     "pwa_install_title": "Установите приложение для уведомлений о ходе",
     "pwa_install_desc": "Игры Relax идут по очереди. На iPhone уведомления о ходе работают только после добавления этого сайта на главный экран.",
     "pwa_step_share": "Нажмите значок <strong>Поделиться</strong> на панели инструментов Safari.",
@@ -336,7 +358,7 @@
     "vibrate": "Вибрация",
     "distance_unit": "Единица расстояния",
     "settings": "Настройки",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "Можно выйти и продолжить позже.",
     "submit": "Отправить",
     "hint_select_both": "Сначала выбери {where} и {when}",
     "and": "и",
@@ -373,7 +395,7 @@
     "round_label": "Раунд {current}",
     "round_label_compact": "Раунд {current}/{total}",
     "source_link": "Источник ↗",
-    "rate": "Rate Image Realism",
+    "rate": "Оцени реализм",
     "rate_saved": "Сохранено",
     "this_round": "Этот раунд",
     "total_penalty": "Общий штраф",
@@ -433,6 +455,12 @@
     "when_badges": "Когда",
     "where_badges": "Где",
     "no_badges": "В этой игре значки не получены",
+    "highlights": "Итоги",
+    "hl_closest_guess": "Лучший ответ",
+    "hl_sharpest_year": "Точнейший год",
+    "hl_toughest_round": "Сложнейший раунд",
+    "hl_years_off": "±{n} г.",
+    "badges_count": "{count, plural, one {# значок} few {# значка} many {# значков} other {# значков}}",
     "era_ancient": "Древность",
     "era_medieval": "Средневековье",
     "era_earlymodern": "Раннее Новое время",
@@ -567,7 +595,24 @@
     "taking_too_long": "Слишком долго?",
     "retry": "Повторить",
     "region_oceania_antarctica": "Океания и Антарктида",
-    "game_accuracy_pct": "Точность игры (%)"
+    "game_accuracy_pct": "Точность игры (%)",
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "Об этом событии",
+    "learn_close": "Закрыть",
+    "learn_find_year": "Как найти год",
+    "learn_find_location": "Как найти место",
+    "learn_what_happened": "Что произошло",
+    "learn_related_events": "Похожие события",
+    "learn_related_to": "Поблизости",
+    "learn_related_location": "Связанное место",
+    "learn_this_event": "Это событие",
+    "learn_error": "Не удалось загрузить данные",
+    "learn_cta": "Об этом событии",
+    "left": "Вышел",
+    "player_left_toast": "{name} вышел из игры",
+    "solo_banner_title": "Вы остались единственным игроком",
+    "solo_continue": "Продолжить одному",
+    "solo_exit": "Выйти из игры"
   },
   "auth": {
     "sign_in": "Войти",
@@ -612,6 +657,14 @@
     "overall": "Общий",
     "daily": "Ежедневный",
     "level_up": "Повышение уровня",
+    "journey": "Путешествие",
+    "sort_accuracy": "Точность",
+    "sort_xp": "XP",
+    "sort_stage": "Этап",
+    "journey_stage": "Этап {n}",
+    "journey_stages_completed": "{n, plural, one {{n} этап пройден} few {{n} этапа пройдено} many {{n} этапов пройдено} other {{n} этапа пройдено}}",
+    "journey_no_stage": "Ни один этап ещё не пройден",
+    "no_results_journey": "Пока нет результатов путешествия.",
     "today": "Сегодня",
     "all_time": "За всё время",
     "err_load_failed": "Не удалось загрузить данные. Повторите.",
@@ -629,7 +682,9 @@
     "rank_suffix_two": "-й",
     "rank_suffix_few": "-й",
     "rank_suffix_many": "-й",
-    "rank_suffix_other": "-й"
+    "rank_suffix_other": "-й",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "Игроков в рейтинге нет."
   },
   "profile": {
     "accuracy_breakdown": "Разбивка точности",
@@ -639,8 +694,6 @@
     "score_distribution": "Распределение очков",
     "history_collection": "Коллекция истории",
     "accuracy_by_century": "Точность по векам",
-    "account": "Аккаунт",
-    "email": "электронная почта",
     "member_since": "Участник с",
     "events_seen": "Просмотрено событий",
     "by_century": "По векам",
@@ -658,7 +711,6 @@
     "games_played": "Сыграно игр",
     "rounds_played": "Сыграно раундов",
     "no_games_yet": "Игр пока нет",
-    "sign_out": "Выйти",
     "experience": "Опыт",
     "accuracy": "Точность",
     "era": "Эпоха",
@@ -672,7 +724,10 @@
     "countries": "Страны",
     "practice": "Практика",
     "daily_all_time": "Ежедневно (всегда)",
-    "level": "Уровень"
+    "level": "Уровень",
+    "era_region": "Эпоха и регион",
+    "rounds": "Раунды",
+    "stats": "Статы"
   },
   "account": {
     "title": "Аккаунт",
@@ -687,7 +742,16 @@
     "settings": "Настройки",
     "sound": "Звук",
     "vibrate": "Вибрация",
-    "distance_unit": "Единица расстояния"
+    "distance_unit": "Единица расстояния",
+    "notif_prefs": "Уведомления",
+    "notif_prefs_lobby_invite": "Приглашения в игру",
+    "notif_prefs_session_complete": "Игрок завершил игру",
+    "notif_channel_none": "Нет",
+    "notif_channel_push": "Только push",
+    "notif_channel_in_app": "Только в приложении",
+    "notif_channel_both": "Обе",
+    "notif_push_hint": "Push-уведомления отключены в этом браузере — включите уведомления, чтобы получать их.",
+    "notif_save_error": "Не удалось сохранить. Попробуйте ещё раз."
   },
   "avatar_picker": {
     "title": "Выбрать аватар",
@@ -716,7 +780,14 @@
     "turn_desc": "Получайте уведомления, когда наступает ваш ход в играх Relax. Вы можете изменить это в любой момент в настройках.",
     "not_now": "Не сейчас",
     "enable": "Включить",
-    "someone": "Кто-то"
+    "someone": "Кто-то",
+    "push_enable": "Включить уведомления",
+    "push_disable": "Отключить уведомления",
+    "push_enabled_msg": "Уведомления включены.",
+    "push_disabled_msg": "Уведомления отключены.",
+    "push_failed_enable": "Не удалось включить.",
+    "push_failed_disable": "Не удалось отключить.",
+    "push_unexpected": "Произошла непредвиденная ошибка."
   },
   "welcome": {
     "title": "Добро пожаловать в Guess-History!",
@@ -725,9 +796,9 @@
     "your_username": "Твоё имя пользователя",
     "lets_play": "Поиграем!",
     "skip_for_now": "Пропустить",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME"
+    "username_label_1": "ВВЕДИ СВОЙ НИК",
+    "username_label_2": "ВЫБЕРИ УНИКАЛЬНЫЙ НИК",
+    "username_label_3": "ЭТО ИМЯ УВИДЯТ ДРУГИЕ"
   },
   "landing": {
     "meta_title": "Guess-History — Проверь свои знания истории",
@@ -748,6 +819,7 @@
   },
   "rank": {
     "rank_label": "Ранг",
+    "your_rank": "Ваш ранг",
     "tier_prefix": "T",
     "next_label": "Далее",
     "rank_1": "Странник",
@@ -761,14 +833,17 @@
     "rank_9": "Учёный",
     "rank_10": "Картограф Роял",
     "next_rank": "{xp} XP до {title}",
-    "max_rank": "Максимальный ранг достигнут"
+    "max_rank": "Максимальный ранг достигнут",
+    "badge_aria": "Значок ранга {tier}",
+    "rail_hint_swipe": "свайп",
+    "tier_of_10": "Уровень {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "Расти с нами — Guess-History",
+    "meta_description": "Миссия, видение и будущее Guess-History — и как ты можешь участвовать.",
     "hero": {
       "tagline": "Будет определено",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "Играть в Guess-History",
       "secondary_cta": "Откройте для себя проект"
     },
     "mission": {
@@ -1051,7 +1126,9 @@
         "principle_1": "Максимальный коэффициент компенсации.",
         "principle_2": "Потолок доходности инвестора.",
         "principle_3": "Реинвестиционная политика.",
-        "principle_4": "Управление, ориентированное на миссию."
+        "principle_4": "Управление, ориентированное на миссию.",
+        "purpose_title": "Цель",
+        "principles_title": "Принципы"
       }
     },
     "partnerships": {
@@ -1218,9 +1295,26 @@
       "sources": "Источники",
       "references": "Ссылки",
       "legal": "Юридическая оговорка",
-      "privacy": "Конфиденциальность"
+      "privacy": "Конфиденциальность",
+      "nav_aria": "Подвал для инвесторов"
     },
-    "nav_aria_label": "Разделы страницы роста"
+    "nav_aria_label": "Разделы страницы роста",
+    "nav": {
+      "slides_aria": "Главы",
+      "toc_expand": "Развернуть оглавление",
+      "toc_collapse": "Свернуть оглавление",
+      "toc_aria": "Оглавление",
+      "chapters": "Главы",
+      "toc_close": "Закрыть оглавление",
+      "go_beginning": "К началу",
+      "go_end": "К концу",
+      "prev": "Назад",
+      "prev_disabled": "Назад (недоступно)",
+      "next": "Далее",
+      "next_disabled": "Далее (недоступно)",
+      "beginning_disabled": "Начало (первая часть)",
+      "end_disabled": "Конец (последняя часть)"
+    }
   },
   "practice": {
     "title": "Игра на практике в процессе",
@@ -1266,7 +1360,7 @@
     "badge_gold": "Золото",
     "badge_silver": "Серебро",
     "badge_bronze": "Бронза",
-    "badge_completion": "Завершение",
+    "badge_completion": "Завершено",
     "badge_none": "Нет значка",
     "load_error": "Не удалось загрузить твоё путешествие. Попробуй ещё раз.",
     "result_pass_mark": "Порог прохождения {pct}%",
@@ -1291,7 +1385,10 @@
     "list_current": "Текущий",
     "list_timer_label": "{time} на раунд",
     "list_years": "{from}–{to}",
-    "list_best_aria": "Лучший результат: {pct}%"
+    "list_best_aria": "Лучший результат: {pct}%",
+    "list_stage_title": "Этап {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "Завершено"
   },
   "legal": {
     "privacy": {
@@ -1376,5 +1473,293 @@
       "section10_title": "10. Свяжитесь с нами",
       "contact_text": "По вопросам, касающимся этих Условий, свяжитесь с нами по адресу: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "Полный экран и установка",
+    "tagline": "Выбери, как открывается Guess-History.",
+    "install_app": "Установить",
+    "ios_intro": "<strong>Добавь на экран «Домой»</strong> для установки:",
+    "install_unavailable": "Установка недоступна в этом браузере.",
+    "remember_choice": "Запомнить выбор"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — Дек для инвесторов",
+    "meta_description": "Дек для инвесторов: от исторической игры к ИИ-бенчмарку на людях.",
+    "meta_image_alt": "Дек Guess History для инвесторов",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "Заяви интерес",
+    "cta_play": "Играть в Guess History",
+    "cta_test": "Заяви интерес",
+    "status_verified": "ПОДТВЕРЖДЕНО",
+    "status_illustrative": "ИЛЛЮСТРАТИВНО",
+    "status_roadmap": "РОАДМАП",
+    "status_conceptual": "КОНЦЕПТ",
+    "model_tag": "МОДЕЛЬ",
+    "s01": {
+      "headline": "Что если игра станет ИИ-бенчмарком?",
+      "body": [
+        "Guess History: игроки восстанавливают, где и когда произошли события.",
+        "Но игра может создать куда больше: визуальный ИИ-бенчмарк на человеческих данных."
+      ],
+      "statements": [
+        "Игра — только начало."
+      ],
+      "alt": "Кинематографичная историческая сцена с глубиной, фигурами и неоднозначными подсказками"
+    },
+    "s02": {
+      "headline": "Простая игра с необычным дата-движком.",
+      "body": [
+        "Игра должна быть понятна без инструкций."
+      ],
+      "alt": "Историческая сцена для мини-демо «где и когда»",
+      "steps": [
+        "Историческая сцена",
+        "Где?",
+        "Когда?",
+        "Раскрытие"
+      ]
+    },
+    "s03": {
+      "headline": "Игроки — не просто игроки.",
+      "subheadline": "Они создают человеческий бенчмарк.",
+      "body": [
+        "Каждый ответ делает бенчмарк информативнее."
+      ],
+      "final": "Каждый ответ делает бенчмарк информативнее.",
+      "alt": "Та же историческая сцена — якорь накапливающихся человеческих наблюдений",
+      "items": [
+        {
+          "label": "Попытки людей",
+          "value": "10 281"
+        },
+        {
+          "label": "Медианная ошибка года",
+          "value": "8 лет"
+        },
+        {
+          "label": "Медианная ошибка места",
+          "value": "74 км"
+        },
+        {
+          "label": "Сложность",
+          "value": "ХАРД"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "Теперь тот же челлендж — для ИИ.",
+      "body": [
+        "Человек и ИИ получают одно изображение и одни вопросы. Результаты сравнимы напрямую."
+      ],
+      "final": "Теперь их можно сравнить.",
+      "alt": "Сплит-скрин: одно изображение тестируется на человеке и ИИ-модели",
+      "status_label": "Планируемая функция оценки",
+      "columns": [
+        {
+          "title": "ЧЕЛОВЕК",
+          "items": [
+            "Где?",
+            "Когда?",
+            "Результат"
+          ]
+        },
+        {
+          "title": "ИИ-МОДЕЛЬ",
+          "items": [
+            "Где?",
+            "Когда?",
+            "Результат"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "Новый слой оценки ИИ.",
+      "body": [
+        "Чистый отчёт об оценке. Бенчмарк — не просто «верно или нет»."
+      ],
+      "final": "Не просто «верно или нет».",
+      "metrics": [
+        {
+          "label": "ВРЕМЕННОЕ РАССУЖДЕНИЕ",
+          "value": "Медианная ошибка: 8 лет"
+        },
+        {
+          "label": "ПРОСТРАНСТВЕННЫЙ АНАЛИЗ",
+          "value": "Медианная дистанция: 182 км"
+        },
+        {
+          "label": "КАЛИБРОВКА",
+          "value": "Ошибка высокой уверенности: 9%"
+        },
+        {
+          "label": "ЛАТЕНТНОСТЬ",
+          "value": "P95: 3,1 с"
+        },
+        {
+          "label": "СТОИМОСТЬ",
+          "value": "$0,014 / оценка"
+        }
+      ],
+      "flow": [
+        "МОДЕЛЬ",
+        "БЕНЧМАРК",
+        "БАЗА ЛЮДЕЙ",
+        "ПЕРФОРМАНС"
+      ]
+    },
+    "s06": {
+      "headline": "Ценный актив — не изображение.",
+      "body": [
+        "Ров растёт через использование.",
+        "Больше наблюдений → сильнее бенчмарк.",
+        "Больше оценок → богаче сравнение.",
+        "Больше истории → сильнее лонгитюдный датасет."
+      ],
+      "final": "Это датасет вокруг изображения.",
+      "alt": "Историческое изображение со всё более плотными слоями данных",
+      "stack": [
+        "Верифицированная истина",
+        "Наблюдения людей",
+        "Человеческая сложность",
+        "Уверенность",
+        "Ответы ИИ",
+        "Версии моделей",
+        "Методология оценки"
+      ]
+    },
+    "s07": {
+      "headline": "Протестируй модель.",
+      "body": [
+        "Провайдер отправляет vision-модель, прогоняет бенчмарк и получает воспроизводимую человеческую оценку."
+      ],
+      "final": "Независимо. По людям. Воспроизводимо.",
+      "status_label": "Планируемая функция оценки",
+      "steps": [
+        "Vision-модель v4.2",
+        "ПРОГНАТЬ БЕНЧМАРК"
+      ],
+      "metrics": [
+        {
+          "label": "ВРЕМЯ",
+          "value": "72%"
+        },
+        {
+          "label": "МЕСТО",
+          "value": "81%"
+        },
+        {
+          "label": "КАЛИБРОВКА",
+          "value": "0,11"
+        },
+        {
+          "label": "ПОБЕДА ЧЕЛОВЕКА",
+          "value": "64%"
+        },
+        {
+          "label": "P95-ЛАТЕНТНОСТЬ",
+          "value": "2,4 с"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "Не тестируй модель один раз.",
+      "subheadline": "Отслеживай каждую версию.",
+      "body": [
+        "Три версии проходят один бенчмарк. График эволюционирует. Метрики растут или падают."
+      ],
+      "final": "Твоя модель реально улучшилась?",
+      "steps": [
+        "МОДЕЛЬ v1 → БЕНЧМАРК",
+        "МОДЕЛЬ v2 → БЕНЧМАРК",
+        "МОДЕЛЬ v3 → БЕНЧМАРК"
+      ]
+    },
+    "s09": {
+      "headline": "Четыре способа монетизировать бенчмарк.",
+      "body": [
+        "Гипотетические цифры выручки не приводятся. Описаны четыре продукта и вторичные возможности."
+      ],
+      "nodes": [
+        {
+          "label": "01 — API бенчмарка",
+          "description": "Автоматические оценки моделей"
+        },
+        {
+          "label": "02 — Enterprise-мониторинг",
+          "description": "Непрерывное тестирование версий"
+        },
+        {
+          "label": "03 — Кастомные бенчмарки",
+          "description": "Клиентские программы оценки"
+        },
+        {
+          "label": "04 — Данные и исследования",
+          "description": "Контролируемый доступ к данным"
+        }
+      ],
+      "branches_root": "Вторичные возможности",
+      "branches_children": [
+        "Образование",
+        "Выбор модели",
+        "Спонсорство бенчмарка"
+      ]
+    },
+    "s10": {
+      "headline": "Игра питает бенчмарк.",
+      "body": [
+        "Цикл ускоряется. Потребительская игра и B2B-оценка усиливают друг друга."
+      ],
+      "final": "Два продукта. Одна усиливающая система.",
+      "flow": [
+        "БОЛЬШЕ ИГРОКОВ",
+        "БОЛЬШЕ ДАННЫХ ЛЮДЕЙ",
+        "ЛУЧШЕ БАЗЫ",
+        "ЛУЧШЕ БЕНЧМАРК",
+        "БОЛЬШЕ ИНТЕРЕСА ИИ",
+        "B2B-ВЫРУЧКА",
+        "БОЛЬШЕ КОНТЕНТА",
+        "БОЛЬШЕ ИГРОКОВ"
+      ]
+    },
+    "s11": {
+      "headline": "История — лишь начало.",
+      "body": [
+        "Платформа может расшириться от исторических изображений к другим категориям визуального рассуждения."
+      ],
+      "final": "Человеческая визуальная оценка ИИ.",
+      "status_label": "Платформенная возможность вдолгую",
+      "branches_root": "ИСТОРИЯ",
+      "branches_children": [
+        "География",
+        "Архитектура",
+        "Культура",
+        "Визуальная хронология",
+        "Карты",
+        "Документы",
+        "Общее визуальное рассуждение"
+      ]
+    },
+    "s12": {
+      "headline": "Мы строим два бизнеса, усиливающих друг друга.",
+      "body": [
+        "GUESS HISTORY: Игра, привлекающая игроков и создающая человеческий интеллект.",
+        "GUESS HISTORY EVALUATION: Платформа, измеряющая ИИ против этого интеллекта."
+      ],
+      "statements": [
+        "Игра → Данные → Бенчмарк",
+        "Бенчмарк → Оценка → Выручка",
+        "Выручка → Больше данных → Сильнее платформа"
+      ],
+      "final": "Сможет ли ИИ понять историю так же, как люди?"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "Контакт",
+    "footer_link_privacy": "Приватность",
+    "footer_link_terms": "Условия",
+    "footer_link_sources": "Источники",
+    "footer_link_disclaimer": "Правовая оговорка",
+    "footer_disclaimer": "Страница носит информационный характер и не является офертой. Прогнозные заявления — цели, а не гарантии."
   }
 }
