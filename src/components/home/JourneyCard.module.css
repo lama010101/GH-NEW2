@@ -6,7 +6,7 @@
   container-type: inline-size;
   container-name: hv2journey;
   border-radius: 20px;
-  padding: 20px;
+  padding: 20px 20px 20px 18px;
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, #3b0764 0%, #6b21a8 55%, #9333ea 100%);
