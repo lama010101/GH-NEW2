@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { enterFullscreen, exitFullscreen, isFullscreen } from '@/lib/fullscreen'
 import { isIOsSafariNonPwa } from '@/core/relaxPwaInterstitial'
 import {
@@ -51,6 +52,9 @@ function writeChoice(value: 'seen' | 'auto'): void {
  * ignores the "seen" gate entirely.
  */
 export default function FullscreenPwaModal() {
+  const t = useTranslations('pwa')
+  const tNav = useTranslations('nav')
+  const tLobby = useTranslations('lobby')
   const [open, setOpen] = useState(false)
   const [remember, setRemember] = useState(false)
   const [installReady, setInstallReady] = useState(false)
@@ -158,22 +162,22 @@ export default function FullscreenPwaModal() {
           type="button"
           className={modalStyles.closeButton}
           onClick={handleDismiss}
-          aria-label="Close"
+          aria-label={tNav('close')}
         >
           ×
         </button>
-        <h2 className={modalStyles.title}>Fullscreen &amp; install</h2>
+        <h2 className={modalStyles.title}>{t('title')}</h2>
         <p className={modalStyles.tagline} style={{ marginBottom: 16 }}>
-          Choose how Guess-History opens on this device.
+          {t('tagline')}
         </p>
 
         {fsActive ? (
           <button type="button" className={modalStyles.submitButton} onClick={handleExitFullscreen}>
-            Exit Fullscreen
+            {tNav('exit_fullscreen')}
           </button>
         ) : (
           <button type="button" className={modalStyles.submitButton} onClick={handleEnterFullscreen}>
-            Enter Fullscreen
+            {tNav('enter_fullscreen')}
           </button>
         )}
 
@@ -184,7 +188,7 @@ export default function FullscreenPwaModal() {
             style={{ marginTop: 12 }}
             onClick={handleInstall}
           >
-            Install App
+            {t('install_app')}
           </button>
         ) : iosNonPwa ? (
           <div style={{ marginTop: 12 }}>
@@ -195,7 +199,7 @@ export default function FullscreenPwaModal() {
                 margin: '0 0 8px 0',
               }}
             >
-              <strong>Add to Home Screen</strong> to install the app:
+              {t.rich('ios_intro', { strong: (chunks) => <strong>{chunks}</strong> })}
             </p>
             <ol
               style={{
@@ -206,9 +210,9 @@ export default function FullscreenPwaModal() {
                 lineHeight: 1.5,
               }}
             >
-              <li>Tap the <strong>Share</strong> icon in Safari&apos;s toolbar.</li>
-              <li>Choose <strong>Add to Home Screen</strong>.</li>
-              <li>Tap <strong>Add</strong>, then open Guess-History from your Home Screen.</li>
+              <li>{tLobby.rich('pwa_step_share', { strong: (chunks) => <strong>{chunks}</strong> })}</li>
+              <li>{tLobby.rich('pwa_step_home', { strong: (chunks) => <strong>{chunks}</strong> })}</li>
+              <li>{tLobby.rich('pwa_step_open', { strong: (chunks) => <strong>{chunks}</strong> })}</li>
             </ol>
           </div>
         ) : (
@@ -220,7 +224,7 @@ export default function FullscreenPwaModal() {
               textAlign: 'center',
             }}
           >
-            App install is not available in this browser.
+            {t('install_unavailable')}
           </p>
         )}
 
@@ -231,7 +235,7 @@ export default function FullscreenPwaModal() {
             checked={remember}
             onChange={(e) => setRemember(e.target.checked)}
           />
-          <span className={modalStyles.rememberMeLabel}>Remember my choice</span>
+          <span className={modalStyles.rememberMeLabel}>{t('remember_choice')}</span>
         </label>
       </div>
     </div>
