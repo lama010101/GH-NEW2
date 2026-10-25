@@ -173,8 +173,8 @@
     "compete_invite_sent": "送信 {time}",
     "compete_round_label": "ラウンド {current}",
     "compete_play": "プレイ",
-    "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_rush": "ライブ",
+    "compete_mode_relax": "いつでも",
     "compete_completed": "完了",
     "compete_win": "勝",
     "compete_loss": "負",
@@ -184,10 +184,10 @@
     "compete_create_game": "作成",
     "tagline": "どこで、いつ起きた？",
     "daily_new_challenge": "次:",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "終了:",
+    "daily_next_in": "次回:",
+    "daily_finished": "完了",
+    "daily_view": "見る",
     "compete_desc": "フレンドと遊ぶ。\nリアルタイムまたはターン制。",
     "daily_desc": "同じイベント。\n世界ランキング",
     "levelup_desc": "レベルを登る。\n経験値XPを獲得。",
@@ -197,28 +197,28 @@
     "compete_delete_aria": "削除",
     "coming_up_soon": "近日公開",
     "daily_view_results": "結果を見る",
-    "journey_up_next": "Up next",
-    "journey_pass_chip": "Pass ≥ {pct}%",
-    "journey_difficulty_chip": "Difficulty {rating}/10",
-    "journey_start": "Start your journey",
-    "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
-    "journey_view": "View journey",
-    "round_of": "Round {current} of {total}",
-    "daily_tagline": "same difficulty for everyone",
-    "daily_status_new": "NEW",
-    "daily_status_in_progress": "IN PROGRESS",
-    "daily_status_done": "DONE",
-    "daily_play_today": "Play today's Daily",
-    "daily_resume": "Resume Daily",
-    "daily_streak": "streak",
-    "daily_playing_today": "{count} playing today",
-    "daily_rank_line": "#{rank} worldwide · Top {pct}%",
+    "journey_up_next": "次へ",
+    "journey_pass_chip": "合格 ≥ {pct}%",
+    "journey_difficulty_chip": "難易度 {rating}/10",
+    "journey_start": "ジャーニーを始める",
+    "journey_explainer": "各ステージ5ラウンド。精度ゲートをクリアで次へ解放。",
+    "journey_view": "ジャーニーを見る",
+    "round_of": "ラウンド {current}/{total}",
+    "daily_tagline": "全員同じ難易度",
+    "daily_status_new": "新",
+    "daily_status_in_progress": "進行中",
+    "daily_status_done": "完了",
+    "daily_play_today": "今日のチャレンジをプレイ",
+    "daily_resume": "デイリーを再開",
+    "daily_streak": "連続",
+    "daily_playing_today": "今日 {count} 人がプレイ",
+    "daily_rank_line": "世界 #{rank} · 上位 {pct}%",
     "daily_xp_gained": "+{xp} XP",
-    "daily_load_error": "Couldn't load today's status",
-    "challenge_sub": "Play with friends",
-    "practice_tagline": "Play solo · Unlimited",
-    "practice_eras_chip": "{selected}/{total} eras",
-    "practice_regions_chip": "{selected}/{total} regions"
+    "daily_load_error": "今日のステータス取得失敗",
+    "challenge_sub": "友達と遊ぶ",
+    "practice_tagline": "ソロ · 無制限",
+    "practice_eras_chip": "{selected}/{total} 時代",
+    "practice_regions_chip": "{selected}/{total} 地域"
   },
   "common": {
     "next_round": "次のラウンド",
@@ -293,10 +293,10 @@
     "n_days": "{n}日",
     "ready_waiting": "準備完了 — 他を待っています",
     "im_ready": "準備完了",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "ゲーム開始",
+    "relax_playing": "プレイ中",
+    "relax_finished": "終了",
+    "relax_joined": "参加済",
     "pwa_install_title": "ターン通知のためにアプリをインストール",
     "pwa_install_desc": "Relax ゲームはターン制です。iPhone では、このサイトをホーム画面に追加しないとターン通知が機能しません。",
     "pwa_step_share": "Safari のツールバーにある <strong>共有</strong> アイコンをタップします。",
@@ -358,7 +358,7 @@
     "vibrate": "バイブレーション",
     "distance_unit": "距離の単位",
     "settings": "設定",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "あとで再開できます。",
     "submit": "送信",
     "hint_select_both": "まず {where} と {when} を選択してください",
     "and": "と",
@@ -395,7 +395,7 @@
     "round_label": "ラウンド {current}",
     "round_label_compact": "ラウンド{current}/{total}",
     "source_link": "出典 ↗",
-    "rate": "Rate Image Realism",
+    "rate": "画像のリアルさを評価",
     "rate_saved": "保存済み",
     "this_round": "このラウンド",
     "total_penalty": "合計ペナルティ",
@@ -455,12 +455,12 @@
     "when_badges": "時間",
     "where_badges": "場所",
     "no_badges": "このゲームでバッジなし",
-    "highlights": "Highlights",
-    "hl_closest_guess": "Closest guess",
-    "hl_sharpest_year": "Sharpest year",
-    "hl_toughest_round": "Toughest round",
-    "hl_years_off": "±{n} yr",
-    "badges_count": "{count, plural, one {# badge} other {# badges}}",
+    "highlights": "ハイライト",
+    "hl_closest_guess": "最接近",
+    "hl_sharpest_year": "最も正確な年",
+    "hl_toughest_round": "最難ラウンド",
+    "hl_years_off": "±{n}年",
+    "badges_count": "{count, plural, other {# バッジ}}",
     "era_ancient": "古代",
     "era_medieval": "中世",
     "era_earlymodern": "近世",
@@ -684,7 +684,7 @@
     "rank_suffix_many": "",
     "rank_suffix_other": "",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "ランク入りのプレイヤーは以上です"
   },
   "profile": {
     "accuracy_breakdown": "精度の内訳",
@@ -725,9 +725,9 @@
     "practice": "練習",
     "daily_all_time": "デイリー（全期間）",
     "level": "レベル",
-    "era_region": "Era & region",
-    "rounds": "Rounds",
-    "stats": "Stats"
+    "era_region": "時代と地域",
+    "rounds": "ラウンド",
+    "stats": "戦績"
   },
   "account": {
     "title": "アカウント",
@@ -780,7 +780,14 @@
     "turn_desc": "Relax ゲームであなたのターンになったときに通知を受け取れます。設定からいつでも変更できます。",
     "not_now": "今はしない",
     "enable": "有効にする",
-    "someone": "誰か"
+    "someone": "誰か",
+    "push_enable": "通知を有効化",
+    "push_disable": "通知を無効化",
+    "push_enabled_msg": "通知が有効になりました",
+    "push_disabled_msg": "通知が無効になりました",
+    "push_failed_enable": "有効化に失敗",
+    "push_failed_disable": "無効化に失敗",
+    "push_unexpected": "予期しないエラーが発生"
   },
   "welcome": {
     "title": "Guess-Historyへようこそ！",
@@ -789,9 +796,9 @@
     "your_username": "あなたのユーザー名",
     "lets_play": "遊ぼう！",
     "skip_for_now": "今はスキップ",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME"
+    "username_label_1": "ユーザー名を入力",
+    "username_label_2": "ユニークな名前を選択",
+    "username_label_3": "この名前は他者に表示"
   },
   "landing": {
     "meta_title": "Guess-History — 歴史の知識を試そう",
@@ -827,16 +834,16 @@
     "rank_10": "ロイヤル地図作成者",
     "next_rank": "{title}まで{xp} XP",
     "max_rank": "最大ランクに到達",
-    "badge_aria": "Rank {tier} badge",
-    "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "badge_aria": "ランク {tier} バッジ",
+    "rail_hint_swipe": "スワイプ",
+    "tier_of_10": "レベル {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "共に成長 — Guess-History",
+    "meta_description": "Guess-Historyのミッション・ビジョン・将来性と参加方法を紹介。",
     "hero": {
       "tagline": "未定",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "Guess-Historyをプレイ",
       "secondary_cta": "プロジェクトを発見する"
     },
     "mission": {
@@ -1119,7 +1126,9 @@
         "principle_1": "最大補償率。",
         "principle_2": "投資家へのリターンの上限。",
         "principle_3": "再投資政策。",
-        "principle_4": "ミッションファーストのガバナンス。"
+        "principle_4": "ミッションファーストのガバナンス。",
+        "purpose_title": "目的",
+        "principles_title": "原則"
       }
     },
     "partnerships": {
@@ -1286,9 +1295,26 @@
       "sources": "情報源",
       "references": "参考文献",
       "legal": "法的免責事項",
-      "privacy": "プライバシー"
+      "privacy": "プライバシー",
+      "nav_aria": "投資家フッター"
     },
-    "nav_aria_label": "成長ページセクション"
+    "nav_aria_label": "成長ページセクション",
+    "nav": {
+      "slides_aria": "章",
+      "toc_expand": "目次を開く",
+      "toc_collapse": "目次を閉じる",
+      "toc_aria": "目次",
+      "chapters": "章",
+      "toc_close": "目次を閉じる",
+      "go_beginning": "先頭へ",
+      "go_end": "末尾へ",
+      "prev": "前へ",
+      "prev_disabled": "前へ(不可)",
+      "next": "次へ",
+      "next_disabled": "次へ(不可)",
+      "beginning_disabled": "先頭(最初のスライド)",
+      "end_disabled": "末尾(最後のスライド)"
+    }
   },
   "practice": {
     "title": "練習ゲームが進行中",
@@ -1447,5 +1473,293 @@
       "section10_title": "10. お問い合わせ",
       "contact_text": "これらの規約に関する質問は、次のアドレスまでお問い合わせください：appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "全画面&インストール",
+    "tagline": "この端末での開き方を選択",
+    "install_app": "インストール",
+    "ios_intro": "<strong>ホーム画面に追加</strong>してインストール:",
+    "install_unavailable": "このブラウザではインストール不可",
+    "remember_choice": "選択を記憶"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — 投資家デッキ",
+    "meta_description": "歴史ゲームから人間基準のビジュアルAIベンチマークへ — 映画のような投資家向けプレゼン。",
+    "meta_image_alt": "Guess History 投資家デッキ",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "関心を登録",
+    "cta_play": "Guess Historyをプレイ",
+    "cta_test": "関心を登録",
+    "status_verified": "検証済",
+    "status_illustrative": "例示",
+    "status_roadmap": "ロードマップ",
+    "status_conceptual": "概念",
+    "model_tag": "モデル",
+    "s01": {
+      "headline": "ゲームがAIベンチマークになったら?",
+      "body": [
+        "Guess Historyはプレイヤーが歴史上の出来事の場所と時代を推測するゲーム。",
+        "しかしこのゲームはもっと大きなものを生み出せる:人間基準のビジュアルAIベンチマーク。"
+      ],
+      "statements": [
+        "ゲームは始まりにすぎない。"
+      ],
+      "alt": "奥行きと人物と曖昧な手がかりのある映画のような歴史シーン"
+    },
+    "s02": {
+      "headline": "シンプルなゲーム、異色のデータエンジン。",
+      "body": [
+        "説明を読まずに理解できるゲームであるべき。"
+      ],
+      "alt": "いつ・どこミニデモ用の歴史シーン",
+      "steps": [
+        "歴史シーン",
+        "どこ?",
+        "いつ?",
+        "正解"
+      ]
+    },
+    "s03": {
+      "headline": "プレイヤーはプレイヤー以上の存在。",
+      "subheadline": "彼らは人間ベンチマークを作っている。",
+      "body": [
+        "すべての回答がベンチマークをより有用にする。"
+      ],
+      "final": "すべての回答がベンチマークをより有用にする。",
+      "alt": "蓄積する人間の観測を支える同一の歴史画像",
+      "items": [
+        {
+          "label": "人間の挑戦",
+          "value": "10,281"
+        },
+        {
+          "label": "年誤差中央値",
+          "value": "8年"
+        },
+        {
+          "label": "位置誤差中央値",
+          "value": "74 km"
+        },
+        {
+          "label": "難易度",
+          "value": "ハード"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "同じ挑戦をAIにも。",
+      "body": [
+        "人間とAIに同じ画像と同じ2つの質問を与える。結果を直接比較できる。"
+      ],
+      "final": "これで比較できる。",
+      "alt": "同一画像を人間とAIモデルで検証する分割画面",
+      "status_label": "計画中の評価機能",
+      "columns": [
+        {
+          "title": "人間",
+          "items": [
+            "どこ?",
+            "いつ?",
+            "結果"
+          ]
+        },
+        {
+          "title": "AIモデル",
+          "items": [
+            "どこ?",
+            "いつ?",
+            "結果"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "AI評価の新しい層。",
+      "body": [
+        "クリーンな評価レポート。ベンチマークは「正解か不正解」だけではない。"
+      ],
+      "final": "「正解か不正解」だけではない。",
+      "metrics": [
+        {
+          "label": "時間的推論",
+          "value": "中央誤差:8年"
+        },
+        {
+          "label": "空間的推論",
+          "value": "中央距離:182 km"
+        },
+        {
+          "label": "較正",
+          "value": "高信頼度誤差:9%"
+        },
+        {
+          "label": "レイテンシ",
+          "value": "P95:3.1秒"
+        },
+        {
+          "label": "コスト",
+          "value": "$0.014/評価"
+        }
+      ],
+      "flow": [
+        "モデル",
+        "ベンチマーク",
+        "人間ベースライン",
+        "性能"
+      ]
+    },
+    "s06": {
+      "headline": "価値ある資産は画像ではない。",
+      "body": [
+        "堀は使用で深くなる。",
+        "人間の観測が増える→ベンチマークが強くなる。",
+        "モデル評価が増える→比較が豊かになる。",
+        "歴史が増える→縦断データセットが強くなる。"
+      ],
+      "final": "価値は画像を取り巻くデータセットだ。",
+      "alt": "データ層が徐々に密になる歴史画像",
+      "stack": [
+        "検証済み正解",
+        "人間の観測",
+        "人間の難易度",
+        "信頼度",
+        "AI応答",
+        "モデルバージョン",
+        "評価方法論"
+      ]
+    },
+    "s07": {
+      "headline": "あなたのモデルを試せ。",
+      "body": [
+        "モデル提供者がビジョンモデルを提出し、ベンチマークを実行し、再現可能な人間基準の評価を受け取る。"
+      ],
+      "final": "独立。人間基準。再現可能。",
+      "status_label": "計画中の評価機能",
+      "steps": [
+        "ビジョンモデル v4.2",
+        "ベンチマーク実行"
+      ],
+      "metrics": [
+        {
+          "label": "時間",
+          "value": "72%"
+        },
+        {
+          "label": "位置",
+          "value": "81%"
+        },
+        {
+          "label": "較正",
+          "value": "0.11"
+        },
+        {
+          "label": "人間の勝利",
+          "value": "64%"
+        },
+        {
+          "label": "P95レイテンシ",
+          "value": "2.4秒"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "モデルを一度だけ試すな。",
+      "subheadline": "全バージョンを追跡せよ。",
+      "body": [
+        "3つのモデルバージョンが同じベンチマークを通過。ラインが進化。メトリクスは改善か退行か。"
+      ],
+      "final": "あなたのモデルは本当に改善したか?",
+      "steps": [
+        "モデル v1 → ベンチマーク",
+        "モデル v2 → ベンチマーク",
+        "モデル v3 → ベンチマーク"
+      ]
+    },
+    "s09": {
+      "headline": "ベンチマーク収益化の4つの方法。",
+      "body": [
+        "仮定の収益数字は提示しない。4つの主要製品と副次的機会を説明する。"
+      ],
+      "nodes": [
+        {
+          "label": "01 — ベンチマークAPI",
+          "description": "自動モデル評価"
+        },
+        {
+          "label": "02 — エンタープライズ監視",
+          "description": "継続的バージョン検証"
+        },
+        {
+          "label": "03 — カスタムベンチマーク",
+          "description": "顧客別評価プログラム"
+        },
+        {
+          "label": "04 — データ&研究",
+          "description": "制御付きデータアクセス"
+        }
+      ],
+      "branches_root": "副次的機会",
+      "branches_children": [
+        "教育",
+        "モデル選定",
+        "ベンチマークスポンサー"
+      ]
+    },
+    "s10": {
+      "headline": "ゲームがベンチマークを育てる。",
+      "body": [
+        "ループは加速する。消費者ゲームとB2B評価が相互に強化し合う。"
+      ],
+      "final": "2つの製品。1つの強化システム。",
+      "flow": [
+        "プレイヤー増",
+        "人間データ増",
+        "ベースライン向上",
+        "ベンチマーク向上",
+        "AI関心増",
+        "B2B収益",
+        "コンテンツ増",
+        "プレイヤー増"
+      ]
+    },
+    "s11": {
+      "headline": "歴史は始まりにすぎない。",
+      "body": [
+        "プラットフォームは歴史画像からより広い視覚推論評価カテゴリへ拡張できる。"
+      ],
+      "final": "人間基準のビジュアルAI評価。",
+      "status_label": "長期的プラットフォーム機会",
+      "branches_root": "歴史",
+      "branches_children": [
+        "地理",
+        "建築",
+        "文化",
+        "視覚的年表",
+        "地図",
+        "文書",
+        "一般視覚推論"
+      ]
+    },
+    "s12": {
+      "headline": "相互に強化する2つの事業を構築中。",
+      "body": [
+        "GUESS HISTORY: プレイヤーを引きつけ独自の人間知能を生成するゲーム。",
+        "GUESS HISTORY EVALUATION: その知能に対するAI性能を測定するプラットフォーム。"
+      ],
+      "statements": [
+        "ゲーム → データ → ベンチマーク",
+        "ベンチマーク → 評価 → 収益",
+        "収益 → データ増 → より強いプラットフォーム"
+      ],
+      "final": "AIは人間と同じく歴史を理解できるか?"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "連絡先",
+    "footer_link_privacy": "プライバシー",
+    "footer_link_terms": "利用規約",
+    "footer_link_sources": "出典",
+    "footer_link_disclaimer": "法的免責",
+    "footer_disclaimer": "本ページは情報提供のみを目的とし、証券購入の勧誘ではありません。将来見通しは目標であり保証ではありません。"
   }
 }

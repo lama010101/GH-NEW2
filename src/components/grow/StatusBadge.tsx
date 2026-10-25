@@ -1,3 +1,6 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
 import type { SectionStatus } from '@/lib/investorContent'
 
 type StatusBadgeProps = {
@@ -16,19 +19,20 @@ const statusStyles: Record<SectionStatus, string> = {
     'border-[var(--gh-gold)]/30 bg-[var(--gh-gold)]/10 text-[var(--gh-gold)]',
 }
 
-const defaultLabels: Record<SectionStatus, string> = {
-  verified: 'VERIFIED',
-  illustrative: 'ILLUSTRATIVE',
-  roadmap: 'ROADMAP',
-  conceptual: 'CONCEPTUAL',
+const statusKeys: Record<SectionStatus, string> = {
+  verified: 'status_verified',
+  illustrative: 'status_illustrative',
+  roadmap: 'status_roadmap',
+  conceptual: 'status_conceptual',
 }
 
 export default function StatusBadge({ status, label }: StatusBadgeProps) {
+  const t = useTranslations('grow_deck')
   return (
     <span
       className={`inline-flex items-center rounded-[var(--gh-radius-pill)] border px-3 py-1 text-xs font-medium uppercase tracking-wide ${statusStyles[status]}`}
     >
-      {label ?? defaultLabels[status]}
+      {label ?? t(statusKeys[status])}
     </span>
   )
 }

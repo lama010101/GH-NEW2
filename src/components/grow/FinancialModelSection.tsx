@@ -53,7 +53,7 @@ export default function FinancialModelSection() {
         <h3 className="text-xl font-semibold text-[var(--gh-text-primary)]">{t('capped.title')}</h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <h4 className="text-sm font-semibold text-[var(--gh-text-secondary)]">Purpose</h4>
+            <h4 className="text-sm font-semibold text-[var(--gh-text-secondary)]">{t('capped.purpose_title')}</h4>
             <ul className="mt-2 list-disc pl-5 text-sm text-[var(--gh-text-secondary)]">
               {purposes.map((p) => (
                 <li key={p}>{t(`capped.purpose_${p}`)}</li>
@@ -61,7 +61,7 @@ export default function FinancialModelSection() {
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-[var(--gh-text-secondary)]">Principles</h4>
+            <h4 className="text-sm font-semibold text-[var(--gh-text-secondary)]">{t('capped.principles_title')}</h4>
             <ul className="mt-2 list-disc pl-5 text-sm text-[var(--gh-text-secondary)]">
               {principles.map((p) => (
                 <li key={p}>{t(`capped.principle_${p}`)}</li>

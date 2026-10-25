@@ -173,8 +173,8 @@
     "compete_invite_sent": "أُرسلت {time}",
     "compete_round_label": "الجولة {current}",
     "compete_play": "العب",
-    "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_rush": "مباشر",
+    "compete_mode_relax": "في أي وقت",
     "compete_completed": "مكتملة",
     "compete_win": "ف",
     "compete_loss": "خ",
@@ -184,10 +184,10 @@
     "compete_create_game": "أنشئ",
     "tagline": "أين ومتى حدث؟",
     "daily_new_challenge": "التالي:",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "ينتهي:",
+    "daily_next_in": "التالي:",
+    "daily_finished": "انتهى",
+    "daily_view": "عرض",
     "compete_desc": "العب مع أصدقاءك.\nفوري أو بالتناوب.",
     "daily_desc": "نفس الأحداث.\nتصدر عالمياً",
     "levelup_desc": "تسلّق المستويات.\nاكسب نقاط الخبرة.",
@@ -197,28 +197,28 @@
     "compete_delete_aria": "حذف",
     "coming_up_soon": "قريباً",
     "daily_view_results": "عرض النتائج",
-    "journey_up_next": "Up next",
-    "journey_pass_chip": "Pass ≥ {pct}%",
-    "journey_difficulty_chip": "Difficulty {rating}/10",
-    "journey_start": "Start your journey",
-    "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
-    "journey_view": "View journey",
-    "round_of": "Round {current} of {total}",
-    "daily_tagline": "same difficulty for everyone",
-    "daily_status_new": "NEW",
-    "daily_status_in_progress": "IN PROGRESS",
-    "daily_status_done": "DONE",
-    "daily_play_today": "Play today's Daily",
-    "daily_resume": "Resume Daily",
-    "daily_streak": "streak",
-    "daily_playing_today": "{count} playing today",
-    "daily_rank_line": "#{rank} worldwide · Top {pct}%",
+    "journey_up_next": "التالي",
+    "journey_pass_chip": "اجتياز ≥ {pct}%",
+    "journey_difficulty_chip": "الصعوبة {rating}/10",
+    "journey_start": "ابدأ رحلتك",
+    "journey_explainer": "كل مرحلة 5 جولات. تجاوز عتبة الدقة لفتح التالية.",
+    "journey_view": "عرض الرحلة",
+    "round_of": "الجولة {current} من {total}",
+    "daily_tagline": "نفس الصعوبة للجميع",
+    "daily_status_new": "جديد",
+    "daily_status_in_progress": "جارٍ",
+    "daily_status_done": "تم",
+    "daily_play_today": "العب تحدي اليوم",
+    "daily_resume": "استئناف",
+    "daily_streak": "سلسلة",
+    "daily_playing_today": "{count} يلعبون اليوم",
+    "daily_rank_line": "#{rank} عالميًا · أعلى {pct}%",
     "daily_xp_gained": "+{xp} XP",
-    "daily_load_error": "Couldn't load today's status",
-    "challenge_sub": "Play with friends",
-    "practice_tagline": "Play solo · Unlimited",
-    "practice_eras_chip": "{selected}/{total} eras",
-    "practice_regions_chip": "{selected}/{total} regions"
+    "daily_load_error": "تعذر تحميل حالة اليوم",
+    "challenge_sub": "العب مع الأصدقاء",
+    "practice_tagline": "فردي · غير محدود",
+    "practice_eras_chip": "{selected}/{total} عصور",
+    "practice_regions_chip": "{selected}/{total} مناطق"
   },
   "common": {
     "next_round": "الجولة التالية",
@@ -293,10 +293,10 @@
     "n_days": "{n} أيام",
     "ready_waiting": "جاهز — بانتظار الآخرين",
     "im_ready": "أنا جاهز",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "ابدأ لعبتي",
+    "relax_playing": "يلعب",
+    "relax_finished": "منتهية",
+    "relax_joined": "انضم",
     "pwa_install_title": "ثبّت التطبيق لتلقي إشعارات الدور",
     "pwa_install_desc": "ألعاب Relax تُلعب بالتناوب. على iPhone، لا تعمل إشعارات الدور إلا عند إضافة هذا الموقع إلى الشاشة الرئيسية.",
     "pwa_step_share": "اضغط على أيقونة <strong>مشاركة</strong> في شريط أدوات Safari.",
@@ -358,7 +358,7 @@
     "vibrate": "الاهتزاز",
     "distance_unit": "وحدة المسافة",
     "settings": "الإعدادات",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "يمكنك المغادرة والاستئناف لاحقًا.",
     "submit": "إرسال",
     "hint_select_both": "اختر {where} و{when} أولاً",
     "and": "و",
@@ -395,7 +395,7 @@
     "round_label": "الجولة {current}",
     "round_label_compact": "الجولة {current}/{total}",
     "source_link": "المصدر ↗",
-    "rate": "Rate Image Realism",
+    "rate": "قيّم واقعية الصورة",
     "rate_saved": "تم الحفظ",
     "this_round": "هذه الجولة",
     "total_penalty": "إجمالي العقوبة",
@@ -455,12 +455,12 @@
     "when_badges": "متى",
     "where_badges": "أين",
     "no_badges": "لم تُكسب أوسمة في هذه اللعبة",
-    "highlights": "Highlights",
-    "hl_closest_guess": "Closest guess",
-    "hl_sharpest_year": "Sharpest year",
-    "hl_toughest_round": "Toughest round",
-    "hl_years_off": "±{n} yr",
-    "badges_count": "{count, plural, one {# badge} other {# badges}}",
+    "highlights": "أبرز اللحظات",
+    "hl_closest_guess": "أقرب تخمين",
+    "hl_sharpest_year": "أدق سنة",
+    "hl_toughest_round": "أصعب جولة",
+    "hl_years_off": "±{n} سنة",
+    "badges_count": "{count, plural, one {# وسام} two {# وسامان} few {# أوسمة} many {# وسامًا} other {# وسام}}",
     "era_ancient": "قديم",
     "era_medieval": "وسيط",
     "era_earlymodern": "حديث مبكر",
@@ -684,7 +684,7 @@
     "rank_suffix_many": "",
     "rank_suffix_other": "",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "لا مزيد من اللاعبين."
   },
   "profile": {
     "accuracy_breakdown": "تفصيل الدقة",
@@ -725,9 +725,9 @@
     "practice": "تدريب",
     "daily_all_time": "يومي (على مر العصور)",
     "level": "المستوى",
-    "era_region": "Era & region",
-    "rounds": "Rounds",
-    "stats": "Stats"
+    "era_region": "العصر والمنطقة",
+    "rounds": "جولات",
+    "stats": "إحصائيات"
   },
   "account": {
     "title": "الحساب",
@@ -780,16 +780,23 @@
     "turn_desc": "احصل على إشعار عندما يحين دورك في ألعاب Relax. يمكنك تغيير هذا في أي وقت من الإعدادات.",
     "not_now": "ليس الآن",
     "enable": "تفعيل",
-    "someone": "شخص ما"
+    "someone": "شخص ما",
+    "push_enable": "تفعيل الإشعارات",
+    "push_disable": "تعطيل الإشعارات",
+    "push_enabled_msg": "تم تفعيل الإشعارات.",
+    "push_disabled_msg": "تم تعطيل الإشعارات.",
+    "push_failed_enable": "فشل التفعيل.",
+    "push_failed_disable": "فشل التعطيل.",
+    "push_unexpected": "حدث خطأ غير متوقع."
   },
   "welcome": {
     "title": "مرحباً بك في Guess-History!",
     "your_historical_avatar": "صورتك الرمزية التاريخية",
     "choose_different_avatar": "اختر صورة رمزية مختلفة",
     "your_username": "اسم المستخدم",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME",
+    "username_label_1": "أدخل اسم المستخدم",
+    "username_label_2": "اختر اسمًا فريدًا",
+    "username_label_3": "سيرى الآخرون هذا الاسم",
     "lets_play": "هيا نلعب!",
     "skip_for_now": "تخطّي الآن"
   },
@@ -827,16 +834,16 @@
     "rank_10": "رسام الخرائط الملكي",
     "next_rank": "{xp} XP حتى {title}",
     "max_rank": "تم الوصول إلى أعلى رتبة",
-    "badge_aria": "Rank {tier} badge",
-    "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "badge_aria": "وسام رتبة {tier}",
+    "rail_hint_swipe": "اسحب",
+    "tier_of_10": "المستوى {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "انمُ معنا — Guess-History",
+    "meta_description": "اكتشف رسالة Guess-History ورؤيتها ومستقبلها وكيفية المشاركة.",
     "hero": {
       "tagline": "سيتم تحديده",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "العب Guess-History",
       "secondary_cta": "اكتشف المشروع"
     },
     "mission": {
@@ -1119,7 +1126,9 @@
         "principle_1": "الحد الأقصى لنسبة التعويض.",
         "principle_2": "سقف عائد المستثمر.",
         "principle_3": "سياسة إعادة الاستثمار",
-        "principle_4": "مهمة الحكم أولا."
+        "principle_4": "مهمة الحكم أولا.",
+        "purpose_title": "الغرض",
+        "principles_title": "المبادئ"
       }
     },
     "partnerships": {
@@ -1286,9 +1295,26 @@
       "sources": "المصادر",
       "references": "المراجع",
       "legal": "إخلاء المسؤولية القانونية",
-      "privacy": "الخصوصية"
+      "privacy": "الخصوصية",
+      "nav_aria": "تذييل المستثمرين"
     },
-    "nav_aria_label": "أقسام صفحة النمو"
+    "nav_aria_label": "أقسام صفحة النمو",
+    "nav": {
+      "slides_aria": "الفصول",
+      "toc_expand": "فتح الفهرس",
+      "toc_collapse": "إغلاق الفهرس",
+      "toc_aria": "الفهرس",
+      "chapters": "الفصول",
+      "toc_close": "إغلاق الفهرس",
+      "go_beginning": "إلى البداية",
+      "go_end": "إلى النهاية",
+      "prev": "السابق",
+      "prev_disabled": "السابق (غير متاح)",
+      "next": "التالي",
+      "next_disabled": "التالي (غير متاح)",
+      "beginning_disabled": "البداية (أول شريحة)",
+      "end_disabled": "النهاية (آخر شريحة)"
+    }
   },
   "practice": {
     "title": "لعبة تدريبية جارية",
@@ -1447,5 +1473,293 @@
       "section10_title": "10. اتصل بنا",
       "contact_text": "للاستفسارات حول هذه الشروط، اتصل بنا على: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "ملء الشاشة والتثبيت",
+    "tagline": "اختر كيف يفتح Guess-History هنا.",
+    "install_app": "تثبيت التطبيق",
+    "ios_intro": "<strong>أضف إلى الشاشة الرئيسية</strong> للتثبيت:",
+    "install_unavailable": "التثبيت غير متاح في هذا المتصفح.",
+    "remember_choice": "تذكر اختياري"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — عرض المستثمرين",
+    "meta_description": "عرض سينمائي للمستثمرين: من لعبة تاريخية إلى معيار ذكاء اصطناعي بصري مرسّخ بشريًا.",
+    "meta_image_alt": "عرض مستثمري Guess History",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "سجّل اهتمامك",
+    "cta_play": "العب Guess History",
+    "cta_test": "سجّل الاهتمام",
+    "status_verified": "موثّق",
+    "status_illustrative": "توضيحي",
+    "status_roadmap": "خارطة طريق",
+    "status_conceptual": "مفاهيمي",
+    "model_tag": "النموذج",
+    "s01": {
+      "headline": "ماذا لو أصبحت لعبة معيارًا للذكاء الاصطناعي؟",
+      "body": [
+        "Guess History لعبة يعيد فيها اللاعبون بناء مكان وزمان الأحداث التاريخية.",
+        "لكن اللعبة يمكن أن تصنع أكثر بكثير: معيار ذكاء اصطناعي بصري مرسّخ بشريًا."
+      ],
+      "statements": [
+        "اللعبة هي البداية."
+      ],
+      "alt": "مشهد تاريخي سينمائي بعمق وشخصيات وأدلة ملتبسة"
+    },
+    "s02": {
+      "headline": "لعبة بسيطة بمحرك بيانات غير معتاد.",
+      "body": [
+        "يجب أن يفهم الزائر اللعبة دون قراءة التعليمات."
+      ],
+      "alt": "مشهد تاريخي لعرض أين-ومتى التجريبي",
+      "steps": [
+        "مشهد تاريخي",
+        "أين؟",
+        "متى؟",
+        "الكشف"
+      ]
+    },
+    "s03": {
+      "headline": "اللاعبون ليسوا مجرد لاعبين.",
+      "subheadline": "إنهم يصنعون معيارًا بشريًا.",
+      "body": [
+        "كل إجابة تجعل المعيار أكثر إفادة."
+      ],
+      "final": "كل إجابة تجعل المعيار أكثر إفادة.",
+      "alt": "نفس الصورة التاريخية ترسّخ الملاحظات البشرية المتراكمة",
+      "items": [
+        {
+          "label": "محاولات بشرية",
+          "value": "10,281"
+        },
+        {
+          "label": "خطأ السنة الوسيط",
+          "value": "8 سنوات"
+        },
+        {
+          "label": "خطأ الموقع الوسيط",
+          "value": "74 كم"
+        },
+        {
+          "label": "الصعوبة",
+          "value": "صعب"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "والآن نفس التحدي للذكاء الاصطناعي.",
+      "body": [
+        "الإنسان والذكاء الاصطناعي يحصلان على نفس الصورة ونفس السؤالين. النتائج قابلة للمقارنة مباشرة."
+      ],
+      "final": "الآن يمكننا مقارنتهما.",
+      "alt": "شاشة منقسمة: نفس الصورة مختبرة على إنسان ونموذج ذكاء اصطناعي",
+      "status_label": "قدرة تقييم مخططة",
+      "columns": [
+        {
+          "title": "إنسان",
+          "items": [
+            "أين؟",
+            "متى؟",
+            "النتيجة"
+          ]
+        },
+        {
+          "title": "نموذج ذكاء",
+          "items": [
+            "أين؟",
+            "متى؟",
+            "النتيجة"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "طبقة جديدة لتقييم الذكاء.",
+      "body": [
+        "تقرير تقييم نظيف. المعيار ليس مجرد «صح أو خطأ»."
+      ],
+      "final": "ليس مجرد «صح أو خطأ».",
+      "metrics": [
+        {
+          "label": "الاستدلال الزمني",
+          "value": "خطأ وسيط: 8 سنوات"
+        },
+        {
+          "label": "الاستدلال المكاني",
+          "value": "مسافة وسيطة: 182 كم"
+        },
+        {
+          "label": "المعايرة",
+          "value": "خطأ عالي الثقة: 9%"
+        },
+        {
+          "label": "زمن الاستجابة",
+          "value": "P95: 3.1 ث"
+        },
+        {
+          "label": "التكلفة",
+          "value": "$0.014 / تقييم"
+        }
+      ],
+      "flow": [
+        "نموذج",
+        "معيار",
+        "خط بشري",
+        "الأداء"
+      ]
+    },
+    "s06": {
+      "headline": "الأصل القيّم ليس الصورة.",
+      "body": [
+        "الخندق ينمو مع الاستخدام.",
+        "ملاحظات بشرية أكثر → معيار أقوى.",
+        "تقييمات نماذج أكثر → مقارنة أغنى.",
+        "تاريخ أكثر → مجموعة بيانات طولية أقوى."
+      ],
+      "final": "إنها مجموعة البيانات حول الصورة.",
+      "alt": "صورة تاريخية تتراكم حولها طبقات بيانات أكثف فأكثف",
+      "stack": [
+        "حقيقة أرضية موثّقة",
+        "ملاحظات بشرية",
+        "صعوبة بشرية",
+        "الثقة",
+        "إجابات الذكاء",
+        "إصدارات النموذج",
+        "منهجية التقييم"
+      ]
+    },
+    "s07": {
+      "headline": "اختبر نموذجك.",
+      "body": [
+        "يقدّم مزوّد نموذجًا بصريًا ويشغّل المعيار ويتلقى تقييمًا قابلًا للتكرار مرسّخًا بشريًا."
+      ],
+      "final": "مستقل. مرسّخ بشريًا. قابل للتكرار.",
+      "status_label": "قدرة تقييم مخططة",
+      "steps": [
+        "نموذج بصري v4.2",
+        "شغّل المعيار"
+      ],
+      "metrics": [
+        {
+          "label": "زمني",
+          "value": "72%"
+        },
+        {
+          "label": "موقع",
+          "value": "81%"
+        },
+        {
+          "label": "معايرة",
+          "value": "0.11"
+        },
+        {
+          "label": "فوز بشري",
+          "value": "64%"
+        },
+        {
+          "label": "P95 استجابة",
+          "value": "2.4ث"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "لا تختبر النموذج مرة واحدة.",
+      "subheadline": "تتبّع كل إصدار.",
+      "body": [
+        "ثلاثة إصدارات تعبر نفس المعيار. المنحنى يتطور. المقاييس تتحسن أو تتراجع."
+      ],
+      "final": "هل تحسّن نموذجك فعلًا؟",
+      "steps": [
+        "نموذج v1 → معيار",
+        "نموذج v2 → معيار",
+        "نموذج v3 → معيار"
+      ]
+    },
+    "s09": {
+      "headline": "أربع طرق لاستثمار المعيار.",
+      "body": [
+        "لا تُعرض أرقام إيرادات افتراضية. توصف المنتجات الأربعة الرئيسية والفرص الثانوية."
+      ],
+      "nodes": [
+        {
+          "label": "01 — API المعيار",
+          "description": "تقييمات نماذج آلية"
+        },
+        {
+          "label": "02 — مراقبة مؤسسية",
+          "description": "اختبار مستمر للإصدارات"
+        },
+        {
+          "label": "03 — معايير مخصصة",
+          "description": "برامج تقييم خاصة بالعملاء"
+        },
+        {
+          "label": "04 — بيانات وأبحاث",
+          "description": "وصول منضبط للبيانات"
+        }
+      ],
+      "branches_root": "فرص ثانوية",
+      "branches_children": [
+        "التعليم",
+        "اختيار النموذج",
+        "رعاية المعيار"
+      ]
+    },
+    "s10": {
+      "headline": "اللعبة تغذي المعيار.",
+      "body": [
+        "الحلقة تتسارع. اللعب الاستهلاكي والتقييم التجاري يعززان بعضهما."
+      ],
+      "final": "منتجان. نظام واحد معزّز.",
+      "flow": [
+        "لاعبون أكثر",
+        "بيانات بشرية أكثر",
+        "خطوط أساس أفضل",
+        "معيار أفضل",
+        "اهتمام ذكاء أكثر",
+        "إيرادات B2B",
+        "محتوى أكثر",
+        "لاعبون أكثر"
+      ]
+    },
+    "s11": {
+      "headline": "التاريخ نقطة البداية.",
+      "body": [
+        "يمكن للمنصة التوسع من الصور التاريخية إلى فئات أوسع من تقييم الاستدلال البصري."
+      ],
+      "final": "تقييم ذكاء بصري مرسّخ بشريًا.",
+      "status_label": "فرصة منصة طويلة الأمد",
+      "branches_root": "التاريخ",
+      "branches_children": [
+        "الجغرافيا",
+        "العمارة",
+        "الثقافة",
+        "التسلسل البصري",
+        "الخرائط",
+        "الوثائق",
+        "استدلال بصري عام"
+      ]
+    },
+    "s12": {
+      "headline": "نبني عملين يعزز كل منهما الآخر.",
+      "body": [
+        "GUESS HISTORY: لعبة تجذب اللاعبين وتولّد ذكاءً بشريًا خاصًا.",
+        "GUESS HISTORY EVALUATION: منصة تقيس أداء الذكاء مقابل ذلك الذكاء."
+      ],
+      "statements": [
+        "لعبة → بيانات → معيار",
+        "معيار → تقييم → إيرادات",
+        "إيرادات → بيانات أكثر → منصة أقوى"
+      ],
+      "final": "هل يفهم الذكاء الاصطناعي التاريخ مثل البشر؟"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "تواصل",
+    "footer_link_privacy": "الخصوصية",
+    "footer_link_terms": "الشروط",
+    "footer_link_sources": "المصادر",
+    "footer_link_disclaimer": "إخلاء قانوني",
+    "footer_disclaimer": "هذه الصفحة لأغراض إعلامية فقط وليست عرضًا لبيع أوراق مالية. البيانات الاستشرافية أهداف وليست ضمانات."
   }
 }
