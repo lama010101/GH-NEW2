@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { BRAND_PRIMARY_HEX } from "@/core/brand";
+import { BRAND_PRIMARY_HEX, BRAND_ACCENT_HEX } from "@/core/brand";
 
 /**
  * GUARD TEST — brand primary single source (BRAND-BUILD-PURPLEICONS-1015-003).
@@ -79,5 +79,29 @@ describe("brand primary single source (BRAND-BUILD-PURPLEICONS-1015-003)", () =>
     expect(buf.readUInt16LE(4)).toBe(3); // count
     const sizes = [0, 1, 2].map((i) => buf.readUInt8(6 + i * 16) || 256);
     expect(sizes).toEqual([16, 32, 48]);
+  });
+
+  it("public/manifest.json background_color equals BRAND_PRIMARY_HEX", () => {
+    const manifest = JSON.parse(readText("public/manifest.json"));
+    expect(manifest.background_color.toLowerCase()).toBe(BRAND_PRIMARY_HEX.toLowerCase());
+  });
+
+  it("BRAND_ACCENT_HEX is a 6-digit hex and appears in all three brand SVGs", () => {
+    expect(BRAND_ACCENT_HEX).toMatch(/^#[0-9a-f]{6}$/i);
+    for (const p of [
+      "docs/ui/assets/gh-symbol.svg",
+      "docs/ui/assets/gh-symbol-micro.svg",
+      "docs/ui/assets/gh-wordmark.svg",
+    ]) {
+      expect(readText(p).toLowerCase()).toContain(BRAND_ACCENT_HEX.toLowerCase());
+    }
+  });
+
+  it("src/components/brand/BrandMark.tsx references BRAND_ACCENT_HEX", () => {
+    expect(readText("src/components/brand/BrandMark.tsx")).toContain("BRAND_ACCENT_HEX");
+  });
+
+  it("public/brand/gh-wordmark.svg is byte-identical to docs/ui/assets/gh-wordmark.svg", () => {
+    expect(read("public/brand/gh-wordmark.svg").equals(read("docs/ui/assets/gh-wordmark.svg"))).toBe(true);
   });
 });

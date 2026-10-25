@@ -31,6 +31,7 @@ import { YearPicker } from "@/components/YearPicker";
 import { AuthModal } from "@/components/AuthModal";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
+import BrandMark from "@/components/brand/BrandMark";
 import styles from "./landing.module.css";
 import lbStyles from "@/app/leaderboard/leaderboard.module.css";
 
@@ -702,8 +703,7 @@ export default function LandingV2Prototype() {
       >
         {showTopbarExtras && (
           <a className={styles.brand} href="#hero" aria-label="Back to top">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/logo.webp" alt="Guess History" width={120} height={32} className={styles.brandImg} />
+            <BrandMark size={32} />
           </a>
         )}
 
@@ -769,7 +769,7 @@ export default function LandingV2Prototype() {
           </p>
           <h1 ref={heroLogoRef} className={styles.heroLogo}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/logo.webp" alt="Guess History" width={440} height={118} className={styles.heroLogoImg} />
+            <img src="/brand/gh-wordmark.svg" alt="Guess History" width={688} height={474} className={styles.heroLogoImg} />
           </h1>
           <p className={styles.heroSub}>Travel through time. Guess where and when.</p>
           <p className={styles.heroTagline}>

@@ -136,8 +136,8 @@
 }
 .heroLogo { margin: 0; display: flex; justify-content: center; }
 .heroLogoImg {
-  width: clamp(280px, 44vw, 440px);
-  height: auto;
+  height: 200px;
+  width: auto;
   filter: drop-shadow(0 6px 40px rgba(0,0,0,.5));
 }
 .heroSub {
@@ -483,7 +483,7 @@
 
 @media (max-width: 480px) {
   .hero { min-height: 560px; }
-  .heroLogoImg { width: clamp(220px, 60vw, 320px); }
+  .heroLogoImg { height: 170px; }
   .sec { padding: 64px 0; }
   .wrap { padding: 0 16px; }
   .topbar { padding: 10px 14px; }
