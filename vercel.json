@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/apply-ai-schedule-changes",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/sync-openrouter-catalog",
+      "schedule": "20 1 * * *"
     }
   ]
 }
