@@ -70,3 +70,9 @@ export async function promptInstall(): Promise<'accepted' | 'dismissed' | 'unava
     return 'unavailable'
   }
 }
+
+// Attach the capture at module load so a beforeinstallprompt fired before
+// any component mounts is still captured. SSR-safe: no-op without window.
+if (typeof window !== 'undefined') {
+  initInstallPromptCapture()
+}
