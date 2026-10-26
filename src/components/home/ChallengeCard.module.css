@@ -87,3 +87,13 @@
     transition: none !important;
   }
 }
+
+/* Desktop: Journey (the row's other card) sets the row height; Challenge
+   never stretches the row. `contain: size` removes its content from track
+   sizing, the tabs area then fills the remaining height and scrolls as one
+   region (the per-section row caps are lifted so there is a single scrollbar). */
+@media (min-width: 1024px) {
+  .challenge { contain: size; min-height: 320px; }
+  .tabs { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .tabBody { max-height: none !important; overflow-y: visible !important; }
+}
