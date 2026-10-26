@@ -32,7 +32,7 @@ export default async function SchedulesPage() {
         <div>
           <h1 className="ops-h1">Scheduled mode changes</h1>
           <p className="ops-pagesub">
-            {pending.length} pending · applied by the cron route every minute
+            {pending.length} pending · applied once a day by the 00:00 UTC cron
           </p>
         </div>
       </header>
