@@ -21,11 +21,22 @@ export async function addAiPlayer(input: {
   }
 
   const pool = getDbPool();
-  await pool.query(
-    `INSERT INTO ai_players (name, provider, model_id, avatar_url)
-     VALUES ($1, $2, $3, $4)`,
-    [name, provider, model_id, input.avatar_url ?? null]
-  );
+  try {
+    await pool.query(
+      `INSERT INTO ai_players (name, provider, model_id, avatar_url, is_active, is_active_daily, is_active_practice)
+       VALUES ($1, $2, $3, $4, false, false, false)`,
+      [name, provider, model_id, input.avatar_url ?? null]
+    );
+  } catch (err) {
+    // One live player per model_id: on a unique violation the existing live
+    // player stands in for the new one (no-op). Anything else is rethrown.
+    if ((err as { code?: string }).code !== "23505") throw err;
+    const live = await pool.query(
+      `SELECT id FROM ai_players WHERE model_id = $1 AND deleted_at IS NULL LIMIT 1`,
+      [model_id]
+    );
+    if (live.rows.length === 0) throw err;
+  }
   revalidatePath("/admin/dashboard");
 }
 
