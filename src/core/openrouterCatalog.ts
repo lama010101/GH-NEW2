@@ -324,6 +324,8 @@ function sameArray(a: readonly string[], b: readonly string[]): boolean {
  * Empty array = nothing worth a history row.
  * 'expiring' fires when expiration_date is newly set or changed, or when the
  * model enters the 30-day window (so a steady expiring model is not re-logged daily).
+ * 'relisted' requires an actual delisting (status 'not_in_catalog' with missing_since
+ * set); a one-day feed blip, where missing_since is set but status is unchanged, is not a relist.
  */
 export function diffKinds(
   previous: CatalogRow | null,
@@ -363,7 +365,12 @@ export function diffKinds(
   ) {
     kinds.push("context_changed");
   }
-  if (previous.missing_since !== null) kinds.push("relisted");
+  if (
+    previous.missing_since !== null &&
+    previous.availability_status === "not_in_catalog"
+  ) {
+    kinds.push("relisted");
+  }
   if (
     next.expiration_date !== null &&
     (previous.expiration_date !== next.expiration_date ||

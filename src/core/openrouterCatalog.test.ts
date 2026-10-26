@@ -241,9 +241,25 @@ describe("diffKinds", () => {
   it("context_changed", () => {
     expect(diffKinds(prev, { ...base, context_length: 256000 }, NOW)).toEqual(["context_changed"]);
   });
-  it("relisted when previous.missing_since is set", () => {
-    const gone = asRow(base, { missing_since: new Date("2026-10-24T01:20:00Z") });
+  it("no relisted for a one-day blip", () => {
+    const blip = asRow(base, { missing_since: new Date("2026-10-25T01:20:00Z") });
+    expect(diffKinds(blip, base, NOW)).toEqual([]);
+  });
+  it("relisted when previous was delisted", () => {
+    const gone = asRow(base, {
+      missing_since: new Date("2026-10-24T01:20:00Z"),
+      availability_status: "not_in_catalog",
+      availability_reason: ABSENT_REASON,
+    });
     expect(diffKinds(gone, base, NOW)).toEqual(["relisted"]);
+  });
+  it("extended expiry on an expired model is not a relist", () => {
+    const expired = asRow(
+      { ...base, expiration_date: "2026-10-20" },
+      { availability_status: "not_in_catalog", availability_reason: "expired" }
+    );
+    const next = { ...base, expiration_date: "2027-06-01" };
+    expect(diffKinds(expired, next, NOW)).toEqual(["expiring"]);
   });
   it("expiring when expiration_date is newly set within the window", () => {
     const ex = norm(EXPIRING);
@@ -355,6 +371,23 @@ describe("planSync", () => {
     expect(plan.history_rows).toHaveLength(1);
     expect(plan.history_rows[0].change_kinds).toEqual(["relisted"]);
     expect(plan.counts.relisted_count).toBe(1);
+    expect(plan.counts.changed_count).toBe(0);
+  });
+
+  it("reappearance after a one-day blip logs nothing", () => {
+    const filler = bigFeed([]);
+    const blip = asRow(norm(FREE), {
+      missing_since: new Date("2026-10-25T01:20:00Z"),
+    });
+    const plan = planSync(
+      [...filler.map((f) => asRow(f)), blip],
+      [...filler, norm(FREE)],
+      NOW
+    );
+    expect(plan.unchanged_ids).toContain("meta/llama-free:free");
+    expect(plan.updates).toHaveLength(0);
+    expect(plan.history_rows).toHaveLength(0);
+    expect(plan.counts.relisted_count).toBe(0);
     expect(plan.counts.changed_count).toBe(0);
   });
 
