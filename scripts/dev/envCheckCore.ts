@@ -260,14 +260,16 @@ export function evaluateEnv(
         notes.push(`role=${resolved.role}`);
       }
       if (resolved.dsn !== undefined) {
-        // DB-HARDEN-CONNSTRING-1027-001 — diagnosis stays within the
+        // DB-HARDEN-CONNSTRING-1027-001/-002 — diagnosis stays within the
         // no-values contract: machine codes and the user-ref boolean only.
         // Host/port/db name are value fragments and passwordLength is a
         // length, so neither may be reported here.
         notes.push(
           resolved.dsn.ok
-            ? "dsn=ok"
-            : `dsn malformed: ${resolved.dsn.problems.join(",")}`,
+            ? resolved.dsn.warnings.length > 0
+              ? `dsn ok (warnings: ${resolved.dsn.warnings.join(",")})`
+              : "dsn=ok"
+            : `dsn malformed: ${resolved.dsn.fatalProblems.join(",")}`,
         );
         if (resolved.dsn.facts.userHasProjectRef !== undefined) {
           notes.push(

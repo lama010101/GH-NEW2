@@ -37,12 +37,17 @@ function enforceDbConnection(): Pool {
   }
 
   // Structural validation — secret-free machine codes only, never any
-  // fragment of the value (DB-HARDEN-CONNSTRING-1027-001)
+  // fragment of the value (DB-HARDEN-CONNSTRING-1027-001/-002)
+  // Fatal only when pg provably cannot parse; anything else warns and the
+  // original, unmodified string is still used for the pool.
   const diagnosis = diagnoseDbConnectionString(connectionString);
   if (!diagnosis.ok) {
-    const malformedMessage = `[FATAL][DB] SUPABASE_DB_CONNECTION is malformed: ${diagnosis.problems.join(",")}`;
+    const malformedMessage = `[FATAL][DB] SUPABASE_DB_CONNECTION is malformed: ${diagnosis.fatalProblems.join(",")}`;
     console.error(malformedMessage);
     throw new Error(malformedMessage);
+  }
+  if (diagnosis.warnings.length > 0) {
+    console.warn(`[WARN][DB] SUPABASE_DB_CONNECTION suspicious: ${diagnosis.warnings.join(",")}`);
   }
 
   const pool = new Pool({

@@ -22,15 +22,40 @@ export interface DbConnectionStringFacts {
 export interface DbConnectionStringDiagnosis {
   ok: boolean;
   problems: string[];
+  fatalProblems: string[];
+  warnings: string[];
   facts: DbConnectionStringFacts;
 }
+
+// DB-HARDEN-CONNSTRING-1027-002 — the app may only refuse to start for
+// strings pg provably cannot parse. Everything else is a warning. These
+// WARNING codes partition `problems` together with the FATAL ones (any code
+// not listed here is fatal).
+const WARNING_CODES = new Set([
+  "LEADING_OR_TRAILING_WHITESPACE",
+  "EMBEDDED_WHITESPACE",
+  "UNENCODED_AT_IN_PASSWORD",
+  "HOST_UNEXPECTED",
+  "DB_NAME_UNEXPECTED",
+  "USER_MISSING_PROJECT_REF",
+]);
 
 export function diagnoseDbConnectionString(
   raw: string | undefined,
 ): DbConnectionStringDiagnosis {
   const problems: string[] = [];
   const facts: DbConnectionStringFacts = {};
-  const done = () => ({ ok: problems.length === 0, problems, facts });
+  const done = () => {
+    const warnings = problems.filter((p) => WARNING_CODES.has(p));
+    const fatalProblems = problems.filter((p) => !WARNING_CODES.has(p));
+    return {
+      ok: fatalProblems.length === 0,
+      problems,
+      fatalProblems,
+      warnings,
+      facts,
+    };
+  };
 
   if (raw === undefined || raw.trim() === "") {
     problems.push("EMPTY");
@@ -83,7 +108,12 @@ export function diagnoseDbConnectionString(
   if (password.length > 0) {
     facts.passwordLength = password.length;
   }
-  if (/[\[\]<>]/.test(password)) {
+  // Placeholder brackets only when the ENTIRE password is wrapped — raw
+  // brackets inside a real password are legal (pg percent-encodes them).
+  if (
+    (password.startsWith("[") && password.endsWith("]")) ||
+    (password.startsWith("<") && password.endsWith(">"))
+  ) {
     problems.push("PLACEHOLDER_BRACKETS");
   }
 
