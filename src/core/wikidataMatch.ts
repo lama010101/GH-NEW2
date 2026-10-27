@@ -238,32 +238,40 @@ export type CandidateScore = {
  */
 export function scoreCandidate(
   candidate: { label?: string | null; aliases?: readonly string[] | null },
-  cleanedTitle: string
+  cleanedTitle: string | readonly string[]
 ): CandidateScore {
-  const titleNorm = normalizeText(cleanedTitle);
-  const titleTokens = normalizeTokens(cleanedTitle);
+  // EDQ-FIX-WIKIDATA-RECALL-1027-001: the runner may pass multiple title
+  // variants (q1 full clean + q2 clause-trim). Each variant is scored and the
+  // better containment wins — variants are title text only, never stored
+  // year/coords.
+  const titles = (
+    typeof cleanedTitle === "string" ? [cleanedTitle] : [...cleanedTitle]
+  ).map((t) => ({ norm: normalizeText(t), tokens: normalizeTokens(t) }));
   const texts = [candidate.label, ...(candidate.aliases ?? [])].filter(
     (t): t is string => typeof t === "string" && t.trim().length > 0
   );
   let best: CandidateScore = { containment: 0, dice: 0 };
   for (const text of texts) {
     const tokens = normalizeTokens(text);
-    const exact = titleNorm.length > 0 && normalizeText(text) === titleNorm;
-    const inter = intersectCount(tokens, titleTokens);
-    const dice =
-      tokens.length + titleTokens.length === 0
-        ? 0
-        : (2 * inter) / (tokens.length + titleTokens.length);
-    const gated = tokens.length < 2 && !exact;
-    const containment =
-      !gated && Math.min(tokens.length, titleTokens.length) > 0
-        ? inter / Math.min(tokens.length, titleTokens.length)
-        : 0;
-    if (
-      containment > best.containment ||
-      (containment === best.containment && dice > best.dice)
-    ) {
-      best = { containment, dice };
+    const textNorm = normalizeText(text);
+    for (const title of titles) {
+      const exact = title.norm.length > 0 && textNorm === title.norm;
+      const inter = intersectCount(tokens, title.tokens);
+      const dice =
+        tokens.length + title.tokens.length === 0
+          ? 0
+          : (2 * inter) / (tokens.length + title.tokens.length);
+      const gated = tokens.length < 2 && !exact;
+      const containment =
+        !gated && Math.min(tokens.length, title.tokens.length) > 0
+          ? inter / Math.min(tokens.length, title.tokens.length)
+          : 0;
+      if (
+        containment > best.containment ||
+        (containment === best.containment && dice > best.dice)
+      ) {
+        best = { containment, dice };
+      }
     }
   }
   return best;
@@ -300,7 +308,7 @@ export function isEventLike(entity: WdEntity): boolean {
 
 export function selectCandidate(
   candidates: readonly MatchCandidate[],
-  cleanedTitle: string
+  cleanedTitle: string | readonly string[]
 ): Selection {
   const ranked = candidates
     .filter((c) => c.eventLike)
@@ -399,15 +407,17 @@ export function classifyVerification(input: {
     return { ...base, status: "review", reason: "distance_in_review_band" };
   }
   if (distanceKm == null) {
-    if (yearDelta === 0) {
-      return {
-        ...base,
-        status: "verified",
-        reason: "coords_unverifiable",
-        coordsUnverifiable: true,
-      };
-    }
-    return { ...base, status: "review", reason: "coords_missing" };
+    // EDQ-FIX-WIKIDATA-RECALL-1027-001: 'verified' requires distance evidence.
+    // When no coordinates can be compared (Wikidata has none, or the stored
+    // location is missing), an exact-label hit can still be the wrong entity
+    // ("Expo 2024 in Rome" matched the Chengdu expo via an exact alias after
+    // " in Rome" was cleaned away). Best attainable status here is review.
+    return {
+      ...base,
+      status: "review",
+      reason: "coords_unverifiable",
+      coordsUnverifiable: true,
+    };
   }
   return { ...base, status: "verified", reason: null };
 }

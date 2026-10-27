@@ -176,6 +176,20 @@ describe("scoreCandidate", () => {
     const s = scoreCandidate({ label: "battle-of-wagram!", aliases: [] }, "The Battle of Wagram");
     expect(s.containment).toBe(1);
   });
+
+  // RECALL-1027-001: query variants — better containment across titles wins.
+  it("takes the better containment across title variants (q1 + q2)", () => {
+    const label = { label: "Battle of Kosovo", aliases: [] };
+    // q1-style narrative title alone: {battle,kosovo}∩{kingdom,falls,...}=0.
+    expect(scoreCandidate(label, "Kingdom Falls to the Invading Ottoman Army").containment).toBe(0);
+    // [q1, q2] array: q2 "Battle of Kosovo" matches fully -> 1.0.
+    const s = scoreCandidate(label, [
+      "Kingdom Falls to the Invading Ottoman Army",
+      "Battle of Kosovo",
+    ]);
+    expect(s.containment).toBe(1);
+    expect(s.dice).toBe(1);
+  });
 });
 
 describe("selectCandidate", () => {
@@ -269,6 +283,35 @@ describe("selectCandidate", () => {
     );
     expect(again.winner?.qid).toBe("Q1");
   });
+
+  // RECALL-1027-001: query-variant titles and diagnostic-field isolation.
+  it("scores candidates against all query variants and keeps the best", () => {
+    const sel = selectCandidate(
+      [cand("Q1", "Battle of Kosovo", 5)],
+      ["Kingdom Falls to the Invading Ottoman Army", "Battle of Kosovo"]
+    );
+    expect(sel.kind).toBe("winner");
+    expect(sel.winner?.containment).toBe(1);
+  });
+
+  it("selection output is identical whether yearConsistentWithStored is computed or not", () => {
+    const titles = ["Kingdom Falls to the Invading Ottoman Army", "Battle of Kosovo"];
+    const candidates = [cand("Q1", "Battle of Kosovo", 5), cand("Q2", "Kosovo Battlefield", 3)];
+    const plain = selectCandidate(candidates, titles);
+    const annotated: Array<MatchCandidate & { yearConsistentWithStored?: boolean }> =
+      candidates.map((c) => ({ ...c, yearConsistentWithStored: c.qid === "Q2" }));
+    const withDiag = selectCandidate(annotated, titles);
+    // Decision-relevant output is identical; the diagnostic field is carried
+    // through the candidate spread but never read by selection logic.
+    const project = (s: Selection) => ({
+      kind: s.kind,
+      winner: s.winner?.qid,
+      runnerUp: s.runnerUp?.qid,
+      ranked: s.ranked.map((c) => [c.qid, c.containment, c.sitelinks]),
+    });
+    expect(project(withDiag)).toEqual(project(plain));
+    expect(plain.winner?.qid).toBe("Q1");
+  });
 });
 
 describe("classifyVerification", () => {
@@ -284,13 +327,48 @@ describe("classifyVerification", () => {
     expect(v).toMatchObject({ status: "verified", yearDelta: 0 });
   });
 
-  it("verified with coords_unverifiable when year is exact and WD coords absent", () => {
+  // RECALL-1027-001: 'verified' requires distance evidence — no WD coords can
+  // never produce 'verified' even on an exact year + label hit.
+  it("review: no WD coords means never verified — coords_unverifiable", () => {
     const v = classifyVerification({
       storedYear: 1809, storedLat: 48.2, storedLon: 16.37,
       selection: selectionOf("winner", "Q1"),
       dates: dates(1809, 1809), coords: null,
     });
-    expect(v).toMatchObject({ status: "verified", yearDelta: 0, distanceKm: null, coordsUnverifiable: true });
+    expect(v).toMatchObject({
+      status: "review",
+      reason: "coords_unverifiable",
+      yearDelta: 0,
+      distanceKm: null,
+      coordsUnverifiable: true,
+    });
+  });
+
+  it("review: Expo-style false positive — exact label and year, zero distance evidence", () => {
+    // "Expo 2024 in Rome" matched the Chengdu 2024 horticultural expo via an
+    // exact alias after " in Rome" was cleaned away. Distance evidence is
+    // required for 'verified'.
+    const v = classifyVerification({
+      storedYear: 2024, storedLat: 41.9, storedLon: 12.5,
+      selection: selectionOf("winner", "Q138822940"),
+      dates: dates(2024, 2024), coords: null,
+    });
+    expect(v.status).toBe("review");
+    expect(v.reason).toBe("coords_unverifiable");
+    expect(v.coordsUnverifiable).toBe(true);
+  });
+
+  it("review: missing stored coords is also unverifiable even when WD coords exist", () => {
+    const v = classifyVerification({
+      storedYear: 1809, storedLat: null, storedLon: null,
+      selection: selectionOf("winner", "Q1"),
+      dates: dates(1809, 1809), coords: at(48.2, 16.37),
+    });
+    expect(v).toMatchObject({
+      status: "review",
+      reason: "coords_unverifiable",
+      coordsUnverifiable: true,
+    });
   });
 
   it("review: coarse precision skips the year comparison entirely", () => {

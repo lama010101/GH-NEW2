@@ -19,7 +19,9 @@ import { resolve } from "path";
 import { dbPool } from "../../src/server/db";
 import {
   EVENT_DATE_PROPS,
+  MIN_MATCH_MARGIN,
   MIN_MATCH_SCORE,
+  YEAR_TOLERANCE,
   classifyVerification,
   extractCoords,
   extractEventDates,
@@ -37,7 +39,7 @@ dotenv.config({ path: ".env.local" });
 // Flags
 // ─────────────────────────────────────────────────────────────────────────────
 
-function parseFlags(): { limit: number; seed: number; write: boolean; runId: string; out: string } {
+function parseFlags(): { limit: number; seed: number; write: boolean; runId: string; out: string; fulltext: boolean } {
   const flags = new Map<string, string | true>();
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i++) {
@@ -54,9 +56,9 @@ function parseFlags(): { limit: number; seed: number; write: boolean; runId: str
   }
   const seed = flags.has("seed") ? Number(flags.get("seed")) : 1026001;
   const limit = flags.has("limit") ? Number(flags.get("limit")) : 100;
-  const runId = String(flags.get("run-id") ?? `wd-1026-001-seed${seed}`);
-  const out = String(flags.get("out") ?? "../wikidata-dryrun-1026-001.json");
-  return { limit, seed, write: flags.has("write"), runId, out };
+  const runId = String(flags.get("run-id") ?? `wd-1027-001-seed${seed}`);
+  const out = String(flags.get("out") ?? "../wikidata-dryrun-1027-001.json");
+  return { limit, seed, write: flags.has("write"), runId, out, fulltext: flags.has("fulltext") };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,6 +95,37 @@ function cleanTitleForSearch(title: string): string {
   const m = /^(.*\S)\s+in\s+[A-Z][A-Za-z' -]{1,60}$/.exec(t);
   if (m && m[1].trim().length >= 3) t = m[1].trim();
   return t;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECALL-1027-001 — query variants. wbsearchentities is a label-prefix search;
+// long narrative titles cannot prefix-match short labels, so each event gets
+// up to 4 deduped queries:
+//   q0 = original title
+//   q1 = cleanTitleForSearch(title)
+//   q2 = clause-trimmed (cut at the first clause separator below; skip <3ch)
+//   q3 = q2 iff it begins with Battle of / Siege of / Treaty of / Peace of —
+//        kept as is; for any other shape no further variant is attempted.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CLAUSE_CUT =
+  /\s(?:between|after|during|in|at|on|near|by|as|amid|following|for|with)\s|:|–|—|,/i;
+
+const BATTLE_PREFIX = /^(battle|siege|treaty|peace)\s+of\b/i;
+
+function clauseTrimmedTitle(title: string): string | null {
+  const m = CLAUSE_CUT.exec(title);
+  const cut = (m ? title.slice(0, m.index) : title).trim().replace(/^The\s+/i, "");
+  return cut.length >= 3 ? cut : null;
+}
+
+function buildQueries(title: string): { q1: string; q2: string | null; all: string[] } {
+  const q0 = title.trim();
+  const q1 = cleanTitleForSearch(title);
+  const q2 = clauseTrimmedTitle(title);
+  const q3 = q2 != null && BATTLE_PREFIX.test(q2) ? q2 : null;
+  const all = [...new Set([q0, q1, q2, q3].filter((q): q is string => q != null && q.length > 0))];
+  return { q1, q2, all };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,6 +205,7 @@ function sampleEvents(all: DbEvent[], limit: number, rng: () => number) {
 const UA = "GuessHistoryBot/1.0 (https://www.guess-history.com)";
 const MIN_GAP_MS = 250;
 const MAX_RETRIES = 5;
+const MAX_429_BUDGET = 20;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -191,7 +225,14 @@ async function wdApi(params: Record<string, string>): Promise<Record<string, unk
     try {
       const res = await fetch(url, { headers: { "User-Agent": UA } });
       if (res.status === 429 || res.status >= 500) {
-        if (res.status === 429) stats.retries429 += 1;
+        if (res.status === 429) {
+          stats.retries429 += 1;
+          // RECALL-1027-001: hard run abort when the Wikimedia 429 budget is
+          // blown — surfaced as an error row and the main loop stops.
+          if (stats.retries429 > MAX_429_BUDGET) {
+            throw new Error("rate_limit_abort: 429 budget exceeded");
+          }
+        }
         const retryAfter = Number(res.headers.get("retry-after"));
         const wait = Number.isFinite(retryAfter) && retryAfter > 0
           ? retryAfter * 1000
@@ -219,7 +260,7 @@ async function wdApi(params: Record<string, string>): Promise<Record<string, unk
 
 type SearchHit = { id: string; label?: string };
 
-async function searchEntities(query: string): Promise<string[]> {
+async function searchEntities(query: string): Promise<SearchHit[]> {
   const json = await wdApi({
     action: "wbsearchentities",
     search: query,
@@ -227,8 +268,24 @@ async function searchEntities(query: string): Promise<string[]> {
     type: "item",
     limit: "7",
   });
-  const hits = (json.search as SearchHit[] | undefined) ?? [];
-  return hits.map((h) => h.id);
+  return (json.search as SearchHit[] | undefined) ?? [];
+}
+
+// RECALL-1027-001 --fulltext: one Action API full-text fallback query when no
+// event-like candidate was found. Returns ns0 item titles ("Q123").
+async function fullTextSearch(query: string): Promise<string[]> {
+  const json = await wdApi({
+    action: "query",
+    list: "search",
+    srsearch: query,
+    srnamespace: "0",
+    srlimit: "5",
+  });
+  const hits =
+    (json.query as { search?: Array<{ title?: string }> } | undefined)?.search ?? [];
+  return hits
+    .map((h) => h.title)
+    .filter((t): t is string => typeof t === "string" && /^Q\d+$/.test(t));
 }
 
 async function getEntities(ids: string[], props: string): Promise<Record<string, WdEntity>> {
@@ -300,7 +357,15 @@ type CandidateDetail = {
   eventLike: boolean;
   p31: string[];
   dateProps: string[];
+  /** DIAGNOSTIC ONLY (RECALL-1027-001): selection never reads this field. */
+  yearConsistentWithStored: boolean;
   rejectReason: string | null;
+};
+
+type QueryHit = {
+  query: string;
+  hits: number;
+  top3: Array<{ qid: string; label: string | null; eventLike: boolean }>;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,6 +400,12 @@ type EventRow = {
   reason: string | null;
   coords_unverifiable: boolean;
   candidates: CandidateDetail[];
+  query_hits: QueryHit[];
+  no_match_reason: "no_search_hits" | "no_event_like" | "below_score" | null;
+  tied_candidates: Array<{ qid: string; label: string | null; containment: number; yearConsistentWithStored: boolean }> | null;
+  year_consistent_count: number | null;
+  winner_year_consistent: boolean | null;
+  runner_up_year_consistent: boolean | null;
   error?: string;
 };
 
@@ -342,9 +413,11 @@ type EventRow = {
 // Per-event verification pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function verifyEvent(ev: DbEvent): Promise<EventRow> {
-  const q1 = cleanTitleForSearch(ev.title);
-  const queries = q1 === ev.title.trim() ? [q1] : [q1, ev.title.trim()];
+async function verifyEvent(ev: DbEvent, fulltext: boolean): Promise<EventRow> {
+  const { q1, q2, all: queries } = buildQueries(ev.title);
+  // Scoring texts: cleaned title q1 AND clause-trimmed q2 — better containment
+  // wins (RECALL-1027-001). Stored year/coords still never enter selection.
+  const scoreTitles = q2 != null && q2 !== q1 ? [q1, q2] : [q1];
   const row: EventRow = {
     event_id: ev.id,
     title: ev.title,
@@ -373,16 +446,53 @@ async function verifyEvent(ev: DbEvent): Promise<EventRow> {
     reason: null,
     coords_unverifiable: false,
     candidates: [],
+    query_hits: [],
+    no_match_reason: null,
+    tied_candidates: null,
+    year_consistent_count: null,
+    winner_year_consistent: null,
+    runner_up_year_consistent: null,
   };
 
+  // Union hits across all query variants; keep per-query hit lists for the
+  // no_match diagnostics report.
   const qidSet = new Set<string>();
-  for (const q of queries) for (const id of await searchEntities(q)) qidSet.add(id);
-  if (qidSet.size === 0) {
-    row.verification_status = "no_match";
-    return row;
+  const perQuery: Array<{ query: string; hits: SearchHit[] }> = [];
+  for (const q of queries) {
+    const hits = await searchEntities(q);
+    perQuery.push({ query: q, hits });
+    for (const h of hits) qidSet.add(h.id);
   }
 
-  const entities = await getEntities([...qidSet], "claims|labels|aliases|sitelinks");
+  const entities = qidSet.size
+    ? await getEntities([...qidSet], "claims|labels|aliases|sitelinks")
+    : {};
+
+  // --fulltext: one extra full-text query when no event-like candidate was
+  // found among the label-prefix hits.
+  if (fulltext && !Object.values(entities).some((e) => isEventLike(e))) {
+    const ftQids = await fullTextSearch(q1);
+    const fresh = ftQids.filter((q) => !(q in entities));
+    if (fresh.length) {
+      const ftEntities = await getEntities(fresh, "claims|labels|aliases|sitelinks");
+      for (const q of fresh) qidSet.add(q);
+      Object.assign(entities, ftEntities);
+      perQuery.push({ query: `[fulltext] ${q1}`, hits: fresh.map((id) => ({ id })) });
+    } else {
+      perQuery.push({ query: `[fulltext] ${q1}`, hits: [] });
+    }
+  }
+
+  // Per-query hit detail for the report (top-3 labels + eventLike flag).
+  row.query_hits = perQuery.map((pq) => ({
+    query: pq.query,
+    hits: pq.hits.length,
+    top3: pq.hits.slice(0, 3).map((h) => ({
+      qid: h.id,
+      label: h.label ?? entityLabel(entities[h.id] ?? {}) ?? null,
+      eventLike: entities[h.id] ? isEventLike(entities[h.id]) : false,
+    })),
+  }));
 
   // One-hop P276 coordinate lookup: only for entities lacking direct P625.
   const p276Ids = new Set<string>();
@@ -405,8 +515,9 @@ async function verifyEvent(ev: DbEvent): Promise<EventRow> {
     eventLike: isEventLike(e),
   }));
 
-  const selection = selectCandidate(candidates, q1);
+  const selection = selectCandidate(candidates, scoreTitles);
   const winnerEntity = selection.winner ? entities[selection.winner.qid] : undefined;
+  const runnerUpEntity = selection.runnerUp ? entities[selection.runnerUp.qid] : undefined;
   const dates = winnerEntity ? extractEventDates(winnerEntity) : null;
   const coords = winnerEntity ? extractCoords(winnerEntity, p276Entities) : null;
 
@@ -419,10 +530,22 @@ async function verifyEvent(ev: DbEvent): Promise<EventRow> {
     coords,
   });
 
-  // Per-candidate detail (Correction 3): scores are computed for display on
-  // every candidate — including non-event-like and rejected ones.
+  // DIAGNOSTIC ONLY (RECALL-1027-001 CHANGE 3): stored-year consistency is
+  // computed for reporting — selectCandidate/scoreCandidate never see it.
+  const yearConsistent = (e: WdEntity | undefined): boolean => {
+    if (!e) return false;
+    const d = extractEventDates(e);
+    if (!d) return false;
+    return (
+      ev.event_year >= d.yearStart - YEAR_TOLERANCE &&
+      ev.event_year <= d.yearEnd + YEAR_TOLERANCE
+    );
+  };
+
+  // Per-candidate detail: scores + diagnostics on every candidate — including
+  // non-event-like and rejected ones.
   const allDetails: CandidateDetail[] = Object.entries(entities).map(([qid, e]) => {
-    const s = scoreCandidate({ label: entityLabel(e), aliases: entityAliases(e) }, q1);
+    const s = scoreCandidate({ label: entityLabel(e), aliases: entityAliases(e) }, scoreTitles);
     let rejectReason: string | null = null;
     if (selection.winner?.qid !== qid) {
       if (!isEventLike(e)) rejectReason = "not_event_like";
@@ -438,6 +561,7 @@ async function verifyEvent(ev: DbEvent): Promise<EventRow> {
       eventLike: isEventLike(e),
       p31: entityP31(e),
       dateProps: entityTimeProps(e),
+      yearConsistentWithStored: yearConsistent(e),
       rejectReason,
     };
   });
@@ -462,6 +586,37 @@ async function verifyEvent(ev: DbEvent): Promise<EventRow> {
   row.reason = verdict.reason;
   row.coords_unverifiable = verdict.coordsUnverifiable;
   row.candidates = allDetails.slice(0, 5); // details jsonb: truncated to 5
+  row.winner_year_consistent = winnerEntity ? yearConsistent(winnerEntity) : null;
+  row.runner_up_year_consistent = runnerUpEntity ? yearConsistent(runnerUpEntity) : null;
+
+  // Ambiguous: the tie set = ranked event-like candidates within
+  // MIN_MATCH_MARGIN of the winner (winner + runner-up at minimum).
+  if (verdict.status === "ambiguous" && selection.winner) {
+    const w = selection.winner;
+    row.tied_candidates = selection.ranked
+      .filter((c) => w.containment - c.containment < MIN_MATCH_MARGIN)
+      .map((c) => ({
+        qid: c.qid,
+        label: c.label,
+        containment: c.containment,
+        yearConsistentWithStored: yearConsistent(entities[c.qid]),
+      }));
+    row.year_consistent_count = row.tied_candidates.filter(
+      (t) => t.yearConsistentWithStored
+    ).length;
+  }
+
+  // no_match diagnostics: which stage stopped the match.
+  if (verdict.status === "no_match") {
+    const totalHits = perQuery.reduce((n, pq) => n + pq.hits.length, 0);
+    row.no_match_reason =
+      totalHits === 0
+        ? "no_search_hits"
+        : !candidates.some((c) => c.eventLike)
+          ? "no_event_like"
+          : "below_score";
+  }
+
   return row;
 }
 
@@ -478,10 +633,10 @@ function percentile(sorted: number[], p: number): number {
 const STATUS_ORDER: VerificationStatus[] = ["verified", "review", "mismatch", "ambiguous", "no_match", "no_wd_date"];
 
 async function main() {
-  const { limit, seed, write, runId, out } = parseFlags();
+  const { limit, seed, write, runId, out, fulltext } = parseFlags();
   const startedAt = Date.now();
-  console.log("=== WIKIDATA VERIFY — EDQ-BUILD-WIKIDATA-VERIFY-1026-001-A ===");
-  console.log(`mode: ${write ? "WRITE (upserts to event_wikidata_verification)" : "DRY RUN — zero DB writes"}`);
+  console.log("=== WIKIDATA VERIFY — EDQ-FIX-WIKIDATA-RECALL-1027-001 ===");
+  console.log(`mode: ${write ? "WRITE (upserts to event_wikidata_verification)" : "DRY RUN — zero DB writes"}   fulltext: ${fulltext ? "ON" : "OFF"}`);
   console.log(`run_id: ${runId}   seed: ${seed}   limit: ${limit}`);
 
   const evRes = await dbPool.query<DbEvent>(
@@ -500,10 +655,17 @@ async function main() {
   }
 
   const rows: EventRow[] = [];
+  let abortedBy429 = false;
   for (let i = 0; i < picked.length; i++) {
+    // RECALL-1027-001: Wikimedia rate-limit guard — stop the run and report.
+    if (stats.retries429 > MAX_429_BUDGET) {
+      abortedBy429 = true;
+      console.log(`  STOPPING RUN: 429 count ${stats.retries429} exceeds ${MAX_429_BUDGET} — partial report follows`);
+      break;
+    }
     const ev = picked[i];
     try {
-      rows.push(await verifyEvent(ev));
+      rows.push(await verifyEvent(ev, fulltext));
     } catch (err) {
       stats.errors += 1;
       rows.push({
@@ -511,13 +673,16 @@ async function main() {
         stored_year: ev.event_year,
         stored_place: [ev.display_name, ev.country].filter(Boolean).join(", ") || null,
         stored_lat: ev.latitude, stored_lon: ev.longitude,
-        queries: [cleanTitleForSearch(ev.title)],
+        queries: buildQueries(ev.title).all,
         verification_status: "error",
         wikidata_qid: null, wd_label: null, wd_year_start: null, wd_year_end: null,
         wd_date_precision: null, wd_lat: null, wd_lon: null, wd_coord_source: null,
         year_delta: null, distance_km: null, match_score: null, winner_dice: null,
         winner_p31: [], runner_up_qid: null, runner_up_score: null,
         reason: null, coords_unverifiable: false, candidates: [],
+        query_hits: [], no_match_reason: null, tied_candidates: null,
+        year_consistent_count: null, winner_year_consistent: null,
+        runner_up_year_consistent: null,
         error: err instanceof Error ? err.message : String(err),
       });
     }
@@ -525,6 +690,7 @@ async function main() {
       console.log(`  ... ${i + 1}/${picked.length} events processed (requests so far: ${stats.requests}, 429s: ${stats.retries429})`);
     }
   }
+  if (abortedBy429) console.log(`  aborted: ${picked.length - rows.length} events unprocessed`);
 
   // Optional write path — upserts into event_wikidata_verification ONLY.
   // NOT run in this task.
@@ -551,7 +717,7 @@ async function main() {
           r.wd_year_start, r.wd_year_end, r.wd_date_precision, r.wd_lat, r.wd_lon,
           r.wd_coord_source, r.year_delta, r.distance_km, r.match_score,
           r.runner_up_qid, r.runner_up_score,
-          JSON.stringify({ queries: r.queries, reason: r.reason, coords_unverifiable: r.coords_unverifiable, winner_dice: r.winner_dice, winner_p31: r.winner_p31, candidates: r.candidates }),
+          JSON.stringify({ queries: r.queries, reason: r.reason, coords_unverifiable: r.coords_unverifiable, winner_dice: r.winner_dice, winner_p31: r.winner_p31, candidates: r.candidates, no_match_reason: r.no_match_reason, tied_candidates: r.tied_candidates, year_consistent_count: r.year_consistent_count, winner_year_consistent: r.winner_year_consistent, runner_up_year_consistent: r.runner_up_year_consistent, query_hits: r.query_hits }),
         ]
       );
       written += 1;
@@ -564,7 +730,7 @@ async function main() {
   // ── Report JSON (outside repo) + raw response cache (Correction 3) ──
   const outPath = resolve(out);
   const cachePath = outPath.replace(/\.json$/i, "") + ".rawcache.json";
-  writeFileSync(outPath, JSON.stringify({ meta: { runId, seed, limit, write, elapsedSec, stats, quotas }, rows }, null, 1));
+  writeFileSync(outPath, JSON.stringify({ meta: { runId, seed, limit, write, fulltext, abortedBy429, elapsedSec, stats, quotas }, rows }, null, 1));
   writeFileSync(cachePath, JSON.stringify(rawCache));
   console.log(`report: ${outPath}`);
   console.log(`raw cache: ${cachePath} (${rawCache.length} responses)`);
@@ -614,6 +780,44 @@ async function main() {
   for (const r of noMatch.slice(0, 5)) {
     console.log(`  ${r.title} | queries: ${r.queries.map((q) => JSON.stringify(q)).join(", ")}`);
   }
+
+  // RECALL-1027-001 CHANGE 4 — diagnostic report sections.
+  const nmrDist: Record<string, number> = {};
+  for (const r of noMatch) {
+    const k = r.no_match_reason ?? "unknown";
+    nmrDist[k] = (nmrDist[k] ?? 0) + 1;
+  }
+  console.log(`\n=== NO_MATCH REASON BREAKDOWN ===`);
+  for (const k of ["no_search_hits", "no_event_like", "below_score"]) {
+    console.log(`  ${k}: ${nmrDist[k] ?? 0}`);
+  }
+
+  console.log(`\n=== NO_MATCH DIAGNOSTIC SAMPLE (30, seeded) ===`);
+  const nmSample = shuffled(noMatch, mulberry32(seed)).slice(0, 30);
+  for (const r of nmSample) {
+    const best = r.candidates[0];
+    console.log(`  ${r.title} | reason=${r.no_match_reason ?? "-"} | best=${best ? `${best.qid} "${best.label}" cont=${best.containment.toFixed(2)}` : "-"}`);
+    for (const qh of r.query_hits) {
+      const t3 = qh.top3.map((t) => `${t.qid} "${t.label ?? "-"}" ev=${t.eventLike}`).join("; ");
+      console.log(`      q="${qh.query}" hits=${qh.hits} top3: ${t3 || "-"}`);
+    }
+  }
+
+  const nonNoMatch = rows.filter((r) => r.verification_status !== "no_match" && r.verification_status !== "error");
+  console.log(`\n=== ALL NON-NO_MATCH ROWS (${nonNoMatch.length}) ===`);
+  for (const r of nonNoMatch) {
+    console.log(
+      `  ${r.title} | ${r.stored_year} | winner=${r.wikidata_qid} "${r.wd_label}" cont=${r.match_score?.toFixed(2)} dice=${r.winner_dice?.toFixed(2)} yc=${r.winner_year_consistent} | runner=${r.runner_up_qid ?? "-"}@${r.runner_up_score?.toFixed(2) ?? "-"} yc=${r.runner_up_year_consistent} | p31=${r.winner_p31.join("+") || "-"} | ${r.verification_status} | ${r.reason ?? "-"}`
+    );
+  }
+
+  // Recall comparison on the SAME sample (seed 1026001, limit 100): previous
+  // run was matched 11/100, no_match 89, verified 5.
+  console.log(`\n=== RECALL COMPARISON (same sample, seed 1026001) ===`);
+  console.log(`  metric      | prev(1026-001) | this run (${fulltext ? "fulltext" : "default"})`);
+  console.log(`  matched     | ${"11/100"}       | ${matched}/${rows.length}`);
+  console.log(`  no_match    | ${"89"}           | ${dist["no_match"] ?? 0}`);
+  console.log(`  verified    | ${"5"}            | ${dist["verified"] ?? 0}`);
 
   console.log(`\n=== RUN STATS ===`);
   console.log(`  requests: ${stats.requests}   429s: ${stats.retries429}   errors: ${stats.errors}   elapsed: ${elapsedSec}s   seed: ${seed}`);
