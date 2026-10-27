@@ -1252,11 +1252,22 @@ async function ensureAiPlayer(pool: Awaited<ReturnType<typeof getDbPool>>): Prom
   if (existing.rows.length > 0) {
     return existing.rows[0].id;
   }
-  const inserted = await pool.query<{ id: string }>(
-    "INSERT INTO ai_players (name, provider, model_id) VALUES ($1, $2, $3) RETURNING id",
-    [AI_PLAYER_NAME, PROVIDER, MODEL_ID]
-  );
-  return inserted.rows[0].id;
+  try {
+    const inserted = await pool.query<{ id: string }>(
+      "INSERT INTO ai_players (name, provider, model_id, is_active, is_active_daily, is_active_practice) VALUES ($1, $2, $3, false, false, false) RETURNING id",
+      [AI_PLAYER_NAME, PROVIDER, MODEL_ID]
+    );
+    return inserted.rows[0].id;
+  } catch (err) {
+    // Lost a race with another creator: use the live row (one live player per model_id).
+    if ((err as { code?: string }).code !== "23505") throw err;
+    const live = await pool.query<{ id: string }>(
+      "SELECT id FROM ai_players WHERE model_id = $1 AND deleted_at IS NULL LIMIT 1",
+      [MODEL_ID]
+    );
+    if (live.rows.length === 0) throw err;
+    return live.rows[0].id;
+  }
 }
 
 async function resolveManifest(

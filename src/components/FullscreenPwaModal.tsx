@@ -95,6 +95,7 @@ export default function FullscreenPwaModal() {
     if (isFullscreen()) return
     setIosNonPwa(isIOsSafariNonPwa())
     setFsActive(isFullscreen())
+    setInstallReady(isInstallAvailable())
     setOpen(true)
   }, [])
 
@@ -149,8 +150,13 @@ export default function FullscreenPwaModal() {
   const handleInstall = async () => {
     // Installs are inherently one-time — mark seen; no remember logic here.
     writeChoice('seen')
+    const result = await promptInstall()
+    if (result === 'unavailable') {
+      // Leave the modal open so the existing install_unavailable text shows.
+      setInstallReady(false)
+      return
+    }
     setOpen(false)
-    await promptInstall()
   }
 
   if (!open) return null
@@ -181,7 +187,7 @@ export default function FullscreenPwaModal() {
           </button>
         )}
 
-        {installReady ? (
+        {isStandalonePwa() ? null : installReady ? (
           <button
             type="button"
             className={modalStyles.submitButton}

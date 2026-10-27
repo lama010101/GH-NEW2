@@ -1265,11 +1265,13 @@ export default async function OpenRouterAdminPage({
                             playerId={row.id}
                             mode="practice"
                             enabled={row.is_active_practice}
+                            modelActive={row.is_active}
                           />
                           <ModeToggle
                             playerId={row.id}
                             mode="daily"
                             enabled={row.is_active_daily}
+                            modelActive={row.is_active}
                           />
                         </div>
                       </td>
@@ -1334,6 +1336,9 @@ export default async function OpenRouterAdminPage({
                               required
                               className="ops-input"
                             />
+                            <p className="text-xs" style={{ color: "var(--ops-mute)" }}>
+                              Time is read as UTC. Changes are applied by the daily 00:00 UTC cron, on its first run after this time.
+                            </p>
                             <button type="submit" className="ops-btn">
                               Schedule change
                             </button>
