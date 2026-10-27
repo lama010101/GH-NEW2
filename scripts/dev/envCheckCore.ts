@@ -12,6 +12,10 @@ import {
   parseProjectRefFromDsn,
   parseProjectRefFromSupabaseUrl,
 } from "../../src/core/projectRef";
+import {
+  diagnoseDbConnectionString,
+  type DbConnectionStringDiagnosis,
+} from "../../src/core/dbConnectionString";
 
 export type EnvCheckContext = "build" | "test" | "live-db";
 
@@ -153,6 +157,7 @@ interface Resolved {
   verdict: Verdict;
   ref: string | "-";
   role?: string;
+  dsn?: DbConnectionStringDiagnosis;
 }
 
 function verdictForValue(
@@ -170,10 +175,11 @@ function verdictForValue(
     }
     case "dsn": {
       const ref = parseProjectRefFromDsn(value);
+      const dsn = diagnoseDbConnectionString(value);
       if (ref === null) {
-        return { verdict: "UNPARSEABLE", ref: "-" };
+        return { verdict: "UNPARSEABLE", ref: "-", dsn };
       }
-      return { verdict: ref === expectedRef ? "MATCH" : "MISMATCH", ref };
+      return { verdict: ref === expectedRef ? "MATCH" : "MISMATCH", ref, dsn };
     }
     case "jwtOrPublishable": {
       if (value.startsWith("sb_publishable_")) {
@@ -252,6 +258,22 @@ export function evaluateEnv(
       const notes: string[] = [];
       if (resolved.role !== undefined) {
         notes.push(`role=${resolved.role}`);
+      }
+      if (resolved.dsn !== undefined) {
+        // DB-HARDEN-CONNSTRING-1027-001 — diagnosis stays within the
+        // no-values contract: machine codes and the user-ref boolean only.
+        // Host/port/db name are value fragments and passwordLength is a
+        // length, so neither may be reported here.
+        notes.push(
+          resolved.dsn.ok
+            ? "dsn=ok"
+            : `dsn malformed: ${resolved.dsn.problems.join(",")}`,
+        );
+        if (resolved.dsn.facts.userHasProjectRef !== undefined) {
+          notes.push(
+            `user-ref=${resolved.dsn.facts.userHasProjectRef ? "yes" : "no"}`,
+          );
+        }
       }
       rows.push({
         logical: spec.logical,

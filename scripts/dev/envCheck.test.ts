@@ -6,6 +6,7 @@ import {
   formatRows,
   type Row,
 } from "./envCheckCore";
+import { diagnoseDbConnectionString } from "../../src/core/dbConnectionString";
 
 // INFRA-BUILD-ENVCHECK-038 — fabricated values only. Refs look like Supabase
 // project refs but are invented; passwords/JWTs are fake. The real
@@ -322,5 +323,206 @@ describe("formatRows — NO-LEAK guarantee", () => {
     expect(header).toContain("REF");
     expect(header).toContain("VERDICT");
     expect(out).toContain("MATCH");
+  });
+});
+
+// DB-HARDEN-CONNSTRING-1027-001 — structural diagnosis tests. DSN strings are
+// built at runtime by concatenation so no password-shaped literal ever
+// appears in this source file. Passwords are split into parts for the same
+// reason.
+function mkDsn(parts: {
+  scheme?: string;
+  user?: string;
+  pw?: string[];
+  host?: string;
+  port?: string;
+  db?: string;
+}): string {
+  return [
+    parts.scheme ?? "postgresql",
+    "://",
+    parts.user ?? "postgres",
+    ":",
+    (parts.pw ?? ["pw"]).join(""),
+    "@",
+    parts.host ?? "db.zz1.supabase.co",
+    ":",
+    parts.port ?? "5432",
+    "/",
+    parts.db ?? "postgres",
+  ].join("");
+}
+
+const PW_PARTS = ["Fake", "Pw", "9090x"] as const;
+const PW_VALUE = PW_PARTS.join("");
+const POOLER = "aws-0-us-fake-1.pooler.supabase.com";
+const USER_WITH_REF = `postgres.${EXPECTED}`;
+
+describe("diagnoseDbConnectionString", () => {
+  it("valid direct DSN → ok, facts carry no secret", () => {
+    const r = diagnoseDbConnectionString(mkDsn({ pw: [...PW_PARTS] }));
+    expect(r.ok).toBe(true);
+    expect(r.problems).toEqual([]);
+    expect(r.facts.scheme).toBe("postgresql");
+    expect(r.facts.host).toBe("db.zz1.supabase.co");
+    expect(r.facts.port).toBe("5432");
+    expect(r.facts.dbName).toBe("postgres");
+    expect(r.facts.passwordLength).toBe(PW_VALUE.length);
+    expect(r.facts.userHasProjectRef).toBe(false);
+  });
+
+  it("valid pooler DSN with project-ref username → ok", () => {
+    const r = diagnoseDbConnectionString(
+      mkDsn({ user: USER_WITH_REF, pw: [...PW_PARTS], host: POOLER, port: "6543" }),
+    );
+    expect(r.ok).toBe(true);
+    expect(r.facts.userHasProjectRef).toBe(true);
+  });
+
+  it("EMPTY: undefined or blank", () => {
+    expect(diagnoseDbConnectionString(undefined).problems).toEqual(["EMPTY"]);
+    expect(diagnoseDbConnectionString("").problems).toEqual(["EMPTY"]);
+    expect(diagnoseDbConnectionString("   ").problems).toEqual(["EMPTY"]);
+  });
+
+  it("LEADING_OR_TRAILING_WHITESPACE on an otherwise-valid DSN", () => {
+    const good = mkDsn({ pw: [...PW_PARTS] });
+    for (const padded of [` ${good}`, `${good} `, `\n${good}\t`]) {
+      const r = diagnoseDbConnectionString(padded);
+      expect(r.ok).toBe(false);
+      expect(r.problems).toContain("LEADING_OR_TRAILING_WHITESPACE");
+    }
+  });
+
+  it("EMBEDDED_WHITESPACE inside the DSN", () => {
+    const r = diagnoseDbConnectionString(
+      mkDsn({ pw: [...PW_PARTS] }).replace("://", ":// "),
+    );
+    expect(r.problems).toContain("EMBEDDED_WHITESPACE");
+    expect(r.ok).toBe(false);
+  });
+
+  it("WRAPPING_QUOTES around an otherwise-valid DSN", () => {
+    const good = mkDsn({ pw: [...PW_PARTS] });
+    for (const q of [`"${good}"`, `'${good}'`]) {
+      const r = diagnoseDbConnectionString(q);
+      expect(r.problems).toContain("WRAPPING_QUOTES");
+      expect(r.ok).toBe(false);
+    }
+  });
+
+  it("PLACEHOLDER_BRACKETS around the password", () => {
+    const r = diagnoseDbConnectionString(
+      mkDsn({ pw: ["[", "YOUR", "-PASSWORD", "]"] }),
+    );
+    expect(r.problems).toContain("PLACEHOLDER_BRACKETS");
+    expect(r.ok).toBe(false);
+  });
+
+  it("BAD_SCHEME for non-postgres schemes", () => {
+    const r = diagnoseDbConnectionString(mkDsn({ scheme: "mysql", pw: [...PW_PARTS] }));
+    expect(r.problems).toContain("BAD_SCHEME");
+    expect(r.facts.scheme).toBe("mysql");
+    expect(r.ok).toBe(false);
+  });
+
+  it("UNENCODED_AT_IN_PASSWORD when the authority holds more than one @", () => {
+    const r = diagnoseDbConnectionString(mkDsn({ pw: [...PW_PARTS, "@", "x"] }));
+    expect(r.problems).toContain("UNENCODED_AT_IN_PASSWORD");
+    expect(r.ok).toBe(false);
+  });
+
+  it("unencoded # in password → HOST_UNEXPECTED", () => {
+    const r = diagnoseDbConnectionString(mkDsn({ pw: [...PW_PARTS, "#", "x"] }));
+    expect(r.problems).toContain("HOST_UNEXPECTED");
+    expect(r.ok).toBe(false);
+  });
+
+  it("PORT_MISSING_OR_NONNUMERIC for a non-numeric or absent port", () => {
+    const bad = diagnoseDbConnectionString(
+      mkDsn({ pw: [...PW_PARTS], port: "abc" }),
+    );
+    expect(bad.problems).toContain("PORT_MISSING_OR_NONNUMERIC");
+    const missing = diagnoseDbConnectionString(
+      `postgresql://postgres:${PW_PARTS.join("")}@db.zz1.supabase.co/postgres`,
+    );
+    expect(missing.problems).toContain("PORT_MISSING_OR_NONNUMERIC");
+  });
+
+  it("DB_NAME_UNEXPECTED when the path is not /postgres", () => {
+    const r = diagnoseDbConnectionString(
+      mkDsn({ pw: [...PW_PARTS], db: "postgre" }),
+    );
+    expect(r.problems).toContain("DB_NAME_UNEXPECTED");
+    expect(r.facts.dbName).toBe("postgre");
+    expect(r.ok).toBe(false);
+  });
+
+  it("USER_MISSING_PROJECT_REF on pooler host without .ref in username", () => {
+    const r = diagnoseDbConnectionString(
+      mkDsn({ user: "postgres", pw: [...PW_PARTS], host: POOLER, port: "6543" }),
+    );
+    expect(r.problems).toContain("USER_MISSING_PROJECT_REF");
+    expect(r.facts.userHasProjectRef).toBe(false);
+    expect(r.ok).toBe(false);
+  });
+
+  it("NO-LEAK: no substring of the password appears in the result", () => {
+    const inputs = [
+      mkDsn({ pw: [...PW_PARTS] }),
+      mkDsn({ pw: [...PW_PARTS], host: "not-supabase.example.invalid" }),
+      mkDsn({ scheme: "mysql", pw: [...PW_PARTS] }),
+      mkDsn({ user: "postgres", pw: [...PW_PARTS], host: POOLER, port: "6543" }),
+      ` ${mkDsn({ pw: [...PW_PARTS] })} `,
+    ];
+    for (const input of inputs) {
+      const r = diagnoseDbConnectionString(input);
+      const serialized = JSON.stringify(r) + r.problems.join(",");
+      expect(serialized).not.toContain(PW_VALUE);
+      for (let i = 0; i + 8 <= PW_VALUE.length; i++) {
+        expect(serialized).not.toContain(PW_VALUE.slice(i, i + 8));
+      }
+    }
+  });
+});
+
+describe("evaluateEnv — DSN diagnosis in notes (DB-HARDEN-CONNSTRING-1027-001)", () => {
+  it("malformed DSN reports problem codes, never the value", () => {
+    const malformed = mkDsn({ scheme: "mysql", pw: [...PW_PARTS] });
+    const rows = rowsFor({ GH_SUPABASE_DB_CONNECTION: malformed }, "live-db");
+    const dbRow = row(rows, "SUPABASE_DB", "GH_SUPABASE_DB_CONNECTION");
+    expect(dbRow?.note).toContain("dsn malformed: ");
+    expect(dbRow?.note).toContain("BAD_SCHEME");
+    expect(dbRow?.note).not.toContain(malformed);
+    expect(dbRow?.note).not.toContain(PW_VALUE);
+  });
+
+  it("structurally-ok foreign DSN still reports dsn=ok alongside MISMATCH", () => {
+    const rows = rowsFor(
+      {
+        GH_SUPABASE_DB_CONNECTION: mkDsn({
+          user: `postgres.${OTHER}`,
+          pw: [...PW_PARTS],
+          host: POOLER,
+          port: "6543",
+        }),
+      },
+      "live-db",
+    );
+    const dbRow = row(rows, "SUPABASE_DB", "GH_SUPABASE_DB_CONNECTION");
+    expect(dbRow?.verdict).toBe("MISMATCH");
+    expect(dbRow?.note).toContain("dsn=ok");
+    expect(dbRow?.note).toContain("user-ref=yes");
+  });
+
+  it("DSN notes never contain an 8-char window of the password", () => {
+    const rows = rowsFor(
+      { GH_SUPABASE_DB_CONNECTION: mkDsn({ pw: [...PW_PARTS] }) },
+      "live-db",
+    );
+    const out = formatRows(rows) + JSON.stringify(rows);
+    for (let i = 0; i + 8 <= PW_VALUE.length; i++) {
+      expect(out).not.toContain(PW_VALUE.slice(i, i + 8));
+    }
   });
 });
