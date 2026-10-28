@@ -309,7 +309,7 @@ function LeaderboardPageInner() {
 
   const renderMetric = (entry: LeaderboardEntry, metric: MetricKind): ReactNode => {
     if (metric === 'accuracy') return <AccuracyValue acc={entry.avg_accuracy} />;
-    if (metric === 'xp') return t('xp_amount', { n: entry.total_xp ?? 0 });
+    if (metric === 'xp') return <span className={styles.xpValue}>{t('xp_amount', { n: entry.total_xp ?? 0 })}</span>;
     return (entry.highest_stage ?? 0) > 0
       ? t('journey_stage', { n: entry.highest_stage })
       : t('journey_no_stage');

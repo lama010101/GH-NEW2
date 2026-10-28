@@ -440,6 +440,12 @@
   color: var(--gh-gold);
 }
 
+/* XP value+label stays light grey in every slot — overrides the gold
+   primary-metric color when sorting by XP */
+.xpValue {
+  color: var(--gh-text-secondary);
+}
+
 .listAcc {
   font-size: var(--font-xs);
   font-weight: 700;
