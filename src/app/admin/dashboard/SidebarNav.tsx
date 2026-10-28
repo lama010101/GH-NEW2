@@ -113,6 +113,12 @@ const GROUPS: NavGroup[] = [
         match: "/admin/dashboard/journey",
         icon: <Icon d="M3 5h18v16H3zM8 3v4M16 3v4M3 10h18" />,
       },
+      {
+        label: "Generator",
+        href: "/admin/dashboard/generator",
+        match: "/admin/dashboard/generator",
+        icon: <Icon d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" />,
+      },
     ],
   },
   {
