@@ -417,6 +417,7 @@
 .listAcc {
   font-size: var(--font-xs);
   font-weight: 700;
+  color: var(--gh-text-secondary);
 }
 
 .listEmpty {
@@ -579,6 +580,7 @@
 .podiumAcc {
   font-size: clamp(0.58rem, 2.4vw, var(--font-xs));
   font-weight: 700;
+  color: var(--gh-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -593,18 +595,19 @@
   font-size: clamp(0.68rem, 3vw, var(--font-lg));
 }
 
-/* Floating back-to-top — appears while scrolling up */
+/* Floating back-to-top — appears while scrolling up, horizontally centered */
 .scrollTopBtn {
   position: fixed;
   bottom: calc(80px + env(safe-area-inset-bottom));
-  right: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 45;
   width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--gh-orange), var(--gh-orange-light));
+  background: var(--gh-orange);
   border: none;
   border-radius: 50%;
   color: var(--gh-text-inverse);
@@ -616,6 +619,6 @@
 }
 
 .scrollTopBtn:hover {
-  transform: translateY(-2px);
+  transform: translate(-50%, -2px);
   box-shadow: 0 6px 24px rgba(var(--gh-orange-rgb), 0.5);
 }
