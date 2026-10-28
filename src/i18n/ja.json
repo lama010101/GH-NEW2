@@ -684,7 +684,8 @@
     "rank_suffix_many": "",
     "rank_suffix_other": "",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "ランク入りのプレイヤーは以上です"
+    "no_more_players": "ランク入りのプレイヤーは以上です",
+    "back_to_top": "トップへ戻る"
   },
   "profile": {
     "accuracy_breakdown": "精度の内訳",

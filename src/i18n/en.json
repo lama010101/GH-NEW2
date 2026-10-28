@@ -684,7 +684,8 @@
     "rank_suffix_many": "th",
     "rank_suffix_other": "th",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "No more ranked players.",
+    "back_to_top": "Back to top"
   },
   "profile": {
     "accuracy_breakdown": "Accuracy breakdown",
