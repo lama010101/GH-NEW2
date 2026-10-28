@@ -2,6 +2,10 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
+# 0. Secret scan — refuses commits containing secret-looking lines or
+#    forbidden new-file names (SEC-BUILD-SECRETGUARD-042).
+npx tsx scripts/dev/secret-scan.ts --staged
+
 # 1. Typecheck — catches type errors before they reach CI
 npx tsc --noEmit
 
