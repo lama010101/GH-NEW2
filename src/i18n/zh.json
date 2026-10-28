@@ -684,7 +684,8 @@
     "rank_suffix_many": "",
     "rank_suffix_other": "",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "没有更多排名玩家"
+    "no_more_players": "没有更多排名玩家",
+    "back_to_top": "回到顶部"
   },
   "profile": {
     "accuracy_breakdown": "准确度明细",

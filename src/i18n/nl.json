@@ -684,7 +684,8 @@
     "rank_suffix_many": "e",
     "rank_suffix_other": "e",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "Geen spelers meer."
+    "no_more_players": "Geen spelers meer.",
+    "back_to_top": "Terug naar boven"
   },
   "profile": {
     "accuracy_breakdown": "Nauwkeurigheid-overzicht",

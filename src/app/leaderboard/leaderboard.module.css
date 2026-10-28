@@ -11,13 +11,19 @@
   flex-direction: column;
 }
 
-/* Header */
+/* Header — sticky so back + title stay visible while the list scrolls.
+   TopBar is 56px tall (see TopBar.module.css) plus iOS safe-area inset. */
 .header {
+  position: sticky;
+  top: calc(56px + env(safe-area-inset-top));
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 22px;
-  padding-top: 8px;
+  padding: 8px 0 12px;
+  background: var(--gh-bg-dark);
+  border-bottom: 1px solid rgba(var(--gh-orange-rgb), 0.08);
 }
 
 .backBtn {
@@ -133,25 +139,52 @@
   color: var(--gh-orange);
 }
 
-/* Filter chips */
+/* Filter row: three distinct groups on one line —
+   Humans/AI identity pills + Friends square toggle + %/XP segmented sort */
 .filterRow {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterRow::-webkit-scrollbar {
+  display: none;
+}
+
+/* Group 1 — Humans / AI (multi-select pair in one pill container) */
+.identityGroup {
+  display: flex;
+  gap: 0;
+  flex: 0 0 auto;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 20px;
+  padding: 2px;
+}
+
+.identityGroup .filterChip {
+  border-color: transparent;
+  background: transparent;
 }
 
 .filterChip,
 .friendsToggle {
   font-size: var(--font-xs);
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 6px 12px;
   background: var(--gh-glass-bg);
   border: 1px solid var(--gh-border-default);
   border-radius: 20px;
   color: var(--gh-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .filterChip:hover,
@@ -160,15 +193,60 @@
   color: var(--gh-text-primary);
 }
 
-.filterChipActive,
-.friendsToggleActive {
-  background: rgba(var(--gh-orange-rgb), 0.15);
-  border-color: rgba(var(--gh-orange-rgb), 0.3);
+.filterChipActive {
+  background: rgba(var(--gh-orange-rgb), 0.15) !important;
+  border-color: rgba(var(--gh-orange-rgb), 0.3) !important;
   color: var(--gh-orange);
 }
 
+/* Group 2 — Friends on/off (distinct squared shape + teal accent) */
 .friendsToggle {
-  margin-left: auto;
+  border-radius: 10px;
+  flex: 0 0 auto;
+}
+
+.friendsToggleActive {
+  background: rgba(var(--gh-teal-rgb), 0.16);
+  border-color: rgba(var(--gh-teal-rgb), 0.4);
+  color: var(--gh-teal);
+}
+
+/* Group 3 — accuracy/XP metric sort (distinct blue segmented control) */
+.sortToggle {
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.sortToggle[aria-hidden="true"] {
+  visibility: hidden;
+}
+
+.sortSegment {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  min-width: 38px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--gh-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.sortSegment:hover {
+  color: var(--gh-text-primary);
+}
+
+.sortSegmentActive {
+  background: rgba(var(--gh-blue-rgb), 0.22);
+  border-color: rgba(var(--gh-blue-rgb), 0.45);
+  color: var(--gh-blue);
 }
 
 .avatarAi {
@@ -339,6 +417,7 @@
 .listAcc {
   font-size: var(--font-xs);
   font-weight: 700;
+  color: var(--gh-text-secondary);
 }
 
 .listEmpty {
@@ -501,6 +580,7 @@
 .podiumAcc {
   font-size: clamp(0.58rem, 2.4vw, var(--font-xs));
   font-weight: 700;
+  color: var(--gh-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -513,4 +593,32 @@
 
 .podiumGold .podiumScore {
   font-size: clamp(0.68rem, 3vw, var(--font-lg));
+}
+
+/* Floating back-to-top — appears while scrolling up, horizontally centered */
+.scrollTopBtn {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gh-orange);
+  border: none;
+  border-radius: 50%;
+  color: var(--gh-text-inverse);
+  font-size: var(--font-lg);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(var(--gh-orange-rgb), 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scrollTopBtn:hover {
+  transform: translate(-50%, -2px);
+  box-shadow: 0 6px 24px rgba(var(--gh-orange-rgb), 0.5);
 }

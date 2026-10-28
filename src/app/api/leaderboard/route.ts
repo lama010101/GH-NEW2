@@ -176,8 +176,8 @@ async function loadOverallRanked(sort: string): Promise<RawRankedRow[]> {
         RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM combined
     )
-    SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, best_accuracy, highest_stage, stages_completed
+    SELECT player_id, rank, avg_accuracy::float8 AS avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
+           completed_at, best_accuracy::float8 AS best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`
   );
@@ -229,8 +229,8 @@ async function loadDailyTodayRanked(date: string, sort: string): Promise<RawRank
         RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM combined
     )
-    SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, best_accuracy, highest_stage, stages_completed
+    SELECT player_id, rank, avg_accuracy::float8 AS avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
+           completed_at, best_accuracy::float8 AS best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`,
     [date]
@@ -280,8 +280,8 @@ async function loadDailyAlltimeRanked(sort: string): Promise<RawRankedRow[]> {
         RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM combined
     )
-    SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, best_accuracy, highest_stage, stages_completed
+    SELECT player_id, rank, avg_accuracy::float8 AS avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
+           completed_at, best_accuracy::float8 AS best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`
   );
@@ -336,8 +336,8 @@ async function loadJourneyRanked(sort: string): Promise<RawRankedRow[]> {
         RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM human_journey
     )
-    SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, best_accuracy, highest_stage, stages_completed
+    SELECT player_id, rank, avg_accuracy::float8 AS avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
+           completed_at, best_accuracy::float8 AS best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`
   );
