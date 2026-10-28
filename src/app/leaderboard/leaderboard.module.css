@@ -11,6 +11,31 @@
   flex-direction: column;
 }
 
+/* Responsive — use the wider canvas on tablet/desktop. 720px matches the
+   journey page content cap (src/app/journey/page.module.css). */
+@media (min-width: 640px) {
+  .container {
+    max-width: 720px;
+  }
+
+  /* Podium + list text: wide screens have room — wrap instead of
+     ellipsizing so no text is ever cut off. Podium items are 78–100% of
+     the 300px podium height, so wrapped lines stay inside the card. */
+  .podiumName,
+  .podiumScore,
+  .podiumAcc {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .listName {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
 /* Header — sticky so back + title stay visible while the list scrolls.
    TopBar is 56px tall (see TopBar.module.css) plus iOS safe-area inset. */
 .header {
@@ -406,6 +431,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .listScore {
