@@ -394,3 +394,78 @@ describe("self scan", () => {
     }
   });
 });
+
+describe("scanner tuning (SEC-HARDEN-BUNDLE-1029-002)", () => {
+  it("regression: still flags a service_role JWT, sb_secret, DSN, 64-hex assignment and PEM", () => {
+    expect(rulesOf("jwt=" + JWT_SVC)).toContain("JWT_SERVICE_ROLE");
+    expect(rulesOf("k " + SB_TOKEN)).toContain("SB_SECRET");
+    expect(rulesOf("export DB_URL=" + DSN)).toContain("DSN_WITH_PASSWORD");
+    expect(rulesOf("PARTYKIT_" + "SECRET" + "=" + HEX64_VALUE)).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+    expect(rulesOf(PEM_HEADER)).toContain("PRIVATE_KEY_BLOCK");
+  });
+
+  it("exempts a REPLACE_ME-style placeholder via the new 'replace' word", () => {
+    expect(
+      rulesOf(GENERIC_NAME + "=" + "REPLACE_" + "ME_SOMETHING_LONG"),
+    ).toEqual([]);
+    expect(isPlaceholderValue("replace" + "_with_your_value_123")).toBe(true);
+  });
+
+  it("exempts pure variable references ($VAR / ${VAR} / %VAR%) in uppercase env-var form", () => {
+    // Long enough to reach the >=20-char threshold, so only the pure-ref
+    // exemption — not length — can clear them.
+    const bare = "$" + "SUPABASE_SECRET_KEY_PROD";
+    const braced = "$" + "{" + "SUPABASE_SECRET_KEY_PROD" + "}";
+    const pct = "%" + "SUPABASE_SECRET_KEY_PROD" + "%";
+    for (const v of [bare, braced, pct]) {
+      expect(rulesOf(GENERIC_NAME + "=" + v), v.length).toEqual([]);
+      expect(rulesOf(GENERIC_NAME + '="' + v + '"'), v.length).toEqual([]);
+    }
+    // The JSON-escaped form inside package.json scripts: the backslash is
+    // the escape of the closing quote, not part of the value.
+    expect(
+      rulesOf("--var \\" + GENERIC_NAME + ":" + bare + "\\" + '" --'),
+    ).toEqual([]);
+  });
+
+  it("still flags a $-prefixed lowercase/digit value (a value, not a reference)", () => {
+    const lowDollar = "$" + "abc123realsecretvalue99";
+    expect(rulesOf(GENERIC_NAME + "=" + lowDollar)).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+    // A value that merely STARTS with $ but contains other characters.
+    const prefixed = "$" + "TOKEN-abc123-realsecretvalue99-x";
+    expect(rulesOf(GENERIC_NAME + "=" + prefixed)).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+  });
+
+  it("detects GITHUB_TOKEN forms", () => {
+    const ghp = "gh" + "p_" + "A".repeat(36);
+    const gho = "gh" + "o_" + "B".repeat(36);
+    const pat = "github" + "_pat_" + "C".repeat(22);
+    expect(rulesOf("k " + ghp)).toContain("GITHUB_TOKEN");
+    expect(rulesOf("k " + gho)).toContain("GITHUB_TOKEN");
+    expect(rulesOf("k " + pat)).toContain("GITHUB_TOKEN");
+    // Too short — not a token shape.
+    expect(rulesOf("k " + "gh" + "p_" + "A".repeat(35))).not.toContain(
+      "GITHUB_TOKEN",
+    );
+  });
+
+  it("allowlist stays valid when lines are inserted above (content-keyed)", () => {
+    const allowlistedLine = "export DB=" + DSN;
+    const entry = {
+      rule: "DSN_WITH_PASSWORD",
+      path: "x.sh",
+      lineSha256: sha256Hex(allowlistedLine.trim()),
+      reason: "unit test fixture",
+    };
+    const moved = scanText("x.sh", "# one\n# two\n# three\n" + allowlistedLine);
+    expect(moved.length).toBeGreaterThan(0);
+    expect(moved[0].line).toBe(4);
+    expect(applyAllowlist(moved, [entry])).toEqual([]);
+  });
+});
