@@ -90,8 +90,11 @@ function LeaderboardPageInner() {
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [showNavModal, setShowNavModal] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const locale = useLocale();
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastScrollY = useRef(0);
+  const didAutoCenter = useRef(false);
 
   const initials = useMemo(() => {
     if (!displayName) return 'PL';
@@ -186,16 +189,30 @@ function LeaderboardPageInner() {
     fetchData();
   }, [fetchData]);
 
-  // Centre the signed-in user's own row (podium card or list row) after every
-  // dataset change. Runs only when the user actually has a rendered row.
+  // Centre the signed-in user's own row (podium card or list row) once on the
+  // first loaded dataset — never again on filter/sort/tab clicks.
   useEffect(() => {
-    if (!playerId || loading || error || !currentData || currentData.length === 0) return;
+    if (didAutoCenter.current || !playerId || loading || error || !currentData || currentData.length === 0) return;
+    didAutoCenter.current = true;
     const raf = requestAnimationFrame(() => {
       const row = rowRefs.current.get(playerId);
       if (row) row.scrollIntoView({ block: 'center', behavior: 'auto' });
     });
     return () => cancelAnimationFrame(raf);
   }, [playerId, currentData, loading, error]);
+
+  // Show the back-to-top button only while the user is scrolling up
+  // (and has scrolled far enough down for it to be useful).
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowScrollTop(y < lastScrollY.current && y > 240);
+      lastScrollY.current = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleRetry = () => {
     fetchData();
@@ -292,7 +309,7 @@ function LeaderboardPageInner() {
 
   const renderMetric = (entry: LeaderboardEntry, metric: MetricKind): ReactNode => {
     if (metric === 'accuracy') return <AccuracyValue acc={entry.avg_accuracy} />;
-    if (metric === 'xp') return t('xp_amount', { n: entry.total_xp ?? 0 });
+    if (metric === 'xp') return <span className={styles.xpValue}>{t('xp_amount', { n: entry.total_xp ?? 0 })}</span>;
     return (entry.highest_stage ?? 0) > 0
       ? t('journey_stage', { n: entry.highest_stage })
       : t('journey_no_stage');
@@ -358,24 +375,27 @@ function LeaderboardPageInner() {
         </div>
       )}
 
-      {/* Filter chips */}
+      {/* Filter controls on one line: identity group (Humans/AI multi-select),
+          friends toggle, and metric sort — three visually distinct groups */}
       <div className={styles.filterRow}>
-        <button
-          type="button"
-          onClick={toggleHumans}
-          className={`${styles.filterChip} ${filter.humans ? styles.filterChipActive : ''}`}
-          aria-pressed={filter.humans}
-        >
-          {t('filter_humans')}
-        </button>
-        <button
-          type="button"
-          onClick={toggleAi}
-          className={`${styles.filterChip} ${filter.ai ? styles.filterChipActive : ''}`}
-          aria-pressed={filter.ai}
-        >
-          {t('filter_ai')}
-        </button>
+        <div className={styles.identityGroup}>
+          <button
+            type="button"
+            onClick={toggleHumans}
+            className={`${styles.filterChip} ${filter.humans ? styles.filterChipActive : ''}`}
+            aria-pressed={filter.humans}
+          >
+            {t('filter_humans')}
+          </button>
+          <button
+            type="button"
+            onClick={toggleAi}
+            className={`${styles.filterChip} ${filter.ai ? styles.filterChipActive : ''}`}
+            aria-pressed={filter.ai}
+          >
+            {t('filter_ai')}
+          </button>
+        </div>
         <button
           type="button"
           onClick={toggleFriends}
@@ -384,20 +404,25 @@ function LeaderboardPageInner() {
         >
           {t('filter_friends')}
         </button>
-      </div>
-
-      {/* Sort control */}
-      <div className={styles.subTabRow}>
-        {TAB_SORT_OPTIONS[activeTab].map((opt) => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => setActiveSort(opt)}
-            className={`${styles.subTab} ${activeSort === opt ? styles.subTabActive : ''}`}
-          >
-            {t(`sort_${opt}`)}
-          </button>
-        ))}
+        <div
+          className={styles.sortToggle}
+          role="group"
+          aria-hidden={TAB_SORT_OPTIONS[activeTab].length === 1}
+        >
+          {TAB_SORT_OPTIONS[activeTab].map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setActiveSort(opt)}
+              className={`${styles.sortSegment} ${activeSort === opt ? styles.sortSegmentActive : ''}`}
+              aria-pressed={activeSort === opt}
+              aria-label={t(`sort_${opt}`)}
+              title={t(`sort_${opt}`)}
+            >
+              {opt === 'accuracy' ? '%' : opt === 'xp' ? 'XP' : t('sort_stage')}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Summary */}
@@ -412,9 +437,11 @@ function LeaderboardPageInner() {
         </div>
       )}
 
-      {/* Content */}
-      <div className={styles.content}>
-        {loading && (
+      {/* Content — keep the rendered list mounted while refetching so the
+          document height (and scroll position) doesn't collapse on every
+          filter/sort/tab click. Spinner shows only when there's no data. */}
+      <div className={styles.content} aria-busy={loading}>
+        {loading && !currentData?.length && (
           <div className={styles.spinnerContainer}>
             <div className={styles.spinner}></div>
           </div>
@@ -435,7 +462,7 @@ function LeaderboardPageInner() {
           </div>
         )}
 
-        {!loading && !error && currentData && currentData.length > 0 && (
+        {currentData && currentData.length > 0 && (
           <>
             {podiumSlots.length > 0 && (
               <div className={styles.card}>
@@ -507,6 +534,18 @@ function LeaderboardPageInner() {
           </>
         )}
       </div>
+
+      {showScrollTop && (
+        <button
+          type="button"
+          className={styles.scrollTopBtn}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={t('back_to_top')}
+          title={t('back_to_top')}
+        >
+          ↑
+        </button>
+      )}
 
       <NavModal
         isOpen={showNavModal}

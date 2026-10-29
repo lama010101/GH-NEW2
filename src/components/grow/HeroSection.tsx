@@ -32,7 +32,7 @@ export default function HeroSection() {
 
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6">
         <h1 className="text-4xl font-bold text-[var(--gh-text-primary)] md:text-6xl">
-          Guess-History
+          Back to the Past
         </h1>
         <p className="text-lg text-[var(--gh-text-secondary)] md:text-xl">
           {t('tagline')}

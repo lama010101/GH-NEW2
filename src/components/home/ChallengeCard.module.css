@@ -14,7 +14,7 @@
 }
 
 .head { display: flex; align-items: center; gap: 12px; }
-.icon { width: 64px; height: 64px; object-fit: contain; display: block; box-sizing: border-box; padding: 6px; border-radius: 16px; background: rgba(255,255,255,0.15); }
+.icon { width: 64px; height: 64px; object-fit: contain; display: block; box-sizing: border-box; padding: 2px; border-radius: 16px; background: rgba(255,255,255,0.15); }
 .headTxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .title { margin: 0; font-size: var(--font-xl); font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--gh-text-primary, #fff); }
 .sub { font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }
@@ -86,4 +86,14 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Desktop: Journey (the row's other card) sets the row height; Challenge
+   never stretches the row. `contain: size` removes its content from track
+   sizing, the tabs area then fills the remaining height and scrolls as one
+   region (the per-section row caps are lifted so there is a single scrollbar). */
+@media (min-width: 1024px) {
+  .challenge { contain: size; min-height: 320px; }
+  .tabs { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .tabBody { max-height: none !important; overflow-y: visible !important; }
 }

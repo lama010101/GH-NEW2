@@ -90,11 +90,16 @@ export function PracticeCard({ playerId, onCtaClick, ctaLoading }: PracticeCardP
   return (
     <section className={styles.more}>
       <div className={styles.tile}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/practice_large.webp" alt="" width={64} height={64} decoding="async" loading="lazy" />
+        <span className={styles.body}>
+        <span className={styles.head}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/practice_large.webp" alt="" width={64} height={64} decoding="async" loading="lazy" />
+          <span className={styles.headTxt}>
+            <span className={styles.name}>{t('home.practice_name')}</span>
+            <span className={styles.desc}>{t('home.practice_tagline')}</span>
+          </span>
+        </span>
         <span className={styles.txt}>
-          <span className={styles.name}>{t('home.practice_name')}</span>
-          <span className={styles.desc}>{t('home.practice_tagline')}</span>
           {playing && (
             <span className={styles.rounds}>
               {Array.from({ length: totalRounds }, (_, i) => (
@@ -103,12 +108,13 @@ export function PracticeCard({ playerId, onCtaClick, ctaLoading }: PracticeCardP
               <span className={styles.roundTxt}>{t('home.round_of', { current: Math.min(roundIndex + 1, totalRounds), total: totalRounds })}</span>
             </span>
           )}
-          {/* Desktop only — timer / eras / regions of the saved settings */}
+          {/* Timer / eras / regions of the saved settings (all viewports) */}
           <span className={styles.settingsRow}>
             <span className={styles.chip}>⏱ {timerLabel}</span>
             <span className={styles.chip}>{t('home.practice_eras_chip', { selected: erasSelected, total: TOTAL_ERAS })}</span>
             <span className={styles.chip}>{t('home.practice_regions_chip', { selected: regionsSelected, total: TOTAL_REGIONS })}</span>
           </span>
+        </span>
         </span>
         <button
           type="button"

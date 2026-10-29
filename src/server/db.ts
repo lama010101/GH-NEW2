@@ -2,6 +2,7 @@ import { Pool, type PoolConfig } from "pg";
 import { randomUUID } from "crypto";
 import { evaluateRound } from "@/core/rules";
 import { EventRecord, LatLng } from "@/core/types";
+import { diagnoseDbConnectionString } from "@/core/dbConnectionString";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -35,10 +36,18 @@ function enforceDbConnection(): Pool {
     throw new Error("[HARNESS][FATAL] SUPABASE_DB_CONNECTION is required. Real DB execution proof requires Supabase PostgreSQL.");
   }
 
-  // Validate Supabase connection string format
-  if (!connectionString.includes("supabase") && !connectionString.includes("postgres")) {
-    console.error("[FATAL][DB] Connection must be Supabase PostgreSQL");
-    throw new Error("[HARNESS][FATAL] Connection must be Supabase PostgreSQL");
+  // Structural validation — secret-free machine codes only, never any
+  // fragment of the value (DB-HARDEN-CONNSTRING-1027-001/-002)
+  // Fatal only when pg provably cannot parse; anything else warns and the
+  // original, unmodified string is still used for the pool.
+  const diagnosis = diagnoseDbConnectionString(connectionString);
+  if (!diagnosis.ok) {
+    const malformedMessage = `[FATAL][DB] SUPABASE_DB_CONNECTION is malformed: ${diagnosis.fatalProblems.join(",")}`;
+    console.error(malformedMessage);
+    throw new Error(malformedMessage);
+  }
+  if (diagnosis.warnings.length > 0) {
+    console.warn(`[WARN][DB] SUPABASE_DB_CONNECTION suspicious: ${diagnosis.warnings.join(",")}`);
   }
 
   const pool = new Pool({

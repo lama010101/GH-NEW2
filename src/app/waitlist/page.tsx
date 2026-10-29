@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 import { WaitlistForm } from '@/components/landing/WaitlistForm'
 import styles from '../page.module.css'
@@ -15,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: 'website',
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Back to the Past — Find clues. Become a historian.' }],
     },
   }
 }
@@ -30,7 +29,8 @@ export default async function WaitlistPage() {
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'var(--gh-modal-overlay)' }} />
 
       {/* Logo (same asset as TopBar) */}
-      <Image src="/icons/logo.webp" alt={t('logo_alt')} width={360} height={96} priority style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/gh-wordmark.svg" alt={t('logo_alt')} width={200} height={138} style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
 
       {/* Hero */}
       <section className="flex flex-col items-center text-center max-w-2xl gap-6" style={{ position: 'relative', zIndex: 2 }}>

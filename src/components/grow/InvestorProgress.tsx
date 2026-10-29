@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { useAuthGate } from '@/hooks/useAuthGate'
+import BrandMark from '@/components/brand/BrandMark'
 import { AuthModal } from '@/components/AuthModal'
 import { useGrowSection } from './GrowSectionContext'
 
@@ -48,14 +48,7 @@ export default function InvestorProgress() {
             className="absolute left-0 flex cursor-pointer items-center border-0 bg-transparent p-0"
             aria-label={t('landing.logo_alt')}
           >
-            <Image
-              src="/icons/logo.webp"
-              alt={t('landing.logo_alt')}
-              width={120}
-              height={32}
-              className="h-8 w-auto object-contain"
-              priority
-            />
+            <BrandMark size={32} title={t('landing.logo_alt')} />
           </button>
 
           <button

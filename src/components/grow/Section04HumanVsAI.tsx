@@ -1,11 +1,12 @@
 'use client'
 
 import Image from 'next/image'
-import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 import StatusBadge from './StatusBadge'
 
 export default function Section04HumanVsAI() {
-  const section = investorContent.sections[3]
+  const { content } = useGrowSection()
+  const section = content.sections[3]
 
   return (
     <section

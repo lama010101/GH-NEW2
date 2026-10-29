@@ -1,10 +1,11 @@
 'use client'
 
-import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 import StatusBadge from './StatusBadge'
 
 export default function Section05Evaluation() {
-  const section = investorContent.sections[4]
+  const { content } = useGrowSection()
+  const section = content.sections[4]
 
   return (
     <section

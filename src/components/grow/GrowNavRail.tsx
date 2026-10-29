@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useGrowSection } from './GrowSectionContext'
 
 const formatNumber = (n: number) => String(n).padStart(2, '0')
@@ -104,7 +105,9 @@ const EndIcon = () => (
 )
 
 export default function GrowNavRail() {
-  const { current, sections } = useGrowSection()
+  const { current, content } = useGrowSection()
+  const { sections } = content
+  const t = useTranslations('grow.nav')
   const [expanded, setExpanded] = useState(false)
   const navRef = useRef<HTMLElement>(null)
 
@@ -152,7 +155,7 @@ export default function GrowNavRail() {
       onClick={() => setExpanded((v) => !v)}
       aria-expanded={expanded}
       aria-controls="grow-toc"
-      aria-label={expanded ? 'Collapse table of contents' : 'Expand table of contents'}
+      aria-label={expanded ? t('toc_collapse') : t('toc_expand')}
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none"
     >
       <List />
@@ -172,7 +175,7 @@ export default function GrowNavRail() {
     <>
       <nav
         ref={navRef}
-        aria-label="Slide chapters"
+        aria-label={t('slides_aria')}
         className="fixed bottom-0 left-0 right-0 z-40 flex h-14 items-center border-t border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-3 backdrop-blur-sm md:left-auto md:right-4 md:top-1/2 md:bottom-auto md:h-auto md:w-12 md:-translate-y-1/2 md:flex-col md:items-center md:justify-center md:rounded-[var(--gh-radius-md)] md:border md:p-2 md:px-0 md:py-2"
       >
         {/* Mobile bottom bar */}
@@ -180,21 +183,21 @@ export default function GrowNavRail() {
           {tocButton}
 
           {current === 0 ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="Beginning (already on first slide)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('beginning_disabled')}>
               <StartIcon />
             </span>
           ) : (
-            <a href={`#${sections[0].id}`} className={activeControlClass} aria-label="Go to beginning">
+            <a href={`#${sections[0].id}`} className={activeControlClass} aria-label={t('go_beginning')}>
               <StartIcon />
             </a>
           )}
 
           {prevIndex === null ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="Previous slide (unavailable)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('prev_disabled')}>
               <PrevIcon />
             </span>
           ) : (
-            <a href={sectionHref(prevIndex)} className={activeControlClass} aria-label="Previous slide">
+            <a href={sectionHref(prevIndex)} className={activeControlClass} aria-label={t('prev')}>
               <PrevIcon />
             </a>
           )}
@@ -202,21 +205,21 @@ export default function GrowNavRail() {
           {pageNumberDisplay}
 
           {nextIndex === null ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="Next slide (unavailable)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('next_disabled')}>
               <NextIcon />
             </span>
           ) : (
-            <a href={sectionHref(nextIndex)} className={activeControlClass} aria-label="Next slide">
+            <a href={sectionHref(nextIndex)} className={activeControlClass} aria-label={t('next')}>
               <NextIcon />
             </a>
           )}
 
           {current === sections.length - 1 ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="End (already on last slide)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('end_disabled')}>
               <EndIcon />
             </span>
           ) : (
-            <a href={`#${sections[sections.length - 1].id}`} className={activeControlClass} aria-label="Go to end">
+            <a href={`#${sections[sections.length - 1].id}`} className={activeControlClass} aria-label={t('go_end')}>
               <EndIcon />
             </a>
           )}
@@ -225,21 +228,21 @@ export default function GrowNavRail() {
         {/* Desktop / tablet vertical rail */}
         <div className="hidden w-full items-center gap-1 md:flex md:w-auto md:flex-col">
           {current === 0 ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="Beginning (already on first slide)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('beginning_disabled')}>
               <StartIcon />
             </span>
           ) : (
-            <a href={`#${sections[0].id}`} className={activeControlClass} aria-label="Go to beginning">
+            <a href={`#${sections[0].id}`} className={activeControlClass} aria-label={t('go_beginning')}>
               <StartIcon />
             </a>
           )}
 
           {prevIndex === null ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="Previous slide (unavailable)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('prev_disabled')}>
               <PrevIcon />
             </span>
           ) : (
-            <a href={sectionHref(prevIndex)} className={activeControlClass} aria-label="Previous slide">
+            <a href={sectionHref(prevIndex)} className={activeControlClass} aria-label={t('prev')}>
               <PrevIcon />
             </a>
           )}
@@ -287,21 +290,21 @@ export default function GrowNavRail() {
           </ol>
 
           {nextIndex === null ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="Next slide (unavailable)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('next_disabled')}>
               <NextIcon />
             </span>
           ) : (
-            <a href={sectionHref(nextIndex)} className={activeControlClass} aria-label="Next slide">
+            <a href={sectionHref(nextIndex)} className={activeControlClass} aria-label={t('next')}>
               <NextIcon />
             </a>
           )}
 
           {current === sections.length - 1 ? (
-            <span className={disabledControlClass} aria-disabled="true" aria-label="End (already on last slide)">
+            <span className={disabledControlClass} aria-disabled="true" aria-label={t('end_disabled')}>
               <EndIcon />
             </span>
           ) : (
-            <a href={`#${sections[sections.length - 1].id}`} className={activeControlClass} aria-label="Go to end">
+            <a href={`#${sections[sections.length - 1].id}`} className={activeControlClass} aria-label={t('go_end')}>
               <EndIcon />
             </a>
           )}
@@ -325,14 +328,14 @@ export default function GrowNavRail() {
             className="w-full max-w-none rounded-[var(--gh-radius-lg)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)] p-4 shadow-xl"
             role="dialog"
             aria-modal="true"
-            aria-label="Table of contents"
+            aria-label={t('toc_aria')}
           >
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-base font-medium text-[var(--gh-text-primary)]">Chapters</span>
+              <span className="text-base font-medium text-[var(--gh-text-primary)]">{t('chapters')}</span>
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
-                aria-label="Close table of contents"
+                aria-label={t('toc_close')}
                 className="flex h-10 w-10 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]"
               >
                 <Close />

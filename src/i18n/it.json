@@ -24,7 +24,7 @@
   "help": {
     "title": "Centro assistenza",
     "hero_title": "Come possiamo aiutarti?",
-    "hero_subtitle": "Trova risposte, impara le regole e sfrutta al meglio Guess-History.",
+    "hero_subtitle": "Trova risposte, impara le regole e sfrutta al meglio Back to the Past.",
     "search_placeholder": "Cerca nel centro assistenza…",
     "search_label": "Cerca nel centro assistenza",
     "clear_search": "Cancella ricerca",
@@ -174,7 +174,7 @@
     "compete_round_label": "Rotondo {current}",
     "compete_play": "GIOCA",
     "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_relax": "Libero",
     "compete_completed": "Completata",
     "compete_win": "V",
     "compete_loss": "P",
@@ -184,10 +184,10 @@
     "compete_create_game": "CREA",
     "tagline": "Dove e quando è successo?",
     "daily_new_challenge": "Prossima:",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "Termina:",
+    "daily_next_in": "Prossimo:",
+    "daily_finished": "Finito",
+    "daily_view": "Vedi",
     "compete_desc": "Gioca con i tuoi amici.\nTempo reale o a turni.",
     "daily_desc": "Stessi eventi.\nClassifica mondiale",
     "levelup_desc": "Sali di livello.\nGuadagna XP.",
@@ -197,28 +197,28 @@
     "compete_delete_aria": "Elimina",
     "coming_up_soon": "In arrivo",
     "daily_view_results": "Visualizza risultati",
-    "journey_up_next": "Up next",
-    "journey_pass_chip": "Pass ≥ {pct}%",
-    "journey_difficulty_chip": "Difficulty {rating}/10",
-    "journey_start": "Start your journey",
-    "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
-    "journey_view": "View journey",
-    "round_of": "Round {current} of {total}",
-    "daily_tagline": "same difficulty for everyone",
-    "daily_status_new": "NEW",
-    "daily_status_in_progress": "IN PROGRESS",
-    "daily_status_done": "DONE",
-    "daily_play_today": "Play today's Daily",
-    "daily_resume": "Resume Daily",
-    "daily_streak": "streak",
-    "daily_playing_today": "{count} playing today",
-    "daily_rank_line": "#{rank} worldwide · Top {pct}%",
+    "journey_up_next": "Prossimo",
+    "journey_pass_chip": "Supera ≥ {pct}%",
+    "journey_difficulty_chip": "Difficoltà {rating}/10",
+    "journey_start": "Inizia il viaggio",
+    "journey_explainer": "5 round a tappa. Supera la soglia per sbloccare la prossima.",
+    "journey_view": "Vedi viaggio",
+    "round_of": "Round {current} di {total}",
+    "daily_tagline": "stessa difficoltà per tutti",
+    "daily_status_new": "NUOVO",
+    "daily_status_in_progress": "IN CORSO",
+    "daily_status_done": "FATTO",
+    "daily_play_today": "Gioca la sfida di oggi",
+    "daily_resume": "Riprendi",
+    "daily_streak": "serie",
+    "daily_playing_today": "{count} giocano oggi",
+    "daily_rank_line": "#{rank} globale · Top {pct}%",
     "daily_xp_gained": "+{xp} XP",
-    "daily_load_error": "Couldn't load today's status",
-    "challenge_sub": "Play with friends",
-    "practice_tagline": "Play solo · Unlimited",
-    "practice_eras_chip": "{selected}/{total} eras",
-    "practice_regions_chip": "{selected}/{total} regions"
+    "daily_load_error": "Stato di oggi non caricato",
+    "challenge_sub": "Gioca con amici",
+    "practice_tagline": "Solo · Illimitato",
+    "practice_eras_chip": "{selected}/{total} ere",
+    "practice_regions_chip": "{selected}/{total} regioni"
   },
   "common": {
     "next_round": "Round successivo",
@@ -293,15 +293,15 @@
     "n_days": "{n} giorni",
     "ready_waiting": "Pronto — in attesa degli altri",
     "im_ready": "Sono pronto",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "Avvia partita",
+    "relax_playing": "In gioco",
+    "relax_finished": "Finito",
+    "relax_joined": "Unito",
     "pwa_install_title": "Installa l'app per le notifiche dei turni",
     "pwa_install_desc": "I giochi Relax sono a turni. Su iPhone, le notifiche dei turni funzionano solo se questo sito viene aggiunto alla schermata Home.",
     "pwa_step_share": "Tocca l'icona <strong>Condividi</strong> nella barra degli strumenti di Safari.",
     "pwa_step_home": "Scegli <strong>Aggiungi alla schermata Home</strong>.",
-    "pwa_step_open": "Tocca <strong>Aggiungi</strong>, poi apri Guess-History dalla schermata Home.",
+    "pwa_step_open": "Tocca <strong>Aggiungi</strong>, poi apri Back to the Past dalla schermata Home.",
     "pwa_got_it": "Ok",
     "players_ready": "({ready}/{total} giocatori pronti)",
     "select_all": "Seleziona tutti",
@@ -358,7 +358,7 @@
     "vibrate": "Vibrazione",
     "distance_unit": "Unità di distanza",
     "settings": "Impostazioni",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "Puoi uscire e riprendere dopo.",
     "submit": "Invia",
     "hint_select_both": "Seleziona prima {where} e {when}",
     "and": "e",
@@ -395,7 +395,7 @@
     "round_label": "Rotondo {current}",
     "round_label_compact": "Giro {current}/{total}",
     "source_link": "Fonte ↗",
-    "rate": "Rate Image Realism",
+    "rate": "Valuta il realismo",
     "rate_saved": "Salvato",
     "this_round": "Questo round",
     "total_penalty": "Penale totale",
@@ -455,12 +455,12 @@
     "when_badges": "Quando",
     "where_badges": "Dove",
     "no_badges": "Nessuna medaglia ottenuta in questa partita",
-    "highlights": "Highlights",
-    "hl_closest_guess": "Closest guess",
-    "hl_sharpest_year": "Sharpest year",
-    "hl_toughest_round": "Toughest round",
-    "hl_years_off": "±{n} yr",
-    "badges_count": "{count, plural, one {# badge} other {# badges}}",
+    "highlights": "In evidenza",
+    "hl_closest_guess": "Più vicino",
+    "hl_sharpest_year": "Anno + preciso",
+    "hl_toughest_round": "Round più duro",
+    "hl_years_off": "±{n} anni",
+    "badges_count": "{count, plural, one {# medaglia} other {# medaglie}}",
     "era_ancient": "Antico",
     "era_medieval": "Medievale",
     "era_earlymodern": "Età Moderna",
@@ -684,7 +684,8 @@
     "rank_suffix_many": "º",
     "rank_suffix_other": "º",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "Nessun altro giocatore.",
+    "back_to_top": "Torna su"
   },
   "profile": {
     "accuracy_breakdown": "Dettaglio precisione",
@@ -725,8 +726,8 @@
     "practice": "Allenamento",
     "daily_all_time": "Giornaliero (di sempre)",
     "level": "Livello",
-    "era_region": "Era & region",
-    "rounds": "Rounds",
+    "era_region": "Era e regione",
+    "rounds": "Round",
     "stats": "Stats"
   },
   "account": {
@@ -751,7 +752,14 @@
     "notif_channel_in_app": "Solo in-app",
     "notif_channel_both": "Entrambe",
     "notif_push_hint": "Le notifiche push sono disattivate in questo browser — attivale per riceverle.",
-    "notif_save_error": "Salvataggio non riuscito. Riprova."
+    "notif_save_error": "Salvataggio non riuscito. Riprova.",
+    "android_apk_title": "App Android (beta)",
+    "android_apk_body": "Installa l'app Back to the Past sul tuo telefono Android.",
+    "android_apk_button": "Scarica l'APK",
+    "android_apk_step1": "1. Tocca «Scarica l'APK» e apri il file.",
+    "android_apk_step2": "2. Se Android lo chiede, consenti le installazioni da questo browser.",
+    "android_apk_step3": "3. Se Play Protect mostra un avviso sull'app, tocca «Installa comunque».",
+    "android_apk_note": "Versione beta: per aggiornarla, disinstalla prima la vecchia versione. Dovrai accedere di nuovo."
   },
   "avatar_picker": {
     "title": "Scegli avatar",
@@ -780,23 +788,30 @@
     "turn_desc": "Ricevi una notifica quando è il tuo turno nelle partite Relax. Puoi modificarlo in qualsiasi momento nelle impostazioni.",
     "not_now": "Non ora",
     "enable": "Attiva",
-    "someone": "Qualcuno"
+    "someone": "Qualcuno",
+    "push_enable": "Attiva notifiche",
+    "push_disable": "Disattiva notifiche",
+    "push_enabled_msg": "Notifiche attivate.",
+    "push_disabled_msg": "Notifiche disattivate.",
+    "push_failed_enable": "Attivazione non riuscita.",
+    "push_failed_disable": "Disattivazione non riuscita.",
+    "push_unexpected": "Si è verificato un errore imprevisto."
   },
   "welcome": {
-    "title": "Benvenuto su Guess-History!",
+    "title": "Benvenuto su Back to the Past!",
     "your_historical_avatar": "Il tuo avatar storico",
     "choose_different_avatar": "Scegli un avatar diverso",
     "your_username": "Il tuo nome utente",
     "lets_play": "Iniziamo!",
     "skip_for_now": "Salta per ora",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME"
+    "username_label_1": "INSERISCI NOME UTENTE",
+    "username_label_2": "SCEGLI UN NOME UNICO",
+    "username_label_3": "VISIBILE AGLI ALTRI"
   },
   "landing": {
-    "meta_title": "Guess-History — Metti alla prova le tue conoscenze su quando e dove",
+    "meta_title": "Back to the Past — Metti alla prova le tue conoscenze su quando e dove",
     "meta_description": "Un gioco storico a ipotesi. Osserva eventi reali della storia e indovina l'anno e il luogo esatti. Sfida gli amici, scala la classifica e dimostra le tue competenze storiche.",
-    "logo_alt": "Guess-History",
+    "logo_alt": "Back to the Past",
     "rank_label": "Rango",
     "tagline": "Dove e quando è successo?",
     "hero_description": "Metti alla prova le tue conoscenze di storia. Osserva eventi reali e indovina l'anno e il luogo esatti. Sfida i tuoi amici, scala la classifica e dimostra di conoscere la storia.",
@@ -827,16 +842,16 @@
     "rank_10": "Cartografo Reale",
     "next_rank": "{xp} XP fino a {title}",
     "max_rank": "Rango massimo raggiunto",
-    "badge_aria": "Rank {tier} badge",
-    "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "badge_aria": "Medaglia rango {tier}",
+    "rail_hint_swipe": "scorri",
+    "tier_of_10": "Liv. {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "Cresci con noi — Back to the Past",
+    "meta_description": "Scopri missione, visione e futuro di Back to the Past e come partecipare.",
     "hero": {
       "tagline": "Da definire",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "Gioca a Back to the Past",
       "secondary_cta": "Scopri il Progetto"
     },
     "mission": {
@@ -1015,7 +1030,7 @@
         "name": "Apprendimento aziendale",
         "description": "Da definire"
       },
-      "center_label": "Guess-History"
+      "center_label": "Back to the Past"
     },
     "business_model": {
       "title": "Modello di business",
@@ -1062,7 +1077,7 @@
       "title": "Costruito per il lungo termine",
       "subtitle": "Da definire",
       "left_header": "Le startup tradizionali ottimizzano per",
-      "right_header": "Guess-History ottimizza per",
+      "right_header": "Back to the Past ottimizza per",
       "left_1": "Valutazione",
       "right_1": "Sostenibilità",
       "left_2": "Finanziamento",
@@ -1105,7 +1120,7 @@
         "detail": "Da definire"
       },
       "future_projects_title": "Progetti futuri",
-      "future_project_1": "Guess-History",
+      "future_project_1": "Back to the Past",
       "future_project_2": "VR History",
       "future_project_3": "Indovina la scienza",
       "future_project_4": "Indovina l'arte",
@@ -1119,7 +1134,9 @@
         "principle_1": "Rapporto massimo di compensazione.",
         "principle_2": "Limite di rendimento dell'investitore.",
         "principle_3": "Politica di reinvestimento.",
-        "principle_4": "Governance incentrata sulla missione."
+        "principle_4": "Governance incentrata sulla missione.",
+        "purpose_title": "Scopo",
+        "principles_title": "Principi"
       }
     },
     "partnerships": {
@@ -1286,9 +1303,26 @@
       "sources": "Fonti",
       "references": "Riferimenti",
       "legal": "Disclaimer legale",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "nav_aria": "Footer investitori"
     },
-    "nav_aria_label": "Sezioni della pagina di crescita"
+    "nav_aria_label": "Sezioni della pagina di crescita",
+    "nav": {
+      "slides_aria": "Capitoli",
+      "toc_expand": "Apri indice",
+      "toc_collapse": "Chiudi indice",
+      "toc_aria": "Indice",
+      "chapters": "Capitoli",
+      "toc_close": "Chiudi indice",
+      "go_beginning": "Vai all'inizio",
+      "go_end": "Vai alla fine",
+      "prev": "Indietro",
+      "prev_disabled": "Indietro (non disponibile)",
+      "next": "Avanti",
+      "next_disabled": "Avanti (non disponibile)",
+      "beginning_disabled": "Inizio (prima diapositiva)",
+      "end_disabled": "Fine (ultima diapositiva)"
+    }
   },
   "practice": {
     "title": "Gioco di pratica in corso",
@@ -1366,11 +1400,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "Politica de Privacidad — Guess-History",
-      "meta_description": "Política de Privacidad para Guess-History",
+      "meta_title": "Politica de Privacidad — Back to the Past",
+      "meta_description": "Política de Privacidad para Back to the Past",
       "title": "Política de Privacidad",
       "last_updated": "Última actualización: 4 de agosto de 2026",
-      "intro": "Guess-History (\"nosotros,\" \"nos,\" \"nuestro\") opera el sitio web www.guess-history.com (el \"Servicio\"), un juego multijugador de historia geográfica y adivinanza de años. Esta Política de Privacidad explica qué información recopilamos, cómo la utilizamos y sus derechos respecto a esa información.",
+      "intro": "Back to the Past (\"nosotros,\" \"nos,\" \"nuestro\") opera el sitio web www.guess-history.com (el \"Servicio\"), un juego multijugador de historia geográfica y adivinanza de años. Esta Política de Privacidad explica qué información recopilamos, cómo la utilizamos y sus derechos respecto a esa información.",
       "section1_title": "1. Información que Recopilamos",
       "account_info_label": "Información de cuenta:",
       "account_info_text": "Cuando ingresa a través de Google o email/contraseña, recibimos su dirección de correo electrónico, nombre de usuario y foto de perfil (si es proporcionada por Google). La autenticación es gestionada por Supabase.",
@@ -1389,7 +1423,7 @@
       "use_communicate": "Comunicarnos con usted sobre su cuenta o el Servicio, si es necesario",
       "no_sell": "No vendemos su información personal. No utilizamos sus datos para publicidad de terceros.",
       "section3_title": "3. Servicios de Terceros",
-      "providers_intro": "Utilizamos los siguientes proveedores de servicios de terceros para operar Guess-History:",
+      "providers_intro": "Utilizamos los siguientes proveedores de servicios de terceros para operar Back to the Past:",
       "supabase_name": "Supabase",
       "supabase_desc": "— autenticación y alojamiento de bases de datos",
       "google_name": "Google OAuth",
@@ -1415,13 +1449,13 @@
       "changes_text": "Podemos actualizar esta Política de Privacidad de vez en cuando. Los cambios materiales se reflejarán mediante una fecha de \"Última actualización\" actualizada en esta página."
     },
     "terms": {
-      "meta_title": "Términos de Servicio — Guess-History",
-      "meta_description": "Términos de Servicio para Guess-History",
+      "meta_title": "Términos de Servicio — Back to the Past",
+      "meta_description": "Términos de Servicio para Back to the Past",
       "title": "Términos de Servicio",
       "last_updated": "Última actualización: 4 de agosto de 2026",
-      "intro": "Bienvenido a Guess-History (\"Servicio\"), operado en www.guess-history.com. Al acceder o usar el Servicio, usted acepta estar sujeto a estos Términos de Servicio (\"Términos\"). Si no está de acuerdo, no use el Servicio.",
+      "intro": "Bienvenido a Back to the Past (\"Servicio\"), operado en www.guess-history.com. Al acceder o usar el Servicio, usted acepta estar sujeto a estos Términos de Servicio (\"Términos\"). Si no está de acuerdo, no use el Servicio.",
       "section1_title": "1. Descripción del Servicio",
-      "section1_text": "Guess-History es un juego multijugador y de un solo jugador donde los jugadores adivinan el año y la ubicación de eventos históricos representados en imágenes, compiten en tablas de líderes y juegan contra amigos o la comunidad.",
+      "section1_text": "Back to the Past es un juego multijugador y de un solo jugador donde los jugadores adivinan el año y la ubicación de eventos históricos representados en imágenes, compiten en tablas de líderes y juegan contra amigos o la comunidad.",
       "section2_title": "2. Cuentas",
       "section2_text": "Debe crear una cuenta (a través de Google o email/contraseña) para acceder a la mayoría de las funciones. Usted es responsable de mantener la confidencialidad de su cuenta y de toda la actividad bajo ella. Debe proporcionar información precisa y es responsable de mantenerla actualizada.",
       "section3_title": "3. Uso Aceptable",
@@ -1435,11 +1469,11 @@
       "section4_title": "4. Contenido de Usuario",
       "section4_text": "Cualquier nombre de usuario, avatar u otro contenido que envíe no debe ser ofensivo, infringir derechos o ser ilegal. Nos reservamos el derecho de eliminar o moderar dicho contenido a nuestra discreción.",
       "section5_title": "5. Propiedad Intelectual",
-      "section5_text": "El Servicio, incluida su diseño de juego, software y marcas, es propiedad de Guess-History y sus creadores. Las imágenes de eventos históricos utilizadas en el juego se utilizan con fines educativos/informativos; los derechos sobre las imágenes de origen subyacentes permanecen con sus respectivos propietarios donde sea aplicable.",
+      "section5_text": "El Servicio, incluida su diseño de juego, software y marcas, es propiedad de Back to the Past y sus creadores. Las imágenes de eventos históricos utilizadas en el juego se utilizan con fines educativos/informativos; los derechos sobre las imágenes de origen subyacentes permanecen con sus respectivos propietarios donde sea aplicable.",
       "section6_title": "6. Renuncia de Garantías",
       "section6_text": "El Servicio se proporciona \"tal cual\" y \"según disponibilidad\" sin garantías de ningún tipo, expresas o implícitas. No garantizamos que el Servicio esté libre de interrupciones, errores o seguro en todo momento.",
       "section7_title": "7. Limitación de Responsabilidad",
-      "section7_text": "En la máxima medida permitida por la ley, Guess-History y sus operadores no serán responsables de ningún daño indirecto, incidental, especial o consecuente que surja de su uso del Servicio.",
+      "section7_text": "En la máxima medida permitida por la ley, Back to the Past y sus operadores no serán responsables de ningún daño indirecto, incidental, especial o consecuente que surja de su uso del Servicio.",
       "section8_title": "8. Cambios en el Servicio",
       "section8_text": "Podemos modificar, suspender o descontinuar cualquier parte del Servicio en cualquier momento, incluidos modos de juego, características o sistemas de puntuación, sin previo aviso.",
       "section9_title": "9. Cambios en Estos Términos",
@@ -1447,5 +1481,293 @@
       "section10_title": "10. Contáctenos",
       "contact_text": "Para preguntas sobre estos Términos, contáctenos en: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "Schermo intero e installa",
+    "tagline": "Scegli come si apre Back to the Past qui.",
+    "install_app": "Installa app",
+    "ios_intro": "<strong>Aggiungi a Home</strong> per installare:",
+    "install_unavailable": "Installazione non disponibile in questo browser.",
+    "remember_choice": "Ricorda la scelta"
+  },
+  "grow_deck": {
+    "meta_title": "Back to the Past — Deck investitori",
+    "meta_description": "Presentazione per investitori: da gioco di storia a benchmark visuale di IA ancorato all'umano.",
+    "meta_image_alt": "Deck investitori di Back to the Past",
+    "title": "Back to the Past",
+    "progress_label": "BACK TO THE PAST",
+    "cta_register": "Manifesta interesse",
+    "cta_play": "Gioca a Back to the Past",
+    "cta_test": "Manifesta interesse",
+    "status_verified": "VERIFICATO",
+    "status_illustrative": "ILLUSTRATIVO",
+    "status_roadmap": "ROADMAP",
+    "status_conceptual": "CONCETTUALE",
+    "model_tag": "MODELLO",
+    "s01": {
+      "headline": "E se un gioco diventasse un benchmark IA?",
+      "body": [
+        "Back to the Past: i giocatori ricostruiscono dove e quando accaddero gli eventi.",
+        "Ma il gioco può creare molto più: un benchmark visuale di IA ancorato all'umano."
+      ],
+      "statements": [
+        "Il gioco è l'inizio."
+      ],
+      "alt": "Scena storica cinematografica con profondità, figure e indizi ambigui"
+    },
+    "s02": {
+      "headline": "Un gioco semplice con un motore dati insolito.",
+      "body": [
+        "Il visitatore deve capire il gioco senza leggere istruzioni."
+      ],
+      "alt": "Scena storica per la mini-demo dove-e-quando",
+      "steps": [
+        "Scena storica",
+        "Dove?",
+        "Quando?",
+        "Rivelazione"
+      ]
+    },
+    "s03": {
+      "headline": "I giocatori non sono solo giocatori.",
+      "subheadline": "Creano un benchmark umano.",
+      "body": [
+        "Ogni risposta rende il benchmark più informativo."
+      ],
+      "final": "Ogni risposta rende il benchmark più informativo.",
+      "alt": "La stessa immagine storica che ancora le osservazioni umane accumulate",
+      "items": [
+        {
+          "label": "Tentativi umani",
+          "value": "10.281"
+        },
+        {
+          "label": "Errore mediano di anno",
+          "value": "8 anni"
+        },
+        {
+          "label": "Errore mediano di luogo",
+          "value": "74 km"
+        },
+        {
+          "label": "Difficoltà",
+          "value": "DIFFICILE"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "Ora dai la stessa sfida all'IA.",
+      "body": [
+        "Umano e IA ricevono la stessa immagine e le stesse domande. Risultati direttamente confrontabili."
+      ],
+      "final": "Ora possiamo confrontarli.",
+      "alt": "Split-screen: stessa immagine testata su umano e modello IA",
+      "status_label": "Capacità di valutazione pianificata",
+      "columns": [
+        {
+          "title": "UMANO",
+          "items": [
+            "Dove?",
+            "Quando?",
+            "Risultato"
+          ]
+        },
+        {
+          "title": "MODELLO IA",
+          "items": [
+            "Dove?",
+            "Quando?",
+            "Risultato"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "Nuovo livello di valutazione IA.",
+      "body": [
+        "Un report pulito. Non solo «giusto o sbagliato»."
+      ],
+      "final": "Non solo «giusto o sbagliato».",
+      "metrics": [
+        {
+          "label": "RAGIONAMENTO TEMPORALE",
+          "value": "Errore mediano: 8 anni"
+        },
+        {
+          "label": "RAGIONAMENTO SPAZIALE",
+          "value": "Distanza mediana: 182 km"
+        },
+        {
+          "label": "CALIBRAZIONE",
+          "value": "Errore alta confidenza: 9 %"
+        },
+        {
+          "label": "LATENZA",
+          "value": "P95: 3,1 s"
+        },
+        {
+          "label": "COSTO",
+          "value": "0,014 $ / valutazione"
+        }
+      ],
+      "flow": [
+        "MODELLO",
+        "BENCHMARK",
+        "BASE UMANA",
+        "PERFORMANCE"
+      ]
+    },
+    "s06": {
+      "headline": "L'asset prezioso non è l'immagine.",
+      "body": [
+        "Il fossato cresce con l'uso.",
+        "Più osservazioni umane → benchmark più forte.",
+        "Più valutazioni → confronto più ricco.",
+        "Più storia → dataset più forte."
+      ],
+      "final": "È il dataset attorno all'immagine.",
+      "alt": "Immagine storica con layer di dati sempre più densi",
+      "stack": [
+        "Verità di base verificata",
+        "Osservazioni umane",
+        "Difficoltà umana",
+        "Confidenza",
+        "Risposte IA",
+        "Versioni modello",
+        "Metodologia di valutazione"
+      ]
+    },
+    "s07": {
+      "headline": "Testa il tuo modello.",
+      "body": [
+        "Un provider invia un modello, esegue il benchmark e riceve una valutazione riproducibile ancorata all'umano."
+      ],
+      "final": "Indipendente. Ancorato all'umano. Riproducibile.",
+      "status_label": "Capacità di valutazione pianificata",
+      "steps": [
+        "Modello vision v4.2",
+        "ESEGUI BENCHMARK"
+      ],
+      "metrics": [
+        {
+          "label": "TEMPORALE",
+          "value": "72%"
+        },
+        {
+          "label": "POSIZIONE",
+          "value": "81%"
+        },
+        {
+          "label": "CALIBRAZIONE",
+          "value": "0,11"
+        },
+        {
+          "label": "VINCE UMANO",
+          "value": "64%"
+        },
+        {
+          "label": "LATENZA P95",
+          "value": "2,4 s"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "Non basta un solo test.",
+      "subheadline": "Traccia ogni versione.",
+      "body": [
+        "Tre versioni passano lo stesso benchmark. La curva evolve: miglioramenti o regressioni."
+      ],
+      "final": "Il tuo modello è davvero migliorato?",
+      "steps": [
+        "MODELLO v1 → BENCHMARK",
+        "MODELLO v2 → BENCHMARK",
+        "MODELLO v3 → BENCHMARK"
+      ]
+    },
+    "s09": {
+      "headline": "Quattro modi per monetizzare il benchmark.",
+      "body": [
+        "Nessuna cifra di ricavo ipotetica. Quattro prodotti primari e opportunità secondarie descritte."
+      ],
+      "nodes": [
+        {
+          "label": "01 — API benchmark",
+          "description": "Valutazioni modello automatiche"
+        },
+        {
+          "label": "02 — Monitoraggio enterprise",
+          "description": "Test continui di versione"
+        },
+        {
+          "label": "03 — Benchmark su misura",
+          "description": "Programmi di valutazione dedicati"
+        },
+        {
+          "label": "04 — Dati e ricerca",
+          "description": "Accesso controllato ai dati"
+        }
+      ],
+      "branches_root": "Opportunità secondarie",
+      "branches_children": [
+        "Educazione",
+        "Selezione modello",
+        "Sponsorizzazione benchmark"
+      ]
+    },
+    "s10": {
+      "headline": "Il gioco alimenta il benchmark.",
+      "body": [
+        "Il loop accelera. Gioco consumer e valutazione B2B si rinforzano."
+      ],
+      "final": "Due prodotti. Un sistema che si rinforza.",
+      "flow": [
+        "PIÙ GIOCATORI",
+        "PIÙ DATI UMANI",
+        "BASI MIGLIORI",
+        "BENCHMARK MIGLIORE",
+        "PIÙ INTERESSE IA",
+        "RICAVI B2B",
+        "PIÙ CONTENUTI",
+        "PIÙ GIOCATORI"
+      ]
+    },
+    "s11": {
+      "headline": "La storia è il punto di partenza.",
+      "body": [
+        "La piattaforma può espandersi dalle immagini storiche ad altre categorie di ragionamento visuale."
+      ],
+      "final": "Valutazione visuale IA ancorata all’umano.",
+      "status_label": "Opportunità piattaforma lungo termine",
+      "branches_root": "STORIA",
+      "branches_children": [
+        "Geografia",
+        "Architettura",
+        "Cultura",
+        "Cronologia visuale",
+        "Mappe",
+        "Documenti",
+        "Ragionamento visuale generale"
+      ]
+    },
+    "s12": {
+      "headline": "Costruiamo due attività che si rafforzano.",
+      "body": [
+        "BACK TO THE PAST: Un gioco che attira giocatori e genera intelligenza umana proprietaria.",
+        "BACK TO THE PAST EVALUATION: Una piattaforma che misura l'IA su quell'intelligenza."
+      ],
+      "statements": [
+        "Gioco → Dati → Benchmark",
+        "Benchmark → Valutazione → Ricavi",
+        "Ricavi → Più dati → Piattaforma più forte"
+      ],
+      "final": "L'IA può capire la storia come gli umani?"
+    },
+    "footer_link_home": "Back to the Past",
+    "footer_link_contact": "Contatti",
+    "footer_link_privacy": "Privacy",
+    "footer_link_terms": "Termini",
+    "footer_link_sources": "Fonti",
+    "footer_link_disclaimer": "Disclaimer legale",
+    "footer_disclaimer": "Pagina solo informativa; non è un'offerta di titoli. Le affermazioni prospettiche sono obiettivi, non garanzie."
   }
 }

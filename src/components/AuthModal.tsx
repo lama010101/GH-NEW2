@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -196,12 +195,12 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         </h2>
 
         <div className={styles.logoWrap}>
-          <Image
-            src="/icons/logo.webp"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/gh-wordmark.svg"
             alt={tLanding('logo_alt')}
-            width={180}
-            height={48}
-            priority
+            width={688}
+            height={474}
             className={styles.logoImg}
           />
         </div>
