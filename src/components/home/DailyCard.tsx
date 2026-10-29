@@ -16,6 +16,7 @@ import { getAccuracyColor } from '@/core/accuracyColor'
 import { getDailyChallengeDate, getNextDailyRollover } from '@/core/dailyDate'
 import { MAX_ROUNDS } from '@/core/types'
 import type { DailySignal } from '@/core/homeCardOrder'
+import { useIdentity } from '@/hooks/useIdentity'
 import styles from './DailyCard.module.css'
 
 type DailyStatus = 'not_started' | 'in_progress' | 'completed' | 'expired'
@@ -30,6 +31,7 @@ interface DailyPayload {
 interface DailyCardProps {
   playerId: string | undefined
   onOrderSignal?: (s: { settled: boolean; status: DailySignal }) => void
+  onGuestGate?: () => void
 }
 
 const STATUS_META: Record<'new' | 'playing' | 'done', { key: string; color: string }> = {
@@ -98,9 +100,11 @@ function ResultRing({ pct: pctPercent, color }: { pct: number; color: string }) 
   )
 }
 
-export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
+export function DailyCard({ playerId, onOrderSignal, onGuestGate }: DailyCardProps) {
   const t = useTranslations()
   const router = useRouter()
+  const { state: identityState } = useIdentity()
+  const isAnonymous = identityState.status === 'ready' && identityState.isAnonymous
 
   const [daily, setDaily] = useState<DailyPayload | null>(null)
   const [streak, setStreak] = useState<number | null>(null)
@@ -226,7 +230,7 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
             )}
 
             {uiState === 'new' && (
-              <button type="button" className={styles.cta} onClick={() => router.push('/daily')}>
+              <button type="button" className={styles.cta} onClick={() => { if (isAnonymous) { onGuestGate?.(); return } router.push('/daily') }}>
                 <Play size={16} strokeWidth={2.5} /> {t('home.daily_play_today')}
               </button>
             )}
@@ -241,7 +245,7 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
                     {t('home.round_of', { current: Math.min(roundIndex + 1, MAX_ROUNDS), total: MAX_ROUNDS })}
                   </span>
                 </div>
-                <button type="button" className={styles.cta} onClick={() => router.push('/daily')}>
+                <button type="button" className={styles.cta} onClick={() => { if (isAnonymous) { onGuestGate?.(); return } router.push('/daily') }}>
                   <Play size={16} strokeWidth={2.5} /> {t('home.daily_resume')}
                 </button>
               </>
@@ -267,7 +271,7 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
                   </div>
                 </div>
                 {daily?.gameId && (
-                  <button type="button" className={styles.ctaOutline} onClick={() => router.push(`/daily/game/${daily.gameId}/results`)}>
+                  <button type="button" className={styles.ctaOutline} onClick={() => { if (isAnonymous) { onGuestGate?.(); return } router.push(`/daily/game/${daily.gameId}/results`) }}>
                     {t('home.daily_view_results')}
                   </button>
                 )}

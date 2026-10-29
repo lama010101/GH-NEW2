@@ -19,6 +19,7 @@ import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
 import { createAsyncCompeteSession } from '@/core/competeCreate'
 import { useCompeteLists } from './useCompeteLists'
+import { useIdentity } from '@/hooks/useIdentity'
 import { acceptInvitation, declineInvitation, timeAgo, timeRemaining } from './CompetePanel'
 import { CappedRows } from './CappedRows'
 import styles from './ChallengeCard.module.css'
@@ -30,11 +31,14 @@ interface ChallengeCardProps {
   displayName: string
   onLobby: (gameId: string) => void
   onOrderSignal?: (s: { settled: boolean; actionable: boolean }) => void
+  onGuestGate?: () => void
 }
 
-export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }: ChallengeCardProps) {
+export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal, onGuestGate }: ChallengeCardProps) {
   const t = useTranslations()
   const router = useRouter()
+  const { state: identityState } = useIdentity()
+  const isAnonymous = identityState.status === 'ready' && identityState.isAnonymous
 
   const { invites, setInvites, invitesLoading, activeGames } = useCompeteLists(playerId)
 
@@ -69,6 +73,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
   }
 
   const handleCompeteCreate = () => {
+    if (isAnonymous) { onGuestGate?.(); return }
     if (!playerId) return
     if (shouldShowRelaxPwaInterstitial()) {
       setPwaInterstitialPending(() => () => setRelaxNudgePending(() => runCompeteCreate))
@@ -107,6 +112,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
   }
 
   const handleAccept = (inviteId: string, gameId: string, mode?: 'sync' | 'async') => {
+    if (isAnonymous) { onGuestGate?.(); return }
     if (mode === 'async' && shouldShowRelaxPwaInterstitial()) {
       setPwaInterstitialPending(() => () => { void runAccept(inviteId, gameId) })
       return
@@ -239,7 +245,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
                     ))
                   )}
                   {invites.length >= 5 && (
-                    <button type="button" className={styles.seeAll} onClick={() => router.push('/home/compete/all')}>
+                    <button type="button" className={styles.seeAll} onClick={() => { if (isAnonymous) { onGuestGate?.(); return } router.push('/home/compete/all') }}>
                       {t('home.compete_see_all')}
                     </button>
                   )}
@@ -284,7 +290,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
                           <button
                             type="button"
                             className={styles.go}
-                            onClick={() => { setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
+                            onClick={() => { if (isAnonymous) { onGuestGate?.(); return } setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
                             aria-label={t('home.compete_play_aria')}
                             disabled={!!lobbyPending[game.game_id]}
                           >
@@ -295,7 +301,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
                     })
                   )}
                   {yourTurnGames.length >= 20 && (
-                    <button type="button" className={styles.seeAll} onClick={() => router.push('/home/compete/all')}>
+                    <button type="button" className={styles.seeAll} onClick={() => { if (isAnonymous) { onGuestGate?.(); return } router.push('/home/compete/all') }}>
                       {t('home.compete_see_all')}
                     </button>
                   )}
@@ -319,7 +325,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
                           className={styles.row}
                           data-cap-row
                           key={game.id}
-                          onClick={() => { setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
+                          onClick={() => { if (isAnonymous) { onGuestGate?.(); return } setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
                           aria-disabled={!!lobbyPending[game.game_id]}
                         >
                           <PlayerAvatar
@@ -359,7 +365,7 @@ export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }:
                     })
                   )}
                   {completedGames.length >= 20 && (
-                    <button type="button" className={styles.seeAll} onClick={() => router.push('/home/compete/all')}>
+                    <button type="button" className={styles.seeAll} onClick={() => { if (isAnonymous) { onGuestGate?.(); return } router.push('/home/compete/all') }}>
                       {t('home.compete_see_all')}
                     </button>
                   )}

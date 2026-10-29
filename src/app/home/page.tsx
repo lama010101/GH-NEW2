@@ -11,6 +11,7 @@ import { JourneyCard } from '@/components/home/JourneyCard'
 import { DailyCard } from '@/components/home/DailyCard'
 import { ChallengeCard } from '@/components/home/ChallengeCard'
 import { PracticeCard } from '@/components/home/PracticeCard'
+import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal'
 import { useHomeCardOrder, useIsMobileViewport } from '@/components/home/useHomeCardOrder'
 import { HOME_CARD_DESKTOP_ORDER } from '@/core/homeCardOrder'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
@@ -66,6 +67,8 @@ function HomePageInner() {
   const [welcomeCompleted, setWelcomeCompleted] = useState<boolean | null>(null)
   const [pushSoftAskDismissed, setPushSoftAskDismissed] = useState<boolean | null>(null)
   const [isNewUserForWelcome, setIsNewUserForWelcome] = useState(false)
+  const [roundsPlayed, setRoundsPlayed] = useState(0)
+  const [totalXpNum, setTotalXpNum] = useState(0)
 
   const triggerAssignAvatar = useCallback(() => {
     if (welcomeHandledRef.current) return
@@ -156,7 +159,10 @@ function HomePageInner() {
         if (session?.user && session.user.id === pid) {
           const createdAt = new Date(session.user.created_at).getTime()
           const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : createdAt
-          setIsNewUserForWelcome(Math.abs(createdAt - lastSignIn) < 300_000)
+          // GUEST-BUILD-ANONSIGNIN-1029-003: anonymous guests never enter the
+          // welcome/assign-avatar flow — welcome_completed must stay false
+          // until after conversion.
+          setIsNewUserForWelcome(!identity.isAnonymous && Math.abs(createdAt - lastSignIn) < 300_000)
         } else {
           setIsNewUserForWelcome(false)
         }
@@ -164,11 +170,13 @@ function HomePageInner() {
         setIsNewUserForWelcome(false)
       }
       try {
-        const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp').eq('player_id', pid).single()
+        const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp,rounds_played').eq('player_id', pid).single()
         if (cancelled) return
         if (stats) {
           setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
           setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
+          setRoundsPlayed(Number(stats.rounds_played) || 0)
+          setTotalXpNum(Number(stats.total_xp) || 0)
         }
       } catch {}
       try {
@@ -204,6 +212,8 @@ function HomePageInner() {
   }, [])
 
   const [showNavModal, setShowNavModal] = useState(false)
+  const [guestGateOpen, setGuestGateOpen] = useState(false)
+  const handleGuestGate = useCallback(() => setGuestGateOpen(true), [])
   const [practiceModalOpen, setPracticeModalOpen] = useState(false)
   const [resumeModalOpen, setResumeModalOpen] = useState(false)
   const [resumeGameId, setResumeGameId] = useState<string | null>(null)
@@ -354,15 +364,17 @@ function HomePageInner() {
         displayName={displayName}
         onLobby={(gameId) => router.push(`/compete/${gameId}`)}
         onOrderSignal={reportChallenge}
+        onGuestGate={handleGuestGate}
       />
     ),
-    daily: <DailyCard key="daily" playerId={playerId} onOrderSignal={reportDaily} />,
+    daily: <DailyCard key="daily" playerId={playerId} onOrderSignal={reportDaily} onGuestGate={handleGuestGate} />,
     practice: (
       <PracticeCard
         key="practice"
         playerId={playerId}
         onCtaClick={handlePracticeTileClick}
         ctaLoading={practiceTileLoading}
+        onGuestGate={handleGuestGate}
       />
     ),
   }
@@ -435,10 +447,14 @@ function HomePageInner() {
           onSaved={() => setProfileVersion(v => v + 1)}
         />
       )}
-      {welcomeData === null && isNewUserForWelcome && welcomeCompleted === true && pushSoftAskDismissed === false && (
+      {/* GUEST-BUILD-ANONSIGNIN-1029-003: PushSoftAsk never shows for
+          anonymous guests; for registered users it is deferred until their
+          first completed round — DB-derived via player_global_stats
+          (rounds_played/total_xp), no localStorage, no new column. */}
+      {welcomeData === null && welcomeCompleted === true && pushSoftAskDismissed === false && !identity.isAnonymous && (roundsPlayed > 0 || totalXpNum > 100) && (
         <PushSoftAsk
           playerId={currentPlayerId ?? ''}
-          isNewUserForWelcome={isNewUserForWelcome}
+          isNewUserForWelcome={true}
           welcomeCompleted={welcomeCompleted === true}
           pushSoftAskDismissed={pushSoftAskDismissed === false ? false : true}
           onDismissed={() => setPushSoftAskDismissed(true)}
@@ -449,6 +465,15 @@ function HomePageInner() {
         onClose={() => setPracticeModalOpen(false)}
         onStart={handlePracticeStart}
         initialSettings={loadPracticeSettings()}
+      />
+      {/* GUEST-BUILD-ANONSIGNIN-1029-003: one shared conversion modal for the
+          Daily/Challenge/Practice card guest gates (JourneyCard keeps its
+          own stage-aware instance). */}
+      <GuestConversionModal
+        isOpen={guestGateOpen}
+        stageNumber={2}
+        onClose={() => setGuestGateOpen(false)}
+        onConverted={() => setGuestGateOpen(false)}
       />
       <PracticeResumeModal
         isOpen={resumeModalOpen}

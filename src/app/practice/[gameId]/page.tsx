@@ -140,7 +140,11 @@ export default function PracticeGamePage() {
     setBusy(true);
     ;(async () => {
       try {
-        const session = await readSession();
+        // GUEST-BUILD-ANONSIGNIN-1029-003: readSession()'s backoff can serve a
+        // stale null for up to 10s right after an anonymous sign-in; the
+        // sequential getSession() fallback reads the live SDK session.
+        const session = (await readSession())
+          ?? (await supabaseBrowser.auth.getSession()).data.session;
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -365,7 +369,8 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const session = await readSession();
+        const session = (await readSession())
+          ?? (await supabaseBrowser.auth.getSession()).data.session;
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -488,7 +493,8 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const session = await readSession();
+        const session = (await readSession())
+          ?? (await supabaseBrowser.auth.getSession()).data.session;
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -534,7 +540,8 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const session = await readSession();
+        const session = (await readSession())
+          ?? (await supabaseBrowser.auth.getSession()).data.session;
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -584,7 +591,8 @@ export default function PracticeGamePage() {
     setPracticeCreating(true);
     ;(async () => {
       try {
-        const session = await readSession();
+        const session = (await readSession())
+          ?? (await supabaseBrowser.auth.getSession()).data.session;
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 

@@ -21,6 +21,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import WhenCard from "@/components/compete/WhenCard";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import { getAccuracyColor } from "@/core/accuracyColor";
@@ -30,6 +31,8 @@ import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { YearPicker } from "@/components/YearPicker";
 import { AuthModal } from "@/components/AuthModal";
 import { useAuthGate } from "@/hooks/useAuthGate";
+import { ensureGuestSession } from "@/core/guestSession";
+import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import BrandMark from "@/components/brand/BrandMark";
 import styles from "./landing.module.css";
@@ -567,7 +570,10 @@ export default function LandingV2Prototype() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
+  const { isModalOpen, closeModal } = useAuthGate();
+  const router = useRouter();
+  const [guestBusy, setGuestBusy] = useState(false);
+  const [guestError, setGuestError] = useState<string | null>(null);
   const demoCounterRef = useRef<number | null>(null);
   const topbarRef = useRef<HTMLElement>(null);
   const heroLogoRef = useRef<HTMLHeadingElement>(null);
@@ -682,6 +688,54 @@ export default function LandingV2Prototype() {
     };
   }, []);
 
+  // Guest-first entry (GUEST-BUILD-ANONSIGNIN-1029-003): Play Now resolves or
+  // creates an anonymous session and drops the visitor into Journey stage 1
+  // with no sign-in. An already-signed-in session (registered or existing
+  // guest) goes straight to /home; failures render inline on the CTA — no
+  // modal. The CTA is disabled while in flight so a double-tap cannot create
+  // two guest accounts. The existing AuthModal path stays for the explicit
+  // sign-in entry.
+  const playAsGuest = async () => {
+    if (guestBusy) return;
+    setGuestBusy(true);
+    setGuestError(null);
+    try {
+      const result = await ensureGuestSession();
+      if (result === "existing") {
+        router.push("/home");
+        return;
+      }
+      if (result === "error") {
+        setGuestError("Unable to start a guest session — please try again.");
+        return;
+      }
+      const res = await fetch("/api/journey/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageNumber: 1 }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? "Unable to start the game — please try again.");
+      }
+      const started = (await res.json()) as {
+        stageId: string;
+        playthroughId: string;
+        gameId: string;
+      };
+      writeActivePlaythrough({
+        stageId: started.stageId,
+        playthroughId: started.playthroughId,
+        gameId: started.gameId,
+      });
+      router.push(`/practice/${started.gameId}`);
+    } catch (err) {
+      setGuestError(err instanceof Error ? err.message : "Unable to start the game — please try again.");
+    } finally {
+      setGuestBusy(false);
+    }
+  };
+
   const phaseTitle = ["A mysterious scene", "Drop a pin", "Pick a year", "Learn the story"][demoPhase];
   const phaseBody = [
     "No names. No dates. Just a picture from the past.",
@@ -741,13 +795,21 @@ export default function LandingV2Prototype() {
         </nav>
 
         {showTopbarExtras && (
-          <button
-            type="button"
-            onClick={() => requireAuth('/home')}
-            className={`${styles.playNowBtn} ${styles.topbarCta}`}
-          >
-            Play Now
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy}
+              className={`${styles.playNowBtn} ${styles.topbarCta}`}
+            >
+              Play Now
+            </button>
+            {guestError && (
+              <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
+                {guestError}
+              </span>
+            )}
+          </>
         )}
       </header>
 
@@ -778,11 +840,17 @@ export default function LandingV2Prototype() {
           <button
             ref={heroCtaRef}
             type="button"
-            onClick={() => requireAuth('/home')}
+            onClick={() => void playAsGuest()}
+            disabled={guestBusy}
             className={`${styles.playNowBtn} ${styles.heroCta}`}
           >
-            Play Now
+            {guestBusy ? "Starting…" : "Play Now"}
           </button>
+          {guestError && (
+            <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
+              {guestError}
+            </p>
+          )}
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
               <button
@@ -1273,12 +1341,18 @@ export default function LandingV2Prototype() {
           <div className={styles.finalCtaRow}>
             <button
               type="button"
-              onClick={() => requireAuth('/home')}
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy}
               className={`${styles.playNowBtn} ${styles.ctaBig}`}
             >
               <span className={styles.ctaPulse} />
-              Play Now
+              {guestBusy ? "Starting…" : "Play Now"}
             </button>
+            {guestError && (
+              <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
+                {guestError}
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -1293,7 +1367,12 @@ export default function LandingV2Prototype() {
           <a href="#ai">AI Images</a>
           <a href="#explore">Explore</a>
           <a href="#fun">Why Play</a>
-          <a href="/" onClick={(e) => { e.preventDefault(); requireAuth('/home'); }}>Play Now</a>
+          <a href="/" onClick={(e) => { e.preventDefault(); void playAsGuest(); }}>Play Now</a>
+          {guestError && (
+            <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
+              {guestError}
+            </span>
+          )}
         </div>
         <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
       </footer>

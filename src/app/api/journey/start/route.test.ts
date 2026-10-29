@@ -28,7 +28,15 @@ vi.mock("next/server", () => ({
   },
 }));
 
-function createSupabaseClient(user: { id: string; is_anonymous?: boolean } | null) {
+function createSupabaseClient(
+  user: { id: string; is_anonymous?: boolean } | null,
+  stageLookup?: { data: { id: string } | null; error?: { message: string } | null }
+) {
+  const maybeSingle = vi.fn().mockResolvedValue(
+    stageLookup ?? { data: null, error: null }
+  );
+  const eq = vi.fn().mockReturnValue({ maybeSingle });
+  const select = vi.fn().mockReturnValue({ eq });
   return {
     auth: {
       getUser: vi.fn().mockResolvedValue({
@@ -36,6 +44,7 @@ function createSupabaseClient(user: { id: string; is_anonymous?: boolean } | nul
         error: user ? null : new Error("Unauthorized"),
       }),
     },
+    from: vi.fn().mockReturnValue({ select }),
   };
 }
 
@@ -127,5 +136,59 @@ describe("POST /api/journey/start", () => {
       stageId: "stage-1",
       isAnonymous: false,
     });
+  });
+
+  it("resolves an optional stageNumber to stageId server-side", async () => {
+    mockFns.createAuthenticatedServerClient.mockReturnValue(
+      createSupabaseClient(
+        { id: "guest-2", is_anonymous: true },
+        { data: { id: "stage-1-uuid" } }
+      )
+    );
+    mockFns.startJourneyPlaythrough.mockResolvedValue({
+      gameId: "game-3",
+      playthroughId: "pt-3",
+      stageId: "stage-1-uuid",
+      stageNumber: 1,
+      drawnEventIds: ["e1"],
+    });
+
+    const POST = await loadRoute();
+    const response = await POST(createMockRequest({ stageNumber: 1 }));
+
+    expect(mockFns.startJourneyPlaythrough).toHaveBeenCalledWith({
+      playerId: "guest-2",
+      stageId: "stage-1-uuid",
+      isAnonymous: true,
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it("returns 404 when stageNumber matches no journey_stages row", async () => {
+    mockFns.createAuthenticatedServerClient.mockReturnValue(
+      createSupabaseClient({ id: "user-3" }, { data: null })
+    );
+
+    const POST = await loadRoute();
+    const response = await POST(createMockRequest({ stageNumber: 99 }));
+
+    expect(mockFns.startJourneyPlaythrough).not.toHaveBeenCalled();
+    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(body.error).toBe("Journey stage not found");
+  });
+
+  it("returns 400 when neither stageId nor stageNumber is provided", async () => {
+    mockFns.createAuthenticatedServerClient.mockReturnValue(
+      createSupabaseClient({ id: "user-4" })
+    );
+
+    const POST = await loadRoute();
+    const response = await POST(createMockRequest({}));
+
+    expect(mockFns.startJourneyPlaythrough).not.toHaveBeenCalled();
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("stageId is required");
   });
 });
