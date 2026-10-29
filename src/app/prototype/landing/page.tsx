@@ -29,8 +29,6 @@ import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { YearPicker } from "@/components/YearPicker";
-import { AuthModal } from "@/components/AuthModal";
-import { useAuthGate } from "@/hooks/useAuthGate";
 import { ensureGuestSession } from "@/core/guestSession";
 import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
@@ -570,7 +568,6 @@ export default function LandingV2Prototype() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-  const { isModalOpen, closeModal } = useAuthGate();
   const router = useRouter();
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestError, setGuestError] = useState<string | null>(null);
@@ -693,8 +690,7 @@ export default function LandingV2Prototype() {
   // with no sign-in. An already-signed-in session (registered or existing
   // guest) goes straight to /home; failures render inline on the CTA — no
   // modal. The CTA is disabled while in flight so a double-tap cannot create
-  // two guest accounts. The existing AuthModal path stays for the explicit
-  // sign-in entry.
+  // two guest accounts. The Sign in entry routes returning users to /login.
   const playAsGuest = async () => {
     if (guestBusy) return;
     setGuestBusy(true);
@@ -766,6 +762,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }}>Sign in</a>
           <LanguageDropdown />
         </nav>
 
@@ -791,6 +788,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <a href="/login" onClick={(e) => { e.preventDefault(); setMenuOpen(false); router.push("/login"); }}>Sign in</a>
           <LanguageDropdown />
         </nav>
 
@@ -851,6 +849,13 @@ export default function LandingV2Prototype() {
               {guestError}
             </p>
           )}
+          <a
+            href="/login"
+            onClick={(e) => { e.preventDefault(); router.push("/login"); }}
+            style={{ color: "var(--gh-text-secondary)", fontSize: "var(--font-sm)", marginTop: 16, display: "inline-block" }}
+          >
+            Already have an account? Sign in
+          </a>
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
               <button
@@ -1376,7 +1381,6 @@ export default function LandingV2Prototype() {
         </div>
         <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
       </footer>
-      <AuthModal isOpen={isModalOpen} onClose={closeModal} required={false} />
     </div>
   );
 }
