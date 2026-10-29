@@ -752,7 +752,14 @@
     "notif_channel_in_app": "アプリ内のみ",
     "notif_channel_both": "両方",
     "notif_push_hint": "このブラウザではプッシュ通知がオフです。受け取るには通知を有効にしてください。",
-    "notif_save_error": "保存できませんでした。もう一度お試しください。"
+    "notif_save_error": "保存できませんでした。もう一度お試しください。",
+    "android_apk_title": "Androidアプリ（ベータ版）",
+    "android_apk_body": "AndroidスマートフォンにBack to the Pastアプリをインストールしてください。",
+    "android_apk_button": "APKをダウンロード",
+    "android_apk_step1": "1. 「APKをダウンロード」をタップし、ファイルを開きます。",
+    "android_apk_step2": "2. Androidに確認されたら、このブラウザからのインストールを許可してください。",
+    "android_apk_step3": "3. Play プロテクトの警告が表示されたら、「インストール」をタップします。",
+    "android_apk_note": "ベータ版：アップデートするには、先に古いバージョンをアンインストールしてください。再度ログインが必要になります。"
   },
   "avatar_picker": {
     "title": "アバターを選択",

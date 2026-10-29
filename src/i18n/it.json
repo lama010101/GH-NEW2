@@ -752,7 +752,14 @@
     "notif_channel_in_app": "Solo in-app",
     "notif_channel_both": "Entrambe",
     "notif_push_hint": "Le notifiche push sono disattivate in questo browser — attivale per riceverle.",
-    "notif_save_error": "Salvataggio non riuscito. Riprova."
+    "notif_save_error": "Salvataggio non riuscito. Riprova.",
+    "android_apk_title": "App Android (beta)",
+    "android_apk_body": "Installa l'app Back to the Past sul tuo telefono Android.",
+    "android_apk_button": "Scarica l'APK",
+    "android_apk_step1": "1. Tocca «Scarica l'APK» e apri il file.",
+    "android_apk_step2": "2. Se Android lo chiede, consenti le installazioni da questo browser.",
+    "android_apk_step3": "3. Se Play Protect mostra un avviso sull'app, tocca «Installa comunque».",
+    "android_apk_note": "Versione beta: per aggiornarla, disinstalla prima la vecchia versione. Dovrai accedere di nuovo."
   },
   "avatar_picker": {
     "title": "Scegli avatar",
