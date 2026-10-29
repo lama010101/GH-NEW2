@@ -752,7 +752,14 @@
     "notif_channel_in_app": "Alleen in-app",
     "notif_channel_both": "Beide",
     "notif_push_hint": "Pushmeldingen staan uit in deze browser — zet meldingen aan om ze te ontvangen.",
-    "notif_save_error": "Opslaan mislukt. Probeer opnieuw."
+    "notif_save_error": "Opslaan mislukt. Probeer opnieuw.",
+    "android_apk_title": "Android-app (bèta)",
+    "android_apk_body": "Installeer de Back to the Past-app op je Android-telefoon.",
+    "android_apk_button": "APK downloaden",
+    "android_apk_step1": "1. Tik op „APK downloaden” en open het bestand.",
+    "android_apk_step2": "2. Als Android daarom vraagt, sta dan installaties vanuit deze browser toe.",
+    "android_apk_step3": "3. Als Play Protect een waarschuwing over de app toont, tik dan op „Toch installeren”.",
+    "android_apk_note": "Bètaversie: verwijder om te updaten eerst de oude versie. Je moet daarna opnieuw inloggen."
   },
   "avatar_picker": {
     "title": "Kies avatar",

@@ -752,7 +752,14 @@
     "notif_channel_in_app": "仅应用内",
     "notif_channel_both": "两者",
     "notif_push_hint": "此浏览器已关闭推送通知——请开启通知以接收推送。",
-    "notif_save_error": "保存失败，请重试。"
+    "notif_save_error": "保存失败，请重试。",
+    "android_apk_title": "Android 应用（测试版）",
+    "android_apk_body": "在您的 Android 手机上安装 Back to the Past 应用。",
+    "android_apk_button": "下载 APK",
+    "android_apk_step1": "1. 点击「下载 APK」并打开文件。",
+    "android_apk_step2": "2. 如果 Android 询问，请允许来自此浏览器的安装。",
+    "android_apk_step3": "3. 如果 Play Protect 提示应用警告，请点击「仍然安装」。",
+    "android_apk_note": "测试版：如需更新，请先卸载旧版本。您需要重新登录。"
   },
   "avatar_picker": {
     "title": "选择头像",

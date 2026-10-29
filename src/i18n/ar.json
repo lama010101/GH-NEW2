@@ -752,7 +752,14 @@
     "notif_channel_in_app": "داخل التطبيق فقط",
     "notif_channel_both": "كلاهما",
     "notif_push_hint": "الإشعارات الفورية غير مفعّلة في هذا المتصفح — فعّل الإشعارات لاستلامها.",
-    "notif_save_error": "تعذّر الحفظ. حاول مرة أخرى."
+    "notif_save_error": "تعذّر الحفظ. حاول مرة أخرى.",
+    "android_apk_title": "تطبيق أندرويد (إصدار تجريبي)",
+    "android_apk_body": "ثبّت تطبيق Back to the Past على هاتفك الذي يعمل بنظام Android.",
+    "android_apk_button": "تنزيل APK",
+    "android_apk_step1": "1. اضغط على «تنزيل APK» وافتح الملف.",
+    "android_apk_step2": "2. إذا طلب Android ذلك، فاسمح بالتثبيت من هذا المتصفح.",
+    "android_apk_step3": "3. إذا عرض Play Protect تحذيراً بشأن التطبيق، فاضغط على «التثبيت على أي حال».",
+    "android_apk_note": "إصدار تجريبي: للتحديث، ألغِ تثبيت الإصدار القديم أولاً. ستحتاج إلى تسجيل الدخول مرة أخرى."
   },
   "avatar_picker": {
     "title": "اختر صورة رمزية",
