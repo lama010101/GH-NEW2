@@ -140,6 +140,7 @@ async function loadOverallRanked(sort: string): Promise<RawRankedRow[]> {
       SELECT pgs.player_id, pgs.avg_accuracy, pgs.total_xp, pgs.games_played, pgs.rounds_played, pgs.rounds_won
       FROM player_global_stats pgs
       JOIN profiles pr ON pr.id = pgs.player_id
+      JOIN auth.users u ON u.id = pgs.player_id AND u.is_anonymous = false
       WHERE pgs.games_played > 0
         AND ${testAccountFilterSql("pgs.player_id")}
     ),
