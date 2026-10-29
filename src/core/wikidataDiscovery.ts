@@ -175,9 +175,29 @@ WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 GROUP BY ?item ?itemLabel ?date ?precision ?lat ?lon ?coordSource ?sitelinks
-ORDER BY ?item
+ORDER BY DESC(?sitelinks) ?item
 LIMIT ${limit}
 OFFSET ${offset}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// wdqsLiteralToJsonTime — WDQS serializes xsd:dateTime in ASTRONOMICAL year
+// numbering (53 BC -> "-0052-...", 1 BC -> "0000-..."), while the JSON/Action
+// API form that parseWikidataTime expects uses -N for N BC and has no year 0
+// (53 BC -> "-0053-...", 1 BC -> "-0001-..."). This converts the WDQS literal
+// to the JSON form before it reaches parseWikidataTime: signed year <= 0 ->
+// year - 1; year >= 1 and unparseable input pass through unchanged.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function wdqsLiteralToJsonTime(lit: string): string {
+  const m = /^([+-]?)(\d+)-\d{2}-\d{2}T/.exec(lit);
+  if (!m) return lit;
+  const magnitude = parseInt(m[2], 10);
+  if (!Number.isFinite(magnitude)) return lit;
+  const year = m[1] === "-" ? -magnitude : magnitude;
+  if (year >= 1) return lit;
+  const jsonYear = year - 1;
+  return `-${String(-jsonYear).padStart(m[2].length, "0")}${lit.slice(m[1].length + m[2].length)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,8 +264,12 @@ export function mapBindingToCandidate(
   // a qid-shaped label is treated as missing, never stored as wd_label.
   if (!label || label === qid) return { ok: false, reason: "missing_label", qid };
 
+  // WDQS literals are astronomical-numbered; convert to the JSON form once —
+  // the raw literal is never fed to parseWikidataTime or stored as event_date.
+  const jsonTime =
+    row.date?.value == null ? undefined : wdqsLiteralToJsonTime(row.date.value);
   const parsed = parseWikidataTime({
-    time: row.date?.value,
+    time: jsonTime,
     precision: row.precision == null ? undefined : Number(row.precision.value),
   });
   if (!parsed) return { ok: false, reason: "null_year", qid };
@@ -275,7 +299,7 @@ export function mapBindingToCandidate(
     .map((s) => s.trim())
     .filter((s) => /^Q\d+$/.test(s));
   // Date text: strip leading "+" and the time-of-day tail, keep BCE sign.
-  const event_date = (row.date?.value ?? "").replace(/^\+/, "").replace(/T.*$/, "");
+  const event_date = (jsonTime ?? "").replace(/^\+/, "").replace(/T.*$/, "");
   const quota_bucket = quotaBucket({ year: parsed.year, classGroup: ctx.classGroup, lat, lon });
 
   return {

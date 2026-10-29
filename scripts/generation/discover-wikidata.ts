@@ -11,10 +11,15 @@
 //
 // Source: https://query.wikidata.org/sparql (Accept: sparql-results+json).
 // Politeness (EDQ conventions, scripts/event-quality/wikidata-verify.ts):
-// serial requests, >=250 ms gap, retry on 429/5xx honoring Retry-After
-// (max 5), abort the run when total 429s exceed 20. WDQS ~60 s timeouts
-// are handled by splitting the year window into era buckets (newest
-// first); a single-era window that still times out is recorded+skipped.
+// serial requests, >=250 ms gap; 429/503 honor Retry-After else
+// exponential backoff with jitter (5s,10s,20s,40s,60s cap) — the class
+// loop aborts only after 8 CONSECUTIVE rate-limit responses and still
+// writes the partial report. Other 5xx keep the generic max-5 retry.
+// WDQS ~60 s timeouts are handled by splitting the year window into era
+// buckets (newest first); a single-era window that still times out is
+// recorded+skipped. The JSON report is written to --out BEFORE any DB
+// access; the read-only overlap SELECT runs afterwards with retries and
+// can only degrade the report, never lose it.
 //
 // Pure logic lives in src/core/wikidataDiscovery.ts +
 // src/core/candidateFingerprint.ts. Year defaults come from the game's
@@ -30,12 +35,14 @@ import {
   eraLabelForYear,
   eraWindows,
   mapBindingToCandidate,
+  wdqsLiteralToJsonTime,
   type DiscoveryBinding,
   type MappedCandidate,
   type MapRejectReason,
 } from "../../src/core/wikidataDiscovery";
 import { buildDedupeFingerprint } from "../../src/core/candidateFingerprint";
 import { parseWikidataTime } from "../../src/core/wikidataMatch";
+import { haversineDistanceKm } from "../../src/core/rules";
 
 dotenv.config({ path: ".env.local" });
 
@@ -108,26 +115,42 @@ function shuffled<T>(arr: readonly T[], rng: () => number): T[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WDQS client — serial requests, >=250 ms gap, 429/5xx retry honoring
-// Retry-After (max 5). Run aborts when retries429 > MAX_429_BUDGET.
+// WDQS client — serial requests, >=250 ms gap. 429/503: Retry-After else
+// exponential backoff with jitter (cap 60 s); RateLimitAbortError after
+// MAX_CONSECUTIVE_RATE_LIMITS consecutive rate-limit responses. Other 5xx
+// and network errors retry up to MAX_RETRIES.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const UA = "GuessHistoryBot/1.0 (https://www.guess-history.com)";
 const WDQS_URL = "https://query.wikidata.org/sparql";
 const MIN_GAP_MS = 250;
 const MAX_RETRIES = 5;
-const MAX_429_BUDGET = 20;
+const MAX_CONSECUTIVE_RATE_LIMITS = 8;
+const RATE_LIMIT_BASE_MS = 5000;
+const RATE_LIMIT_CAP_MS = 60000;
 const CLIENT_TIMEOUT_MS = 75000;
+const PROXIMITY_YEAR_TOLERANCE = 1;
+const PROXIMITY_MAX_KM = 30;
+const OVERLAP_MAX_ATTEMPTS = 4; // initial try + up to 3 retries
+const OVERLAP_RETRY_GAP_MS = 5000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const stats = { requests: 0, retries429: 0, timeouts: 0, errors: 0, windowSplits: 0 };
+const stats = { requests: 0, retries429: 0, retries503: 0, timeouts: 0, errors: 0, windowSplits: 0 };
 let lastRequestAt = 0;
+let consecutiveRateLimits = 0;
 
 class WdqsTimeoutError extends Error {
   constructor(msg: string) {
     super(msg);
     this.name = "WdqsTimeoutError";
+  }
+}
+
+class RateLimitAbortError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = "RateLimitAbortError";
   }
 }
 
@@ -146,25 +169,46 @@ async function wdqs(sparql: string): Promise<DiscoveryBinding[]> {
         headers: { "User-Agent": UA, Accept: "application/sparql-results+json" },
         signal: ctrl.signal,
       });
-      if (res.status === 429 || res.status >= 500) {
+      if (res.status === 429 || res.status === 503) {
         const body = await res.text().catch(() => "");
-        if (res.status === 429) {
-          stats.retries429 += 1;
-          if (stats.retries429 > MAX_429_BUDGET) {
-            throw new Error("rate_limit_abort: 429 budget exceeded");
-          }
-        }
         if (/timeout/i.test(body)) {
           stats.timeouts += 1;
           throw new WdqsTimeoutError(`WDQS query timeout (HTTP ${res.status})`);
         }
+        if (res.status === 429) stats.retries429 += 1;
+        else stats.retries503 += 1;
+        consecutiveRateLimits += 1;
+        if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
+          throw new RateLimitAbortError(
+            `rate_limit_abort: ${MAX_CONSECUTIVE_RATE_LIMITS} consecutive rate-limit responses`
+          );
+        }
         const retryAfter = Number(res.headers.get("retry-after"));
-        const wait = Number.isFinite(retryAfter) && retryAfter > 0
-          ? retryAfter * 1000
-          : Math.min(16000, 1000 * 2 ** attempt);
+        const backoff = Math.min(
+          RATE_LIMIT_CAP_MS,
+          RATE_LIMIT_BASE_MS * 2 ** (consecutiveRateLimits - 1)
+        );
+        const wait =
+          Number.isFinite(retryAfter) && retryAfter > 0
+            ? retryAfter * 1000
+            : Math.round(backoff * (0.5 + Math.random() * 0.5));
+        lastErr = `HTTP ${res.status}`;
+        // Rate-limit waits ride on the consecutive counter, not the generic
+        // retry budget: undo the loop increment for this iteration.
+        attempt -= 1;
+        await sleep(wait);
+        continue;
+      }
+      consecutiveRateLimits = 0;
+      if (res.status >= 500) {
+        const body = await res.text().catch(() => "");
+        if (/timeout/i.test(body)) {
+          stats.timeouts += 1;
+          throw new WdqsTimeoutError(`WDQS query timeout (HTTP ${res.status})`);
+        }
         lastErr = `HTTP ${res.status}`;
         if (attempt === MAX_RETRIES) break;
-        await sleep(wait);
+        await sleep(Math.min(16000, 1000 * 2 ** attempt));
         continue;
       }
       if (!res.ok) {
@@ -176,6 +220,7 @@ async function wdqs(sparql: string): Promise<DiscoveryBinding[]> {
     } catch (err) {
       lastErr = err instanceof Error ? err.message : String(err);
       if (err instanceof WdqsTimeoutError) throw err;
+      if (err instanceof RateLimitAbortError) throw err;
       if (ctrl.signal.aborted) {
         stats.timeouts += 1;
         throw new WdqsTimeoutError(`WDQS client timeout after ${CLIENT_TIMEOUT_MS}ms`);
@@ -212,12 +257,10 @@ async function fetchClass(
   const errors: WindowError[] = [];
   const queue: Array<{ yearMin: number; yearMax: number }> = [{ yearMin, yearMax }];
   while (queue.length > 0 && rows.length < limitPerClass) {
-    if (stats.retries429 > MAX_429_BUDGET) break;
     const w = queue.shift()!;
     try {
       let offset = 0;
       while (rows.length < limitPerClass) {
-        if (stats.retries429 > MAX_429_BUDGET) break;
         const pageLimit = Math.min(PAGE_SIZE, limitPerClass - rows.length);
         const sparql = buildDiscoveryQuery({
           classQids,
@@ -250,6 +293,11 @@ async function fetchClass(
           errors.push({ ...w, error: msg });
           stats.errors += 1;
         }
+      } else if (err instanceof RateLimitAbortError) {
+        errors.push({ ...w, error: msg });
+        stats.errors += 1;
+        console.log(`  [${className}] rate-limit abort: ${msg} — stopping class`);
+        break;
       } else {
         errors.push({ ...w, error: msg });
         stats.errors += 1;
@@ -292,6 +340,65 @@ async function insertBatch(cands: MappedCandidate[]): Promise<number> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Overlap report types + DB error sanitizer (module level; used only by main).
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ExistingEvent = {
+  id: string;
+  title: string;
+  event_year: number;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+type FingerprintExample = {
+  qid: string;
+  candidateTitle: string;
+  existingTitle: string;
+  year: number;
+};
+
+type ProximityPair = {
+  qid: string;
+  label: string;
+  candidateYear: number;
+  eventId: string;
+  existingTitle: string;
+  existingYear: number;
+  km: number;
+};
+
+type OverlapReport =
+  | { unavailable: true; error: string }
+  | {
+      existingFingerprints: number;
+      collisions: number;
+      examples: FingerprintExample[];
+      proximity: {
+        yearTolerance: number;
+        maxDistanceKm: number;
+        candidatesWithMatch: number;
+        matchPairs: number;
+        examples: ProximityPair[];
+        pairs: ProximityPair[];
+      };
+    };
+
+// Error text recorded in the report: name + pg/net code, or a first-line
+// message with connection-detail key=value pairs redacted. A raw conninfo
+// string or username can never reach the report file.
+function safeDbError(err: unknown): string {
+  const e = err as { name?: string; code?: string; message?: string } | null;
+  const name = e?.name ?? "Error";
+  if (e?.code) return `${name} ${e.code}`;
+  const msg = (e?.message ?? String(err))
+    .split("\n")[0]
+    .replace(/(host|user|password|dbname|database|port|sslmode|connection[_ ]?string)\s*[=:]\s*\S+/gi, "$1=<redacted>")
+    .slice(0, 160);
+  return `${name}: ${msg}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -325,14 +432,14 @@ async function main() {
   const rawByClassEra: Record<string, Record<string, number>> = {};
   const errorsByClassEra: Record<string, WindowError[]> = {};
   const allRows: Array<{ row: DiscoveryBinding; classGroup: string }> = [];
-  let abortedBy429 = false;
+  let abortedByRateLimit = false;
 
   for (const g of groups) {
     rawByClassEra[g.name] = {};
     const out = await fetchClass(g.qids, f.yearMin, f.yearMax, f.minSitelinks, f.limitPerClass, g.name);
     for (const row of out.rows) {
       const parsed = parseWikidataTime({
-        time: row.date?.value,
+        time: row.date?.value == null ? undefined : wdqsLiteralToJsonTime(row.date.value),
         precision: row.precision == null ? undefined : Number(row.precision.value),
       });
       const era = eraLabelForYear(parsed?.year ?? null);
@@ -342,8 +449,8 @@ async function main() {
     if (out.errors.length) {
       (errorsByClassEra[g.name] ??= []).push(...out.errors);
     }
-    if (stats.retries429 > MAX_429_BUDGET) {
-      abortedBy429 = true;
+    if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
+      abortedByRateLimit = true;
       break;
     }
   }
@@ -418,27 +525,6 @@ async function main() {
   const rng = mulberry32(f.seed);
   const sample = shuffled(dedupedCandidates, rng).slice(0, 25);
 
-  // (e) overlap report vs existing events (READ-ONLY SELECT via dbPool).
-  type ExistingEvent = { title: string; event_year: number; latitude: number | null; longitude: number | null };
-  const evRes = await dbPool.query<ExistingEvent>(
-    `SELECT e.title, e.event_year, l.latitude, l.longitude
-       FROM events e
-       JOIN locations l ON l.event_id = e.id
-      WHERE e.real_event = true`
-  );
-  const existingByFp = new Map<string, ExistingEvent>();
-  for (const e of evRes.rows) {
-    const fp = buildDedupeFingerprint({
-      title: e.title, year: e.event_year, lat: e.latitude, lon: e.longitude,
-    });
-    if (!existingByFp.has(fp)) existingByFp.set(fp, e);
-  }
-  const collisions: Array<{ candidate: MappedCandidate; existing: ExistingEvent }> = [];
-  for (const c of dedupedCandidates) {
-    const ex = existingByFp.get(c.dedupe_fingerprint);
-    if (ex) collisions.push({ candidate: c, existing: ex });
-  }
-
   // ── Console report ──
   const totalRaw = allRows.length;
   console.log(`\n=== (a) RAW ROWS per class x era (sitelinks>=${f.minSitelinks}) ===`);
@@ -471,11 +557,146 @@ async function main() {
     console.log(`  ${c.wikidata_qid.padEnd(10)} ${c.event_year.toString().padStart(6)} ${c.quota_bucket.era.padEnd(6)} ${c.quota_bucket.class.padEnd(14)} ${c.title} | ${c.latitude?.toFixed(2)},${c.longitude?.toFixed(2)} ${c.coord_source} sl=${c.sitelinks}`);
   }
 
-  console.log(`\n=== (e) OVERLAP vs existing events (events JOIN locations, real_event=true) ===`);
-  console.log(`  existing event fingerprints: ${existingByFp.size} (from ${evRes.rows.length} rows)`);
-  console.log(`  colliding candidates: ${collisions.length}/${dedupedCandidates.length}`);
-  for (const { candidate, existing } of collisions.slice(0, 10)) {
-    console.log(`  DUP ${candidate.wikidata_qid} "${candidate.title}" ${candidate.event_year} ~= "${existing.title}" ${existing.event_year}`);
+  // ── Report BEFORE any DB access: --out exists on disk even if the
+  // overlap SELECT below fails. overlap is rewritten in place afterwards.
+  const outPath = resolve(f.out);
+  const report = {
+    meta: {
+      task: "GEN-FIX-DISCOVER-1028-002",
+      write: f.write,
+      yearMin: f.yearMin,
+      yearMax: f.yearMax,
+      minSitelinks: f.minSitelinks,
+      limitPerClass: f.limitPerClass,
+      seed: f.seed,
+      classes: groups.map((g) => g.name),
+      abortedByRateLimit,
+      elapsedSec: 0,
+      stats,
+    },
+    rawByClassEra,
+    windowErrors: errorsByClassEra,
+    coords: { rowsWithCoords, rowsWithoutCoords, qidWithCoords: qidWithCoords.size, distinctQids: qidSet.size },
+    rejects,
+    fingerprintDupes: fpDupes,
+    overlap: { unavailable: true, error: "overlap pending — report written before DB access" } as OverlapReport,
+    sample,
+    candidates: dedupedCandidates,
+  };
+  const writeReport = () => {
+    report.meta.elapsedSec = Math.round((Date.now() - startedAt) / 10) / 100;
+    writeFileSync(outPath, JSON.stringify(report, null, 1));
+  };
+  writeReport();
+  console.log(`\nreport (pre-DB): ${outPath}`);
+
+  // (e) overlap vs existing events — READ-ONLY SELECT AFTER the report is
+  // on disk. Initial try + up to 3 retries (OVERLAP_MAX_ATTEMPTS), 5 s
+  // apart; a final failure degrades overlap to {unavailable,error} and the
+  // run still exits 0 — process.exit(1) must never fire for a DB error
+  // once the report exists.
+  let existingRows: ExistingEvent[] | null = null;
+  let overlapErr = "unknown";
+  for (let i = 0; i < OVERLAP_MAX_ATTEMPTS; i++) {
+    try {
+      const evRes = await dbPool.query<ExistingEvent>(
+        `SELECT e.id, e.title, e.event_year, l.latitude, l.longitude
+           FROM events e
+           JOIN locations l ON l.event_id = e.id
+          WHERE e.real_event = true`
+      );
+      existingRows = evRes.rows;
+      break;
+    } catch (err) {
+      overlapErr = safeDbError(err);
+      if (i + 1 < OVERLAP_MAX_ATTEMPTS) {
+        console.log(`  overlap SELECT failed (${overlapErr}) — retry ${i + 1}/3 in ${OVERLAP_RETRY_GAP_MS / 1000}s`);
+        await sleep(OVERLAP_RETRY_GAP_MS);
+      }
+    }
+  }
+
+  if (existingRows == null) {
+    report.overlap = { unavailable: true, error: overlapErr };
+    writeReport();
+    console.log(`\n=== (e) OVERLAP unavailable: ${overlapErr} — report kept, no DB-error exit ===`);
+  } else {
+    const existingByFp = new Map<string, ExistingEvent>();
+    for (const e of existingRows) {
+      const fp = buildDedupeFingerprint({
+        title: e.title, year: e.event_year, lat: e.latitude, lon: e.longitude,
+      });
+      if (!existingByFp.has(fp)) existingByFp.set(fp, e);
+    }
+    const collisions: Array<{ candidate: MappedCandidate; existing: ExistingEvent }> = [];
+    for (const c of dedupedCandidates) {
+      const ex = existingByFp.get(c.dedupe_fingerprint);
+      if (ex) collisions.push({ candidate: c, existing: ex });
+    }
+
+    // REPORT-ONLY proximity overlap (never blocks): |Δyear| <= 1 AND
+    // great-circle distance <= 30 km via the shared haversineDistanceKm.
+    const proximityPairs: ProximityPair[] = [];
+    const pairKeys = new Set<string>();
+    const matchedQids = new Set<string>();
+    for (const c of dedupedCandidates) {
+      if (c.latitude == null || c.longitude == null) continue;
+      for (const e of existingRows) {
+        if (e.latitude == null || e.longitude == null) continue;
+        if (typeof e.event_year !== "number" || !Number.isFinite(e.event_year)) continue;
+        if (Math.abs(c.event_year - e.event_year) > PROXIMITY_YEAR_TOLERANCE) continue;
+        const km = haversineDistanceKm(
+          { lat: c.latitude, lng: c.longitude },
+          { lat: e.latitude, lng: e.longitude }
+        );
+        if (km > PROXIMITY_MAX_KM) continue;
+        const key = `${c.wikidata_qid}|${e.id}`;
+        if (pairKeys.has(key)) continue;
+        pairKeys.add(key);
+        matchedQids.add(c.wikidata_qid);
+        proximityPairs.push({
+          qid: c.wikidata_qid,
+          label: c.title,
+          candidateYear: c.event_year,
+          eventId: e.id,
+          existingTitle: e.title,
+          existingYear: e.event_year,
+          km: Math.round(km * 100) / 100,
+        });
+      }
+    }
+
+    report.overlap = {
+      existingFingerprints: existingByFp.size,
+      collisions: collisions.length,
+      examples: collisions.slice(0, 10).map((x) => ({
+        qid: x.candidate.wikidata_qid,
+        candidateTitle: x.candidate.title,
+        existingTitle: x.existing.title,
+        year: x.candidate.event_year,
+      })),
+      proximity: {
+        yearTolerance: PROXIMITY_YEAR_TOLERANCE,
+        maxDistanceKm: PROXIMITY_MAX_KM,
+        candidatesWithMatch: matchedQids.size,
+        matchPairs: proximityPairs.length,
+        examples: proximityPairs.slice(0, 20),
+        pairs: proximityPairs,
+      },
+    };
+    writeReport();
+
+    console.log(`\n=== (e) OVERLAP vs existing events (events JOIN locations, real_event=true) ===`);
+    console.log(`  existing event fingerprints: ${existingByFp.size} (from ${existingRows.length} rows)`);
+    console.log(`  colliding candidates: ${collisions.length}/${dedupedCandidates.length}`);
+    for (const { candidate, existing } of collisions.slice(0, 10)) {
+      console.log(`  DUP ${candidate.wikidata_qid} "${candidate.title}" ${candidate.event_year} ~= "${existing.title}" ${existing.event_year}`);
+    }
+    console.log(`\n=== (e2) PROXIMITY OVERLAP (report only): |Δyear| <= ${PROXIMITY_YEAR_TOLERANCE} AND dist <= ${PROXIMITY_MAX_KM} km ===`);
+    console.log(`  candidates with >=1 proximity match: ${matchedQids.size}/${dedupedCandidates.length}  (matched pairs: ${proximityPairs.length})`);
+    for (const p of proximityPairs.slice(0, 20)) {
+      console.log(`  NEAR ${p.qid} "${p.label}" ${p.candidateYear} ~= ${p.eventId} "${p.existingTitle}" ${p.existingYear} @ ${p.km}km`);
+    }
   }
 
   // Optional write path — never executed in this task.
@@ -489,43 +710,11 @@ async function main() {
 
   const elapsedSec = Math.round((Date.now() - startedAt) / 10) / 100;
   console.log(`\n=== RUN STATS ===`);
-  console.log(`  requests: ${stats.requests}   429s: ${stats.retries429}   timeouts: ${stats.timeouts}   window splits: ${stats.windowSplits}   errors: ${stats.errors}   elapsed: ${elapsedSec}s`);
-  if (abortedBy429) console.log(`  aborted: 429 budget exceeded (${stats.retries429} > ${MAX_429_BUDGET}) — partial report`);
+  console.log(`  requests: ${stats.requests}   429s: ${stats.retries429}   503s: ${stats.retries503}   timeouts: ${stats.timeouts}   window splits: ${stats.windowSplits}   errors: ${stats.errors}   elapsed: ${elapsedSec}s`);
+  if (abortedByRateLimit) console.log(`  aborted: ${MAX_CONSECUTIVE_RATE_LIMITS} consecutive rate-limit responses — partial report`);
   if (!f.write) console.log("\nDRY RUN COMPLETE — generation_candidates untouched (0 writes).");
 
-  const outPath = resolve(f.out);
-  writeFileSync(outPath, JSON.stringify({
-    meta: {
-      task: "GEN-BUILD-DISCOVER-1028-001",
-      write: f.write,
-      yearMin: f.yearMin,
-      yearMax: f.yearMax,
-      minSitelinks: f.minSitelinks,
-      limitPerClass: f.limitPerClass,
-      seed: f.seed,
-      classes: groups.map((g) => g.name),
-      abortedBy429,
-      elapsedSec,
-      stats,
-    },
-    rawByClassEra,
-    windowErrors: errorsByClassEra,
-    coords: { rowsWithCoords, rowsWithoutCoords, qidWithCoords: qidWithCoords.size, distinctQids: qidSet.size },
-    rejects,
-    fingerprintDupes: fpDupes,
-    overlap: {
-      existingFingerprints: existingByFp.size,
-      collisions: collisions.length,
-      examples: collisions.slice(0, 10).map((x) => ({
-        qid: x.candidate.wikidata_qid,
-        candidateTitle: x.candidate.title,
-        existingTitle: x.existing.title,
-        year: x.candidate.event_year,
-      })),
-    },
-    sample,
-    candidates: dedupedCandidates,
-  }, null, 1));
+  writeReport();
   console.log(`report: ${outPath}`);
 }
 

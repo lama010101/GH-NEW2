@@ -12,6 +12,7 @@ import {
   mapBindingToCandidate,
   quotaBucket,
   regionLabel,
+  wdqsLiteralToJsonTime,
   type DiscoveryBinding,
 } from "./wikidataDiscovery";
 
@@ -152,11 +153,12 @@ describe("mapBindingToCandidate", () => {
     expect(c.quota_bucket).toEqual({ era: "c19", class: "battle", region: "N50_E0" });
   });
 
-  it("maps BCE years with the reused parser (-N = N BCE)", () => {
+  it("maps BCE years from the WDQS literal (astronomical -N = N+1 BCE)", () => {
     const r = mapBindingToCandidate(
       binding({
         itemLabel: "Assassination of Julius Caesar",
-        date: "-0044-03-15T00:00:00Z",
+        // WDQS serializes 44 BC as astronomical -43; the JSON form is -0044.
+        date: "-0043-03-15T00:00:00Z",
         lat: "41.895",
         lon: "12.483",
         sitelinks: "80",
@@ -205,11 +207,11 @@ describe("mapBindingToCandidate", () => {
     expect(r.reason).toBe("year_out_of_range");
   });
 
-  it("rejects year 0 as null_year (ambiguous under BCE convention)", () => {
+  it("maps WDQS year 0 (1 BC, unambiguous in astronomical numbering) to -1", () => {
     const r = mapBindingToCandidate(binding({ date: "0000-01-01T00:00:00Z" }), ctx);
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.reason).toBe("null_year");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.candidate.event_year).toBe(-1);
   });
 });
 
@@ -263,5 +265,111 @@ describe("era/region/quotaBucket", () => {
       class: "battle",
       region: "N50_E0",
     });
+  });
+});
+
+describe("wdqsLiteralToJsonTime", () => {
+  it("shifts non-positive astronomical years back one (WDQS -> JSON)", () => {
+    expect(wdqsLiteralToJsonTime("-0052-06-07T00:00:00Z")).toBe("-0053-06-07T00:00:00Z");
+    expect(wdqsLiteralToJsonTime("0000-01-01T00:00:00Z")).toBe("-0001-01-01T00:00:00Z");
+    expect(wdqsLiteralToJsonTime("-0330-10-01T00:00:00Z")).toBe("-0331-10-01T00:00:00Z");
+  });
+  it("leaves CE years unchanged (signed and unsigned)", () => {
+    expect(wdqsLiteralToJsonTime("0044-03-15T00:00:00Z")).toBe("0044-03-15T00:00:00Z");
+    expect(wdqsLiteralToJsonTime("+1815-06-18T00:00:00Z")).toBe("+1815-06-18T00:00:00Z");
+  });
+  it("returns unparseable input unchanged", () => {
+    expect(wdqsLiteralToJsonTime("not-a-date")).toBe("not-a-date");
+    expect(wdqsLiteralToJsonTime("")).toBe("");
+    expect(wdqsLiteralToJsonTime("0052-13-45T99:99:99Z")).toBe("0052-13-45T99:99:99Z");
+  });
+});
+
+// GEN-FIX-DISCOVER-1028-002 — end-to-end WDQS-literal -> mapped-year tests.
+// QIDs and literals verified 2026-10-29 via wbsearchentities/wbgetentities
+// (JSON form) + live WDQS timeValue (astronomical form):
+//   Q205887 Carrhae    API "-0053-06-09" / WDQS "-0052-06-07" -> -53
+//   Q179670 Gaugamela  API "-0331-10-01" / WDQS "-0330-09-26" -> -331
+//   Q25299  "1 BC"     API "-0001-00-00" / WDQS "0000-00-00"  -> -1
+//   Q83224  Hastings   API "+1066-10-14" / WDQS "+1066-10-14" -> 1066
+// (WDQS also normalizes Julian->proleptic Gregorian, hence day shifts —
+// only the year is asserted against the API value.)
+describe("mapBindingToCandidate — WDQS astronomical-year offset", () => {
+  const ctx = { classGroup: "battle", yearMin: -400, yearMax: 2025 };
+
+  it("maps Carrhae (Q205887) WDQS -0052 to event_year -53", () => {
+    const r = mapBindingToCandidate(
+      binding({
+        item: "http://www.wikidata.org/entity/Q205887",
+        itemLabel: "Battle of Carrhae",
+        date: "-0052-06-07T00:00:00Z",
+        lat: "44.17",
+        lon: "43.00",
+        sitelinks: "41",
+      }),
+      ctx
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.candidate.event_year).toBe(-53);
+    expect(r.candidate.event_date).toBe("-0053-06-07");
+    expect(r.candidate.quota_bucket.era).toBe("bce1c");
+  });
+
+  it("maps Gaugamela (Q179670) WDQS -0330 to event_year -331", () => {
+    const r = mapBindingToCandidate(
+      binding({
+        item: "http://www.wikidata.org/entity/Q179670",
+        itemLabel: "Battle of Gaugamela",
+        date: "-0330-09-26T00:00:00Z",
+        lat: "36.56",
+        lon: "43.44",
+        sitelinks: "60",
+      }),
+      ctx
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.candidate.event_year).toBe(-331);
+    expect(r.candidate.event_date).toBe("-0331-09-26");
+    expect(r.candidate.quota_bucket.era).toBe("bce4c");
+  });
+
+  it("maps a 1 BC item (Q25299) WDQS year 0 to event_year -1, not null_year", () => {
+    const r = mapBindingToCandidate(
+      binding({
+        item: "http://www.wikidata.org/entity/Q25299",
+        itemLabel: "1 BC",
+        date: "0000-00-00T00:00:00Z",
+        precision: "9",
+        lat: "41.90",
+        lon: "12.50",
+        sitelinks: "55",
+      }),
+      ctx
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.candidate.event_year).toBe(-1);
+    expect(r.candidate.event_date).toBe("-0001-00-00");
+  });
+
+  it("leaves a CE item (Q83224, Hastings 1066) unchanged", () => {
+    const r = mapBindingToCandidate(
+      binding({
+        item: "http://www.wikidata.org/entity/Q83224",
+        itemLabel: "Battle of Hastings",
+        date: "+1066-10-14T00:00:00Z",
+        lat: "50.91",
+        lon: "0.49",
+        sitelinks: "90",
+      }),
+      ctx
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.candidate.event_year).toBe(1066);
+    expect(r.candidate.event_date).toBe("1066-10-14");
+    expect(r.candidate.quota_bucket.era).toBe("c11");
   });
 });
