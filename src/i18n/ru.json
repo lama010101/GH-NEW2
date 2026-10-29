@@ -684,7 +684,8 @@
     "rank_suffix_many": "-й",
     "rank_suffix_other": "-й",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "Игроков в рейтинге нет."
+    "no_more_players": "Игроков в рейтинге нет.",
+    "back_to_top": "Наверх"
   },
   "profile": {
     "accuracy_breakdown": "Разбивка точности",

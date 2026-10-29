@@ -684,7 +684,8 @@
     "rank_suffix_many": "º",
     "rank_suffix_other": "º",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No hay más jugadores."
+    "no_more_players": "No hay más jugadores.",
+    "back_to_top": "Volver arriba"
   },
   "profile": {
     "accuracy_breakdown": "Desglose de precisión",

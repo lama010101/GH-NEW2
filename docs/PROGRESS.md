@@ -2272,7 +2272,7 @@ Description: Added useEffect hook to preload next round image when current round
 
 ## MP-FIX-SECRET-001 - Sync .env.local PARTYKIT_SECRET to match .dev.vars
 - **File modified**: .env.local
-- **Change**: Changed PARTYKIT_SECRET from dev-internal-secret-changeme to 76d9112bdb5c5705394f224de2f2d4dcbb53c63baf297b524412e771acf3d104
+- **Change**: Changed PARTYKIT_SECRET from dev-internal-secret-changeme to <REDACTED-64HEX>
 
 ## MP-FIX-SCHEMA-CLEANUP-001 - Remove duplicate room_code unique index on sessions table
 - **File created**: supabase/migrations/032_drop_duplicate_room_code_index.sql

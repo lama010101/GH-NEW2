@@ -684,7 +684,8 @@
     "rank_suffix_many": "e",
     "rank_suffix_other": "e",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "Plus de joueurs classés."
+    "no_more_players": "Plus de joueurs classés.",
+    "back_to_top": "Retour en haut"
   },
   "profile": {
     "accuracy_breakdown": "Répartition de la précision",
