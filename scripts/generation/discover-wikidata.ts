@@ -28,6 +28,7 @@
 import dotenv from "dotenv";
 import { writeFileSync } from "fs";
 import { resolve } from "path";
+import { Pool } from "pg";
 import { dbPool } from "../../src/server/db";
 import {
   CLASS_GROUPS,
@@ -591,28 +592,46 @@ async function main() {
   console.log(`\nreport (pre-DB): ${outPath}`);
 
   // (e) overlap vs existing events — READ-ONLY SELECT AFTER the report is
-  // on disk. Initial try + up to 3 retries (OVERLAP_MAX_ATTEMPTS), 5 s
-  // apart; a final failure degrades overlap to {unavailable,error} and the
-  // run still exits 0 — process.exit(1) must never fire for a DB error
-  // once the report exists.
+  // on disk. Dedicated SELECT-only pool: dbPool's module-level enforcement
+  // process.exit(1)s on a failed connection test, which must not happen
+  // after the report exists — a throw here is catchable instead. Initial
+  // try + up to 3 retries (OVERLAP_MAX_ATTEMPTS), 5 s apart; a final
+  // failure degrades overlap to {unavailable,error} and the run still
+  // exits 0 — process.exit(1) must never fire for a DB error once the
+  // report exists.
   let existingRows: ExistingEvent[] | null = null;
   let overlapErr = "unknown";
-  for (let i = 0; i < OVERLAP_MAX_ATTEMPTS; i++) {
+  const overlapConn = process.env.SUPABASE_DB_CONNECTION;
+  if (!overlapConn) {
+    overlapErr = "SUPABASE_DB_CONNECTION not set";
+  } else {
+    const overlapPool = new Pool({
+      connectionString: overlapConn,
+      ssl: { rejectUnauthorized: false },
+      max: 1,
+      connectionTimeoutMillis: 15000,
+    });
     try {
-      const evRes = await dbPool.query<ExistingEvent>(
-        `SELECT e.id, e.title, e.event_year, l.latitude, l.longitude
-           FROM events e
-           JOIN locations l ON l.event_id = e.id
-          WHERE e.real_event = true`
-      );
-      existingRows = evRes.rows;
-      break;
-    } catch (err) {
-      overlapErr = safeDbError(err);
-      if (i + 1 < OVERLAP_MAX_ATTEMPTS) {
-        console.log(`  overlap SELECT failed (${overlapErr}) — retry ${i + 1}/3 in ${OVERLAP_RETRY_GAP_MS / 1000}s`);
-        await sleep(OVERLAP_RETRY_GAP_MS);
+      for (let i = 0; i < OVERLAP_MAX_ATTEMPTS; i++) {
+        try {
+          const evRes = await overlapPool.query<ExistingEvent>(
+            `SELECT e.id, e.title, e.event_year, l.latitude, l.longitude
+               FROM events e
+               JOIN locations l ON l.event_id = e.id
+              WHERE e.real_event = true`
+          );
+          existingRows = evRes.rows;
+          break;
+        } catch (err) {
+          overlapErr = safeDbError(err);
+          if (i + 1 < OVERLAP_MAX_ATTEMPTS) {
+            console.log(`  overlap SELECT failed (${overlapErr}) — retry ${i + 1}/3 in ${OVERLAP_RETRY_GAP_MS / 1000}s`);
+            await sleep(OVERLAP_RETRY_GAP_MS);
+          }
+        }
       }
+    } finally {
+      await overlapPool.end().catch(() => undefined);
     }
   }
 
