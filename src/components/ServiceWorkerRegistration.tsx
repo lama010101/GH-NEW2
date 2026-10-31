@@ -8,6 +8,11 @@ export function ServiceWorkerRegistration() {
       return;
     }
 
+    // Snapshot whether a worker already controls this tab BEFORE register:
+    // on a first visit controllerchange fires from clients.claim() on the
+    // just-installed worker and must not reload (GUEST-FIX-FIRSTVISIT-1031-005).
+    const hadController = !!navigator.serviceWorker.controller;
+
     navigator.serviceWorker.register('/sw.js').catch((error) => {
       console.error('Service worker registration failed:', error);
     });
@@ -17,6 +22,7 @@ export function ServiceWorkerRegistration() {
     // new JS, so force a reload to move the tab onto the new build.
     let reloaded = false;
     const onControllerChange = () => {
+      if (!hadController) return;
       if (reloaded) {
         return;
       }

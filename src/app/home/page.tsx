@@ -114,6 +114,25 @@ function HomePageInner() {
     welcomeHandledRef.current = false
   }, [currentPlayerId])
 
+  // GUEST-FIX-FIRSTVISIT-1031-005: one-shot resume for a brand-new guest whose
+  // first Play Now was redirected to /home by a residual race (e.g. the
+  // first-install SW reload). The marker is written by the landing page right
+  // before navigating to /practice/<gameId>; it is removed on read and only
+  // honored within 30s, for anonymous identities only — never for returning
+  // guests or registered users.
+  useEffect(() => {
+    if (identity.status !== 'ready' || !identity.isAnonymous) return
+    try {
+      const raw = sessionStorage.getItem('gh_guest_launch')
+      sessionStorage.removeItem('gh_guest_launch')
+      if (!raw) return
+      const { gameId, ts } = JSON.parse(raw) as { gameId?: string; ts?: number }
+      if (gameId && typeof ts === 'number' && Date.now() - ts < 30000) {
+        router.replace(`/practice/${gameId}`)
+      }
+    } catch {}
+  }, [identity, router])
+
   // Trigger the welcome flow only when we know the persisted flag is false.
   // The profile fetch effect below is the single source of truth for welcome_completed.
   useEffect(() => {
