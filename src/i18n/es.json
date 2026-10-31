@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Las contraseñas no coinciden",
     "err_password_min_length": "La contraseña debe tener al menos 6 caracteres",
     "err_enter_email_first": "Introduce tu email primero, luego haz clic en ¿Olvidaste tu contraseña?",
+    "err_network": "No pudimos conectar con el servicio de inicio de sesión. Una extensión de privacidad, un bloqueador de contenido o un problema de red puede estar bloqueándolo. Prueba a desactivar los bloqueadores para este sitio o usa otra red.",
     "redirecting": "Redirigiendo…",
     "email_placeholder": "tu@ejemplo.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Email de restablecimiento enviado. Revisa tu bandeja.",
     "confirm_email_sent": "Revisa tu correo para confirmar tu cuenta.",
     "remember_me": "Recuérdame",
-    "confirm_password": "Confirmar contraseña"
+    "confirm_password": "Confirmar contraseña",
+    "cookies_blocked_notice": "Las cookies están bloqueadas en tu navegador, por lo que no permanecerás conectado. Permite las cookies de guess-history.com e inténtalo de nuevo."
   },
   "leaderboard": {
     "title": "CLASIFICACIÓN",
@@ -752,7 +754,14 @@
     "notif_channel_in_app": "Solo en la app",
     "notif_channel_both": "Ambas",
     "notif_push_hint": "Las notificaciones push están desactivadas en este navegador — actívalas para recibirlas.",
-    "notif_save_error": "No se pudo guardar. Inténtalo de nuevo."
+    "notif_save_error": "No se pudo guardar. Inténtalo de nuevo.",
+    "android_apk_title": "Aplicación Android (beta)",
+    "android_apk_body": "Instala la aplicación Back to the Past en tu teléfono Android.",
+    "android_apk_button": "Descargar APK",
+    "android_apk_step1": "1. Pulsa «Descargar APK» y abre el archivo.",
+    "android_apk_step2": "2. Si Android lo pide, permite las instalaciones desde este navegador.",
+    "android_apk_step3": "3. Si Play Protect muestra una advertencia sobre la aplicación, pulsa «Instalar de todos modos».",
+    "android_apk_note": "Versión beta: para actualizar, desinstala primero la versión anterior. Tendrás que iniciar sesión de nuevo."
   },
   "avatar_picker": {
     "title": "Elegir avatar",

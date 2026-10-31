@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "两次密码不一致",
     "err_password_min_length": "密码至少需要6个字符",
     "err_enter_email_first": "请先输入邮箱地址，然后点击忘记密码。",
+    "err_network": "无法连接到登录服务。可能是隐私扩展、内容拦截器或网络问题导致的。请尝试为此网站停用拦截器，或更换其他网络。",
     "redirecting": "正在跳转…",
     "email_placeholder": "你@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "密码重置邮件已发送。请查收邮箱。",
     "confirm_email_sent": "请查收邮件以确认你的账户。",
     "remember_me": "记住我",
-    "confirm_password": "确认密码"
+    "confirm_password": "确认密码",
+    "cookies_blocked_notice": "您的浏览器已阻止 Cookie，因此无法保持登录状态。请允许 guess-history.com 使用 Cookie 后重试。"
   },
   "leaderboard": {
     "title": "排行榜",
@@ -752,7 +754,14 @@
     "notif_channel_in_app": "仅应用内",
     "notif_channel_both": "两者",
     "notif_push_hint": "此浏览器已关闭推送通知——请开启通知以接收推送。",
-    "notif_save_error": "保存失败，请重试。"
+    "notif_save_error": "保存失败，请重试。",
+    "android_apk_title": "Android 应用（测试版）",
+    "android_apk_body": "在您的 Android 手机上安装 Back to the Past 应用。",
+    "android_apk_button": "下载 APK",
+    "android_apk_step1": "1. 点击「下载 APK」并打开文件。",
+    "android_apk_step2": "2. 如果 Android 询问，请允许来自此浏览器的安装。",
+    "android_apk_step3": "3. 如果 Play Protect 提示应用警告，请点击「仍然安装」。",
+    "android_apk_note": "测试版：如需更新，请先卸载旧版本。您需要重新登录。"
   },
   "avatar_picker": {
     "title": "选择头像",

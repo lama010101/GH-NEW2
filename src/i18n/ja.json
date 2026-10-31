@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "パスワードが一致しません",
     "err_password_min_length": "パスワードは6文字以上必要です",
     "err_enter_email_first": "まずメールアドレスを入力し、パスワードをお忘れですか？をクリック。",
+    "err_network": "サインインサービスに接続できませんでした。プライバシー拡張機能、コンテンツブロッカー、またはネットワークの問題が原因の可能性があります。このサイトのブロッカーを無効にするか、別のネットワークをお試しください。",
     "redirecting": "リダイレクト中…",
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "パスワードリセットメールを送信しました。受信箱を確認。",
     "confirm_email_sent": "アカウント確認のためメールを確認してください。",
     "remember_me": "ログイン状態を保持",
-    "confirm_password": "パスワード確認"
+    "confirm_password": "パスワード確認",
+    "cookies_blocked_notice": "ブラウザーでCookieがブロックされているため、サインイン状態が保持されません。guess-history.comのCookieを許可してから、もう一度お試しください。"
   },
   "leaderboard": {
     "title": "ランキング",
@@ -752,7 +754,14 @@
     "notif_channel_in_app": "アプリ内のみ",
     "notif_channel_both": "両方",
     "notif_push_hint": "このブラウザではプッシュ通知がオフです。受け取るには通知を有効にしてください。",
-    "notif_save_error": "保存できませんでした。もう一度お試しください。"
+    "notif_save_error": "保存できませんでした。もう一度お試しください。",
+    "android_apk_title": "Androidアプリ（ベータ版）",
+    "android_apk_body": "AndroidスマートフォンにBack to the Pastアプリをインストールしてください。",
+    "android_apk_button": "APKをダウンロード",
+    "android_apk_step1": "1. 「APKをダウンロード」をタップし、ファイルを開きます。",
+    "android_apk_step2": "2. Androidに確認されたら、このブラウザからのインストールを許可してください。",
+    "android_apk_step3": "3. Play プロテクトの警告が表示されたら、「インストール」をタップします。",
+    "android_apk_note": "ベータ版：アップデートするには、先に古いバージョンをアンインストールしてください。再度ログインが必要になります。"
   },
   "avatar_picker": {
     "title": "アバターを選択",

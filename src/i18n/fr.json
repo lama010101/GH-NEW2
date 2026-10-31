@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Les mots de passe ne correspondent pas",
     "err_password_min_length": "Le mot de passe doit contenir au moins 6 caractères",
     "err_enter_email_first": "Entre ton adresse e-mail d'abord, puis clique sur Mot de passe oublié.",
+    "err_network": "Impossible de joindre le service de connexion. Une extension de confidentialité, un bloqueur de contenu ou un problème réseau le bloque peut-être. Essayez de désactiver les bloqueurs pour ce site ou utilisez un autre réseau.",
     "redirecting": "Redirection…",
     "email_placeholder": "vous@exemple.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-mail de réinitialisation envoyé. Vérifie ta boîte de réception.",
     "confirm_email_sent": "Vérifie ton e-mail pour confirmer ton compte.",
     "remember_me": "Se souvenir de moi",
-    "confirm_password": "Confirmer le mot de passe"
+    "confirm_password": "Confirmer le mot de passe",
+    "cookies_blocked_notice": "Les cookies sont bloqués dans votre navigateur, vous ne resterez donc pas connecté. Autorisez les cookies pour guess-history.com et réessayez."
   },
   "leaderboard": {
     "title": "CLASSEMENT",
@@ -752,7 +754,14 @@
     "notif_channel_in_app": "Dans l'app uniquement",
     "notif_channel_both": "Les deux",
     "notif_push_hint": "Les notifications push sont désactivées dans ce navigateur — activez-les pour les recevoir.",
-    "notif_save_error": "Échec de l'enregistrement. Réessayez."
+    "notif_save_error": "Échec de l'enregistrement. Réessayez.",
+    "android_apk_title": "Application Android (bêta)",
+    "android_apk_body": "Installez l'application Back to the Past sur votre téléphone Android.",
+    "android_apk_button": "Télécharger l'APK",
+    "android_apk_step1": "1. Touchez « Télécharger l'APK » puis ouvrez le fichier.",
+    "android_apk_step2": "2. Si Android le demande, autorisez les installations depuis ce navigateur.",
+    "android_apk_step3": "3. Si Play Protect affiche un avertissement concernant l'application, touchez « Installer quand même ».",
+    "android_apk_note": "Version bêta : pour la mettre à jour, désinstallez d'abord l'ancienne version. Vous devrez vous reconnecter."
   },
   "avatar_picker": {
     "title": "Choisir un avatar",

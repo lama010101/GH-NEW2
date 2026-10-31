@@ -8,6 +8,12 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { defaultLocale } from "@/i18n/config";
 import styles from "./AuthModal.module.css";
 
+const NETWORK_ERROR_RE = /NetworkError|Failed to fetch|Load failed|network/i;
+
+function mapAuthError(rawMessage: string, networkMessage: string): string {
+  return NETWORK_ERROR_RE.test(rawMessage) ? networkMessage : rawMessage;
+}
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -28,6 +34,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotSent, setForgotSent] = useState(false);
   const [signUpSent, setSignUpSent] = useState(false);
+  const [cookiesBlocked, setCookiesBlocked] = useState(false);
   const signInSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
@@ -35,6 +42,18 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       setLoading(false);
       setError(null);
       setSignUpSent(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      document.cookie = "gh_cookie_probe=1; path=/; SameSite=Lax";
+      const probeOk = document.cookie.indexOf("gh_cookie_probe=1") !== -1;
+      document.cookie = "gh_cookie_probe=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      setCookiesBlocked(!probeOk);
+    } catch {
+      setCookiesBlocked(true);
     }
   }, [isOpen]);
 
@@ -52,18 +71,25 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     setError(null);
 
     const next = searchParams.get("next") || "/home";
-    const { error } = await supabaseBrowser.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        queryParams: {
-          prompt: "select_account",
+    try {
+      const { error } = await supabaseBrowser.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          queryParams: {
+            prompt: "select_account",
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        console.error("AuthModal OAuth error:", error);
+        setError(mapAuthError(error.message, t('err_network')));
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error("AuthModal OAuth exception:", e);
+      setError(mapAuthError(e instanceof Error ? e.message : String(e), t('err_network')));
       setLoading(false);
     }
     // On success: browser redirects to Google. Loading stays true intentionally
@@ -106,24 +132,34 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     signInSubscriptionRef.current = subscription;
 
     let result;
-    if (mode === "signin") {
-      result = await supabaseBrowser.auth.signInWithPassword({ email, password });
-    } else {
-      const next = searchParams.get("next") || "/home";
-      result = await supabaseBrowser.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        },
-      });
+    try {
+      if (mode === "signin") {
+        result = await supabaseBrowser.auth.signInWithPassword({ email, password });
+      } else {
+        const next = searchParams.get("next") || "/home";
+        result = await supabaseBrowser.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          },
+        });
+      }
+    } catch (e) {
+      subscription.unsubscribe();
+      signInSubscriptionRef.current = null;
+      setLoading(false);
+      console.error("AuthModal email auth exception:", e);
+      setError(mapAuthError(e instanceof Error ? e.message : String(e), t('err_network')));
+      return;
     }
 
     if (result.error) {
       subscription.unsubscribe();
       signInSubscriptionRef.current = null;
       setLoading(false);
-      setError(result.error.message);
+      console.error("AuthModal email auth error:", result.error);
+      setError(mapAuthError(result.error.message, t('err_network')));
       return;
     }
 
@@ -160,7 +196,8 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      console.error("AuthModal reset password error:", error);
+      setError(mapAuthError(error.message, t('err_network')));
     } else {
       setForgotSent(true);
     }
@@ -214,6 +251,15 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
             className={styles.error}
           >
             {error}
+          </p>
+        )}
+
+        {cookiesBlocked && (
+          <p
+            className={styles.cookieNotice}
+            data-testid="auth-cookie-notice"
+          >
+            {t('cookies_blocked_notice')}
           </p>
         )}
 

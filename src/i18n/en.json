@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Passwords do not match",
     "err_password_min_length": "Password must be at least 6 characters",
     "err_enter_email_first": "Enter your email address first, then click Forgot password.",
+    "err_network": "We couldn't reach the sign-in service. A privacy extension, content blocker or network problem may be blocking it. Try disabling blockers for this site or another network.",
     "redirecting": "Redirecting…",
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Password reset email sent. Check your inbox.",
     "confirm_email_sent": "Check your email to confirm your account.",
     "remember_me": "Remember me",
-    "confirm_password": "Confirm Password"
+    "confirm_password": "Confirm Password",
+    "cookies_blocked_notice": "Cookies are blocked in your browser, so you will not stay signed in. Allow cookies for guess-history.com and try again."
   },
   "leaderboard": {
     "title": "LEADERBOARD",
@@ -752,7 +754,14 @@
     "notif_channel_in_app": "In-app only",
     "notif_channel_both": "Both",
     "notif_push_hint": "Push is off in this browser — enable notifications to receive pushes.",
-    "notif_save_error": "Couldn't save. Try again."
+    "notif_save_error": "Couldn't save. Try again.",
+    "android_apk_title": "Android app (beta)",
+    "android_apk_body": "Install the Back to the Past app on your Android phone.",
+    "android_apk_button": "Download APK",
+    "android_apk_step1": "1. Tap Download APK and open the file.",
+    "android_apk_step2": "2. If Android asks, allow installs from this browser.",
+    "android_apk_step3": "3. If Play Protect warns about the app, tap Install anyway.",
+    "android_apk_note": "Beta build: to update, uninstall the old version first. You will need to sign in again."
   },
   "avatar_picker": {
     "title": "Choose Avatar",

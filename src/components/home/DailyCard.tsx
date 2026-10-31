@@ -214,7 +214,7 @@ export function DailyCard({ playerId, onOrderSignal, onGuestGate }: DailyCardPro
             {uiState !== 'new' && !loadFailed && (
               <span
                 className={styles.status}
-                style={{ color: statusMeta.color, background: 'rgba(0,0,0,0.32)', borderColor: statusMeta.color }}
+                style={{ color: '#1a0505', background: statusMeta.color, borderColor: statusMeta.color }}
               >
                 {t(statusMeta.key)}
               </span>

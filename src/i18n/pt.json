@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "As senhas não coincidem",
     "err_password_min_length": "A senha deve ter pelo menos 6 caracteres",
     "err_enter_email_first": "Digite seu email primeiro, depois clique em Esqueceu a senha?",
+    "err_network": "Não conseguimos acessar o serviço de login. Uma extensão de privacidade, um bloqueador de conteúdo ou um problema de rede pode estar bloqueando. Tente desativar os bloqueadores para este site ou use outra rede.",
     "redirecting": "Redirecionando…",
     "email_placeholder": "voce@exemplo.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Email de redefinição enviado. Verifique sua caixa de entrada.",
     "confirm_email_sent": "Verifique seu e-mail para confirmar sua conta.",
     "remember_me": "Lembrar de mim",
-    "confirm_password": "Confirmar senha"
+    "confirm_password": "Confirmar senha",
+    "cookies_blocked_notice": "Os cookies estão bloqueados no seu navegador, então você não permanecerá conectado. Permita cookies para guess-history.com e tente novamente."
   },
   "leaderboard": {
     "title": "RANKING",
@@ -752,7 +754,14 @@
     "notif_channel_in_app": "Apenas no app",
     "notif_channel_both": "Ambas",
     "notif_push_hint": "As notificações push estão desativadas neste navegador — ative-as para recebê-las.",
-    "notif_save_error": "Não foi possível salvar. Tente novamente."
+    "notif_save_error": "Não foi possível salvar. Tente novamente.",
+    "android_apk_title": "Aplicativo Android (beta)",
+    "android_apk_body": "Instale o aplicativo Back to the Past no seu celular Android.",
+    "android_apk_button": "Baixar APK",
+    "android_apk_step1": "1. Toque em «Baixar APK» e abra o arquivo.",
+    "android_apk_step2": "2. Se o Android pedir, permita instalações a partir deste navegador.",
+    "android_apk_step3": "3. Se o Play Protect exibir um aviso sobre o aplicativo, toque em «Instalar mesmo assim».",
+    "android_apk_note": "Versão beta: para atualizar, desinstale primeiro a versão antiga. Será necessário entrar novamente na sua conta."
   },
   "avatar_picker": {
     "title": "Escolher avatar",
