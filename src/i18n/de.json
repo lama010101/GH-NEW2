@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Passwörter stimmen nicht überein",
     "err_password_min_length": "Passwort muss mindestens 6 Zeichen lang sein",
     "err_enter_email_first": "Gib zuerst deine E-Mail ein, dann klicke auf Passwort vergessen.",
+    "err_network": "Der Anmeldedienst konnte nicht erreicht werden. Möglicherweise wird er durch eine Datenschutz-Erweiterung, einen Content-Blocker oder ein Netzwerkproblem blockiert. Deaktiviere Blocker für diese Website oder wechsle zu einem anderen Netzwerk.",
     "redirecting": "Weiterleitung…",
     "email_placeholder": "du@beispiel.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-Mail zum Zurücksetzen gesendet. Prüfe deinen Posteingang.",
     "confirm_email_sent": "Prüfe deine E-Mail, um dein Konto zu bestätigen.",
     "remember_me": "Angemeldet bleiben",
-    "confirm_password": "Passwort bestätigen"
+    "confirm_password": "Passwort bestätigen",
+    "cookies_blocked_notice": "Cookies sind in deinem Browser blockiert, daher bleibst du nicht angemeldet. Erlaube Cookies für guess-history.com und versuche es erneut."
   },
   "leaderboard": {
     "title": "BESTENLISTE",

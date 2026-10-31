@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Wachtwoorden komen niet overeen",
     "err_password_min_length": "Wachtwoord moet minstens 6 tekens zijn",
     "err_enter_email_first": "Voer eerst je e-mailadres in, klik dan op Wachtwoord vergeten.",
+    "err_network": "We konden de aanmeldservice niet bereiken. Een privacy-extensie, contentblocker of netwerkprobleem blokkeert deze mogelijk. Schakel blockers voor deze site uit of probeer een ander netwerk.",
     "redirecting": "Doorsturen…",
     "email_placeholder": "jij@voorbeeld.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-mail voor wachtwoordreset verzonden. Controleer je inbox.",
     "confirm_email_sent": "Controleer je e-mail om je account te bevestigen.",
     "remember_me": "Onthoud mij",
-    "confirm_password": "Bevestig wachtwoord"
+    "confirm_password": "Bevestig wachtwoord",
+    "cookies_blocked_notice": "Cookies zijn geblokkeerd in je browser, dus je blijft niet aangemeld. Sta cookies toe voor guess-history.com en probeer het opnieuw."
   },
   "leaderboard": {
     "title": "RANGLIJST",

@@ -83,6 +83,16 @@
   padding: 8px 16px;
 }
 
+.cookieNotice {
+  color: rgb(var(--gh-amber-rgb));
+  font-size: var(--font-xs);
+  margin-bottom: 12px;
+  background: rgba(var(--gh-amber-rgb), 0.10);
+  border: 1px solid rgba(var(--gh-amber-rgb), 0.30);
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
 .googleButton {
   width: 100%;
   display: flex;

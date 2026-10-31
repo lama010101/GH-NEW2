@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "两次密码不一致",
     "err_password_min_length": "密码至少需要6个字符",
     "err_enter_email_first": "请先输入邮箱地址，然后点击忘记密码。",
+    "err_network": "无法连接到登录服务。可能是隐私扩展、内容拦截器或网络问题导致的。请尝试为此网站停用拦截器，或更换其他网络。",
     "redirecting": "正在跳转…",
     "email_placeholder": "你@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "密码重置邮件已发送。请查收邮箱。",
     "confirm_email_sent": "请查收邮件以确认你的账户。",
     "remember_me": "记住我",
-    "confirm_password": "确认密码"
+    "confirm_password": "确认密码",
+    "cookies_blocked_notice": "您的浏览器已阻止 Cookie，因此无法保持登录状态。请允许 guess-history.com 使用 Cookie 后重试。"
   },
   "leaderboard": {
     "title": "排行榜",
