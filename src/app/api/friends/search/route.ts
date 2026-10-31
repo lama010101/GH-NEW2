@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { rows: players } = await pool.query(
       `SELECT p.id, p.display_name, p.avatar_url
        FROM public.profiles p
-       JOIN auth.users u ON u.id = p.id
+       JOIN auth.users u ON u.id = p.id AND u.is_anonymous = false
        WHERE p.id != $1
        AND (
          p.display_name ILIKE $2

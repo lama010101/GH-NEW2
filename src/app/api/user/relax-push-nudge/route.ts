@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,9 @@ export async function PATCH() {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(user);
+  if (guest) return guest;
 
   const { error } = await supabase
     .from("profiles")

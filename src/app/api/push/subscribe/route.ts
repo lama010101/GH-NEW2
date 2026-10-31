@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,9 @@ export async function POST(request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(user);
+  if (guest) return guest;
 
   let body: SubscribeBody;
   try {
