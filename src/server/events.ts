@@ -40,7 +40,8 @@ export async function fetchEventsWithDetails(options: {
   const whereClauses: string[] = [
     "e.status = 'validated'",
     "l.latitude IS NOT NULL",
-    "l.longitude IS NOT NULL"
+    "l.longitude IS NOT NULL",
+    "EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id AND i.url LIKE 'https://firebasestorage.googleapis.com/%')"
   ];
   const params: (string | number | string[])[] = [];
   let paramIndex = 1;
