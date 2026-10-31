@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl'
 import { Play } from 'lucide-react'
 import { loadPracticeSettings, type PracticeSettings } from '@/components/practice/practiceSettings'
 import { MAX_ROUNDS } from '@/core/types'
+import { useIdentity } from '@/hooks/useIdentity'
 import styles from './PracticeCard.module.css'
 
 // Fixed domain totals — mirror the lists in
@@ -33,10 +34,13 @@ interface PracticeCardProps {
   playerId: string | undefined
   onCtaClick: () => void
   ctaLoading: boolean
+  onGuestGate?: () => void
 }
 
-export function PracticeCard({ playerId, onCtaClick, ctaLoading }: PracticeCardProps) {
+export function PracticeCard({ playerId, onCtaClick, ctaLoading, onGuestGate }: PracticeCardProps) {
   const t = useTranslations()
+  const { state: identityState } = useIdentity()
+  const isAnonymous = identityState.status === 'ready' && identityState.isAnonymous
 
   const [resumeGameId, setResumeGameId] = useState<string | null>(null)
   const [roundIndex, setRoundIndex] = useState(0)
@@ -120,7 +124,7 @@ export function PracticeCard({ playerId, onCtaClick, ctaLoading }: PracticeCardP
           type="button"
           className={styles.play}
           data-testid="home-practice-play-btn"
-          onClick={onCtaClick}
+          onClick={() => { if (isAnonymous) { onGuestGate?.(); return } onCtaClick() }}
           disabled={ctaLoading}
           aria-label={t('home.play_mode_aria', { mode: t('home.practice_name') })}
         >
