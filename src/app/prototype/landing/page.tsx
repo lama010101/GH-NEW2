@@ -571,10 +571,16 @@ export default function LandingV2Prototype() {
   const router = useRouter();
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestError, setGuestError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const demoCounterRef = useRef<number | null>(null);
+  const guestBusyRef = useRef(false);
   const topbarRef = useRef<HTMLElement>(null);
   const heroLogoRef = useRef<HTMLHeadingElement>(null);
   const heroCtaRef = useRef<HTMLButtonElement>(null);
+
+  // Hydration gate (GUEST-FIX-FIRSTVISIT-1031-005): Play Now is inert until
+  // mounted so a pre-hydration tap can't be silently dropped.
+  useEffect(() => setHydrated(true), []);
 
   // Scroll reveal
   useEffect(() => {
@@ -692,7 +698,11 @@ export default function LandingV2Prototype() {
   // modal. The CTA is disabled while in flight so a double-tap cannot create
   // two guest accounts. The Sign in entry routes returning users to /login.
   const playAsGuest = async () => {
-    if (guestBusy) return;
+    // Ref-based guard: useState updates are async, so two rapid clicks can
+    // both observe guestBusy=false — the ref closes that double-tap window
+    // (GUEST-FIX-FIRSTVISIT-1031-005).
+    if (guestBusyRef.current) return;
+    guestBusyRef.current = true;
     setGuestBusy(true);
     setGuestError(null);
     try {
@@ -724,10 +734,17 @@ export default function LandingV2Prototype() {
         playthroughId: started.playthroughId,
         gameId: started.gameId,
       });
-      router.push(`/practice/${started.gameId}`);
+      // Marker for the /home fallback: if a residual redirect race still
+      // lands a brand-new guest on /home, it resumes this game once
+      // (GUEST-FIX-FIRSTVISIT-1031-005). Storage may be blocked — optional.
+      try {
+        sessionStorage.setItem("gh_guest_launch", JSON.stringify({ gameId: started.gameId, ts: Date.now() }));
+      } catch {}
+      router.replace(`/practice/${started.gameId}`);
     } catch (err) {
       setGuestError(err instanceof Error ? err.message : "Unable to start the game — please try again.");
     } finally {
+      guestBusyRef.current = false;
       setGuestBusy(false);
     }
   };
@@ -797,7 +814,7 @@ export default function LandingV2Prototype() {
             <button
               type="button"
               onClick={() => void playAsGuest()}
-              disabled={guestBusy}
+              disabled={guestBusy || !hydrated}
               className={`${styles.playNowBtn} ${styles.topbarCta}`}
             >
               Play Now
@@ -839,7 +856,7 @@ export default function LandingV2Prototype() {
             ref={heroCtaRef}
             type="button"
             onClick={() => void playAsGuest()}
-            disabled={guestBusy}
+            disabled={guestBusy || !hydrated}
             className={`${styles.playNowBtn} ${styles.heroCta}`}
           >
             {guestBusy ? "Starting…" : "Play Now"}
@@ -1347,7 +1364,7 @@ export default function LandingV2Prototype() {
             <button
               type="button"
               onClick={() => void playAsGuest()}
-              disabled={guestBusy}
+              disabled={guestBusy || !hydrated}
               className={`${styles.playNowBtn} ${styles.ctaBig}`}
             >
               <span className={styles.ctaPulse} />
@@ -1372,7 +1389,7 @@ export default function LandingV2Prototype() {
           <a href="#ai">AI Images</a>
           <a href="#explore">Explore</a>
           <a href="#fun">Why Play</a>
-          <a href="/" onClick={(e) => { e.preventDefault(); void playAsGuest(); }}>Play Now</a>
+          <a href="/" onClick={(e) => { e.preventDefault(); if (!hydrated) return; void playAsGuest(); }}>Play Now</a>
           {guestError && (
             <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
               {guestError}
