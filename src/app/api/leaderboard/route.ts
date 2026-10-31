@@ -27,7 +27,7 @@ const DEFAULT_SORT: Record<TabName, string> = {
 };
 
 // Test accounts all use one of these email domains; excluded from every
-// HUMAN CTE. Anonymous guests (no auth.users email) are NOT excluded.
+// HUMAN CTE. Guests (auth.users.is_anonymous = true) are excluded from all tabs.
 const TEST_ACCOUNT_EMAIL_DOMAINS = ["example.com", "example.local", "devin.local", "test.guess-history.com"] as const;
 const TEST_ACCOUNT_DOMAIN_LIST = TEST_ACCOUNT_EMAIL_DOMAINS.map((d) => `'${d}'`).join(", ");
 const testAccountFilterSql = (playerIdExpr: string): string =>
@@ -319,6 +319,7 @@ async function loadJourneyRanked(sort: string): Promise<RawRankedRow[]> {
         COALESCE(x.total_xp, 0)::int AS total_xp
       FROM att
       JOIN profiles pr ON pr.id = att.player_id
+      JOIN auth.users u ON u.id = att.player_id AND u.is_anonymous = false
       LEFT JOIN xp x ON x.player_id = att.player_id
       WHERE ${testAccountFilterSql("att.player_id")}
     ),
