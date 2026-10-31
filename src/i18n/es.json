@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Las contraseñas no coinciden",
     "err_password_min_length": "La contraseña debe tener al menos 6 caracteres",
     "err_enter_email_first": "Introduce tu email primero, luego haz clic en ¿Olvidaste tu contraseña?",
+    "err_network": "No pudimos conectar con el servicio de inicio de sesión. Una extensión de privacidad, un bloqueador de contenido o un problema de red puede estar bloqueándolo. Prueba a desactivar los bloqueadores para este sitio o usa otra red.",
     "redirecting": "Redirigiendo…",
     "email_placeholder": "tu@ejemplo.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Email de restablecimiento enviado. Revisa tu bandeja.",
     "confirm_email_sent": "Revisa tu correo para confirmar tu cuenta.",
     "remember_me": "Recuérdame",
-    "confirm_password": "Confirmar contraseña"
+    "confirm_password": "Confirmar contraseña",
+    "cookies_blocked_notice": "Las cookies están bloqueadas en tu navegador, por lo que no permanecerás conectado. Permite las cookies de guess-history.com e inténtalo de nuevo."
   },
   "leaderboard": {
     "title": "CLASIFICACIÓN",

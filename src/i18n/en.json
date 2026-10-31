@@ -632,13 +632,15 @@
     "err_passwords_mismatch": "Passwords do not match",
     "err_password_min_length": "Password must be at least 6 characters",
     "err_enter_email_first": "Enter your email address first, then click Forgot password.",
+    "err_network": "We couldn't reach the sign-in service. A privacy extension, content blocker or network problem may be blocking it. Try disabling blockers for this site or another network.",
     "redirecting": "Redirecting…",
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Password reset email sent. Check your inbox.",
     "confirm_email_sent": "Check your email to confirm your account.",
     "remember_me": "Remember me",
-    "confirm_password": "Confirm Password"
+    "confirm_password": "Confirm Password",
+    "cookies_blocked_notice": "Cookies are blocked in your browser, so you will not stay signed in. Allow cookies for guess-history.com and try again."
   },
   "leaderboard": {
     "title": "LEADERBOARD",
