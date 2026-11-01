@@ -1,75 +1,75 @@
 'use client'
 
 import { useGrowSection } from './GrowSectionContext'
+import GrowSlide from './GrowSlide'
 import StatusBadge from './StatusBadge'
 
 export default function Section05Evaluation() {
   const { content } = useGrowSection()
   const section = content.sections[4]
+  const flow = section.visual.flow ?? []
 
   return (
-    <section
+    <GrowSlide
       id={section.id}
-      data-section-id={section.id}
-      data-section-index={section.number - 1}
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
+      index={section.number - 1}
+      kicker={section.kicker}
+      headline={section.headline}
+      accent="blue"
+      finalStatement={section.finalStatement}
     >
-      <div className="relative z-10 flex max-w-4xl flex-col items-center gap-8 text-center">
-        <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-          {section.headline}
-        </h2>
+      {section.body.map((paragraph) => (
+        <p key={paragraph} className="max-w-2xl text-base text-[var(--gh-text-secondary)] md:text-lg">
+          {paragraph}
+        </p>
+      ))}
 
-        {section.body.map((paragraph) => (
-          <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
-            {paragraph}
-          </p>
-        ))}
+      {section.status && <StatusBadge status={section.status} />}
 
-        {section.status && (
-          <StatusBadge status={section.status} />
-        )}
-
-        <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {section.visual.metrics?.map((metric) => (
-            <div
-              key={metric.label}
-              className="rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-5 text-left"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--gh-text-muted)]">
-                {metric.label}
-              </p>
-              <p className="mt-2 text-2xl font-medium text-[var(--gh-text-primary)]">
-                {metric.value}
-              </p>
-              {metric.status && (
-                <div className="mt-3">
-                  <StatusBadge status={metric.status} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {section.visual.flow && (
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-[var(--gh-text-secondary)]">
-            {section.visual.flow.map((node, index) => (
-              <span key={node} className="flex items-center gap-3">
-                <span className="font-medium text-[var(--gh-gold)]">{node}</span>
-                {index < section.visual.flow!.length - 1 && (
-                  <span className="text-[var(--gh-text-muted)]">↓</span>
-                )}
-              </span>
-            ))}
+      <div className="grid w-full gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {section.visual.metrics?.map((metric) => (
+          <div
+            key={metric.label}
+            className="rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-3 text-left"
+          >
+            <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.16em] text-[var(--gh-text-muted)]">
+              {metric.label}
+            </p>
+            <p className="mt-1.5 font-sora text-base font-bold text-[var(--gh-text-primary)] md:text-lg">
+              {metric.value}
+            </p>
           </div>
-        )}
-
-        {section.finalStatement && (
-          <p className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
-            {section.finalStatement}
-          </p>
-        )}
-
+        ))}
       </div>
-    </section>
+
+      {section.baseline && (
+        <p className="rounded-full grow-accent-soft px-3 py-1 text-[0.625rem] text-[var(--gh-text-secondary)] md:text-xs">
+          {section.baseline}
+        </p>
+      )}
+
+      {flow.length > 0 && (
+        <ol className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[0.625rem] uppercase tracking-[0.14em] text-[var(--gh-text-secondary)] md:text-[0.6875rem]">
+          {flow.map((node, index) => (
+            <li key={node} className="flex items-center gap-2.5">
+              <span
+                className={
+                  index === 0
+                    ? 'font-semibold text-[color:var(--grow-accent)]'
+                    : 'font-semibold text-[var(--gh-text-primary)]'
+                }
+              >
+                {node}
+              </span>
+              {index < flow.length - 1 && (
+                <span className="text-[var(--gh-text-muted)]" aria-hidden="true">
+                  →
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+    </GrowSlide>
   )
 }

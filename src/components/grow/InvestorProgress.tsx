@@ -40,12 +40,12 @@ export default function InvestorProgress() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 z-50 w-full border-b border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-6 py-4 text-sm font-medium text-[var(--gh-text-primary)] backdrop-blur-sm">
-        <div className="relative mx-auto flex w-full max-w-7xl items-center justify-center">
+      <header className="fixed top-0 left-0 z-50 flex h-[3.5rem] w-full items-center border-b border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)] px-6 text-sm font-medium text-[var(--gh-text-primary)]">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="absolute left-0 flex cursor-pointer items-center border-0 bg-transparent p-0"
+            className="flex cursor-pointer items-center border-0 bg-transparent p-0"
             aria-label={t('landing.logo_alt')}
           >
             <Image
@@ -61,7 +61,7 @@ export default function InvestorProgress() {
           <button
             type="button"
             onClick={() => requireAuth('/home')}
-            className="absolute right-0 inline-flex min-w-[100px] items-center justify-center rounded-[var(--gh-radius-pill)] bg-gradient-to-br from-[#fb923c] to-[#f97316] px-4 py-1.5 text-xs font-bold text-[#1a0a00] shadow-[0_0_16px_rgba(251,146,60,.45),0_2px_8px_rgba(0,0,0,.35)] transition-all hover:translate-y-[-2px] hover:shadow-[0_0_24px_rgba(251,146,60,.55),0_4px_12px_rgba(0,0,0,.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] sm:min-w-[120px] sm:px-7 sm:py-2 sm:text-sm"
+            className="inline-flex min-w-[100px] items-center justify-center rounded-[var(--gh-radius-pill)] bg-gradient-to-br from-[#fb923c] to-[#f97316] px-4 py-1.5 text-xs font-bold text-[#1a0a00] shadow-[0_0_16px_rgba(251,146,60,.45),0_2px_8px_rgba(0,0,0,.35)] transition-all hover:translate-y-[-2px] hover:shadow-[0_0_24px_rgba(251,146,60,.55),0_4px_12px_rgba(0,0,0,.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] sm:min-w-[120px] sm:px-7 sm:py-2 sm:text-sm"
           >
             Play Now
           </button>

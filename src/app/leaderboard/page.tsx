@@ -17,6 +17,7 @@ import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
 type DailySubTab = 'today' | 'alltime';
+type LeaderboardSort = 'accuracy' | 'xp';
 
 type LeaderboardEntry = {
   rank: number;
@@ -52,6 +53,7 @@ function LeaderboardPageInner() {
 
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
+  const [sortMode, setSortMode] = useState<LeaderboardSort>('accuracy');
 
   const [currentData, setCurrentData] = useState<LeaderboardEntry[] | null>(null);
   const [ownEntry, setOwnEntry] = useState<LeaderboardEntry | null>(null);
@@ -62,8 +64,10 @@ function LeaderboardPageInner() {
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [showNavModal, setShowNavModal] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const locale = useLocale();
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastScrollY = useRef(0);
 
   const initials = useMemo(() => {
     if (!displayName) return 'PL';
@@ -100,6 +104,10 @@ function LeaderboardPageInner() {
     if (subtab === 'today' || subtab === 'alltime') {
       setActiveSubTab(subtab as DailySubTab);
     }
+    const sort = searchParams.get('sort');
+    if (sort === 'accuracy' || sort === 'xp') {
+      setSortMode(sort as LeaderboardSort);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -111,9 +119,11 @@ function LeaderboardPageInner() {
     else params.delete('tab');
     if (activeTab === 'daily' && activeSubTab === 'alltime') params.set('subtab', activeSubTab);
     else params.delete('subtab');
+    if (sortMode !== 'accuracy') params.set('sort', sortMode);
+    else params.delete('sort');
     const qs = params.toString();
     router.replace(qs ? `/leaderboard?${qs}` : '/leaderboard', { scroll: false });
-  }, [activeTab, activeSubTab, router, searchParams]);
+  }, [activeTab, activeSubTab, sortMode, router, searchParams]);
 
   const getApiTab = useCallback((): string => {
     if (activeTab === 'daily') {
@@ -134,6 +144,7 @@ function LeaderboardPageInner() {
       if (filter.humans) params.set('humans', 'true');
       if (filter.ai) params.set('ai', 'true');
       if (filter.friends) params.set('friends', 'true');
+      if (sortMode !== 'accuracy') params.set('sort', sortMode);
       const qs = params.toString();
       const res = await fetch(`/api/leaderboard${qs ? `?${qs}` : ''}`);
       if (!res.ok) {
@@ -153,11 +164,24 @@ function LeaderboardPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [getApiTab, filter, t]);
+  }, [getApiTab, filter, sortMode, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Show the back-to-top button only while the user is scrolling up
+  // (and has scrolled far enough down for it to be useful).
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowScrollTop(y < lastScrollY.current && y > 240);
+      lastScrollY.current = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleRetry = () => {
     fetchData();
@@ -250,6 +274,14 @@ function LeaderboardPageInner() {
   const getEntryAccuracy = (entry: LeaderboardEntry): number | undefined =>
     activeTab === 'levelup' ? entry.best_accuracy : entry.avg_accuracy;
 
+  // When sorting by %, accuracy is the prominent (primary) value and the
+  // score text (XP / level) becomes the secondary line; inverted for XP sort.
+  const renderPrimaryMetric = (entry: LeaderboardEntry): ReactNode =>
+    sortMode === 'accuracy' ? <AccuracyValue acc={getEntryAccuracy(entry)} /> : getScoreText(entry);
+
+  const renderSecondaryMetric = (entry: LeaderboardEntry): ReactNode =>
+    sortMode === 'accuracy' ? getScoreText(entry) : <AccuracyValue acc={getEntryAccuracy(entry)} />;
+
   return (
     <div className={styles.container} style={{ paddingTop: 64 }}>
       <TopBar
@@ -310,24 +342,26 @@ function LeaderboardPageInner() {
         </div>
       )}
 
-      {/* Filter chips */}
+      {/* Filter controls: identity multi-select + friends toggle + metric sort */}
       <div className={styles.filterRow}>
-        <button
-          type="button"
-          onClick={toggleHumans}
-          className={`${styles.filterChip} ${filter.humans ? styles.filterChipActive : ''}`}
-          aria-pressed={filter.humans}
-        >
-          {t('filter_humans')}
-        </button>
-        <button
-          type="button"
-          onClick={toggleAi}
-          className={`${styles.filterChip} ${filter.ai ? styles.filterChipActive : ''}`}
-          aria-pressed={filter.ai}
-        >
-          {t('filter_ai')}
-        </button>
+        <div className={styles.identityGroup}>
+          <button
+            type="button"
+            onClick={toggleHumans}
+            className={`${styles.filterChip} ${filter.humans ? styles.filterChipActive : ''}`}
+            aria-pressed={filter.humans}
+          >
+            {t('filter_humans')}
+          </button>
+          <button
+            type="button"
+            onClick={toggleAi}
+            className={`${styles.filterChip} ${filter.ai ? styles.filterChipActive : ''}`}
+            aria-pressed={filter.ai}
+          >
+            {t('filter_ai')}
+          </button>
+        </div>
         <button
           type="button"
           onClick={toggleFriends}
@@ -336,6 +370,28 @@ function LeaderboardPageInner() {
         >
           {t('filter_friends')}
         </button>
+        <div className={styles.sortToggle} role="group">
+          <button
+            type="button"
+            onClick={() => setSortMode('accuracy')}
+            className={`${styles.sortSegment} ${sortMode === 'accuracy' ? styles.sortSegmentActive : ''}`}
+            aria-pressed={sortMode === 'accuracy'}
+            aria-label={t('sort_by_accuracy')}
+            title={t('sort_by_accuracy')}
+          >
+            %
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortMode('xp')}
+            className={`${styles.sortSegment} ${sortMode === 'xp' ? styles.sortSegmentActive : ''}`}
+            aria-pressed={sortMode === 'xp'}
+            aria-label={t('sort_by_xp')}
+            title={t('sort_by_xp')}
+          >
+            XP
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -350,9 +406,11 @@ function LeaderboardPageInner() {
         </div>
       )}
 
-      {/* Content */}
-      <div className={styles.content}>
-        {loading && (
+      {/* Content — keep the rendered list mounted while refetching so the
+          document height (and scroll position) doesn't collapse on every
+          filter/sort/tab click. Spinner shows only when there's no data. */}
+      <div className={styles.content} aria-busy={loading}>
+        {loading && !currentData?.length && (
           <div className={styles.spinnerContainer}>
             <div className={styles.spinner}></div>
           </div>
@@ -373,7 +431,7 @@ function LeaderboardPageInner() {
           </div>
         )}
 
-        {!loading && !error && currentData && currentData.length > 0 && (
+        {currentData && currentData.length > 0 && (
           <>
             {podiumSlots.length > 0 && (
               <div className={styles.card}>
@@ -396,10 +454,8 @@ function LeaderboardPageInner() {
                         isMe={playerId === slot.entry.player_id}
                       />
                       <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
-                      <span className={styles.podiumScore}>{getScoreText(slot.entry)}</span>
-                      <span className={styles.podiumAcc}>
-                        <AccuracyValue acc={getEntryAccuracy(slot.entry)} />
-                      </span>
+                      <span className={styles.podiumScore}>{renderPrimaryMetric(slot.entry)}</span>
+                      <span className={styles.podiumAcc}>{renderSecondaryMetric(slot.entry)}</span>
                     </div>
                   ))}
                 </div>
@@ -436,10 +492,8 @@ function LeaderboardPageInner() {
                         <span className={styles.listMeta}>{getRowSubtitle(entry)}</span>
                       </div>
                       <div className={styles.listScoreCol}>
-                        <span className={styles.listScore}>{getScoreText(entry)}</span>
-                        <span className={styles.listAcc}>
-                          <AccuracyValue acc={getEntryAccuracy(entry)} />
-                        </span>
+                        <span className={styles.listScore}>{renderPrimaryMetric(entry)}</span>
+                        <span className={styles.listAcc}>{renderSecondaryMetric(entry)}</span>
                       </div>
                     </div>
                   );
@@ -449,6 +503,18 @@ function LeaderboardPageInner() {
           </>
         )}
       </div>
+
+      {showScrollTop && (
+        <button
+          type="button"
+          className={styles.scrollTopBtn}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={t('back_to_top')}
+          title={t('back_to_top')}
+        >
+          ↑
+        </button>
+      )}
 
       <NavModal
         isOpen={showNavModal}

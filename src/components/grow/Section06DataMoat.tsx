@@ -2,21 +2,25 @@
 
 import Image from 'next/image'
 import { useGrowSection } from './GrowSectionContext'
+import GrowSlide from './GrowSlide'
 
 export default function Section06DataMoat() {
   const { content } = useGrowSection()
   const section = content.sections[5]
+  const stack = section.visual.stack ?? []
 
   return (
-    <section
+    <GrowSlide
       id={section.id}
-      data-section-id={section.id}
-      data-section-index={section.number - 1}
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
-    >
-      <div className="relative z-10 grid max-w-6xl gap-10 md:grid-cols-2 md:items-center">
-        {section.visual.src && (
-          <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
+      index={section.number - 1}
+      kicker={section.kicker}
+      headline={section.headline}
+      layout="split"
+      accent="gold"
+      finalStatement={section.finalStatement}
+      media={
+        section.visual.src ? (
+          <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
             <Image
               src={section.visual.src}
               alt={section.visual.alt ?? ''}
@@ -24,36 +28,36 @@ export default function Section06DataMoat() {
               sizes="(max-width: 768px) 100vw, 500px"
               className="object-cover"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#080c14]/85 via-transparent to-transparent" />
           </div>
-        )}
+        ) : null
+      }
+    >
+      {section.body.map((paragraph) => (
+        <p key={paragraph} className="text-sm text-[var(--gh-text-secondary)] md:text-base">
+          {paragraph}
+        </p>
+      ))}
 
-        <div className="flex flex-col gap-6">
-          <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-            {section.headline}
-          </h2>
-
-          <ul className="space-y-3 border-y border-[var(--gh-border-default)] py-6 text-lg text-[var(--gh-text-secondary)]">
-            {section.visual.stack?.map((layer) => (
-              <li key={layer} className="flex items-center gap-3">
-                <span className="text-[var(--gh-gold)]">+</span>
-                <span>{layer}</span>
-              </li>
-            ))}
-          </ul>
-
-          {section.body.map((paragraph) => (
-            <p key={paragraph} className="text-[var(--gh-text-secondary)]">
-              {paragraph}
-            </p>
-          ))}
-
-          {section.finalStatement && (
-            <p className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
-              {section.finalStatement}
-            </p>
-          )}
-        </div>
-      </div>
-    </section>
+      <ol className="flex flex-col gap-1">
+        {stack.map((layer, index) => (
+          <li key={layer} className="flex items-center gap-2">
+            <span className="w-4 shrink-0 font-mono text-[0.5625rem] text-[var(--gh-text-muted)]">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span
+              className="h-6 flex-1 rounded-[6px] border border-[var(--gh-border-subtle)] px-2 text-[0.625rem] leading-6 text-[var(--gh-text-secondary)]"
+              style={{
+                background: `linear-gradient(90deg, rgba(var(--grow-accent-rgb), ${
+                  0.06 + index * 0.04
+                }), rgba(var(--grow-accent-rgb), 0.02))`,
+              }}
+            >
+              {layer}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </GrowSlide>
   )
 }

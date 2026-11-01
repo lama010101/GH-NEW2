@@ -446,6 +446,10 @@ a {
   letter-spacing: 0.02em;
 }
 
+.font-sora {
+  font-family: var(--font-sora), sans-serif;
+}
+
 /* ============================================================
    BADGE POPUP KEYFRAMES (moved from BadgePopup.module.css)
    ============================================================ */
@@ -703,6 +707,85 @@ a {
   color: var(--gh-orange);
 }
 
+/* /grow investor deck: the deck is always dark, independent of the user's
+   theme. The dark semantic tokens are re-declared on the deck root so the
+   photographic hero and every accent keep their intended contrast in both
+   themes. Scoped to [data-grow-snap]; no other page is affected. */
+[data-grow-snap] {
+  --gh-bg-base:     #080c14;
+  --gh-bg-surface:  rgba(15, 25, 50, 0.60);
+  --gh-bg-elevated: rgba(20, 35, 70, 0.75);
+  --gh-text-primary:   #ffffff;
+  --gh-text-secondary: rgba(255, 255, 255, 0.60);
+  --gh-text-muted:     rgba(255, 255, 255, 0.50);
+  --gh-text-tertiary:  rgba(255, 255, 255, 0.45);
+  --gh-border-default: rgba(255, 255, 255, 0.12);
+  --gh-border-subtle:  rgba(255, 255, 255, 0.08);
+  --gh-orange: #fb923c;
+  --gh-blue:   #3b82f6;
+  --gh-violet: #e879f9;
+  --gh-gold:   #f0c060;
+  --gh-teal:   #22d3ee;
+  --gh-orange-rgb: 251, 146, 60;
+  --gh-blue-rgb:   59, 130, 246;
+  --gh-violet-rgb: 232, 121, 249;
+  --gh-gold-rgb:   240, 192, 96;
+  --gh-teal-rgb:   34, 211, 238;
+  /* Per-section accent, overridden inline by each slide. */
+  --grow-accent: var(--gh-gold);
+  --grow-accent-rgb: var(--gh-gold-rgb);
+  background-color: var(--gh-bg-base);
+}
+
+/* Single shared background treatment for every slide: an accent glow that
+   fades out before it reaches the content. Each slide only sets its accent. */
+[data-grow-snap] [data-section-id]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 75% 45% at 50% 0%,
+    rgba(var(--grow-accent-rgb), 0.14) 0%,
+    transparent 70%
+  );
+}
+
+/* Accent helpers for the deck. Each slide sets --grow-accent (solid) and
+   --grow-accent-rgb (channel triplet) inline, so these resolve per slide. */
+.grow-accent {
+  color: var(--grow-accent);
+}
+
+.grow-accent-soft {
+  background-color: rgba(var(--grow-accent-rgb), 0.10);
+  border: 1px solid rgba(var(--grow-accent-rgb), 0.35);
+}
+
+/* Slide entrance. CSS-only on purpose: the deck is server-rendered, so the
+   content must never depend on JS hydration to become visible. */
+@keyframes grow-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.grow-slide-enter {
+  animation: grow-slide-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grow-slide-enter {
+    animation: none;
+  }
+}
+
 /* /grow investor deck: native viewport-snapped cinematic slides.
    The document (html) is the scroll container; each narrative section
    snaps to the top of the viewport. The footer intentionally has no
@@ -761,7 +844,7 @@ a {
 /* Collapse the tallest mobile layouts to single-viewport height. */
 @media (max-width: 639px) {
   [data-grow-snap] [data-section-id="evaluation"] .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   [data-grow-snap] [data-section-id="human-ai"] .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

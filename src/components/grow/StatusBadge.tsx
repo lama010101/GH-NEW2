@@ -14,7 +14,7 @@ const statusStyles: Record<SectionStatus, string> = {
   illustrative:
     'border-amber-500/30 bg-amber-500/10 text-amber-300',
   roadmap:
-    'border-[var(--gh-blue)]/30 bg-[var(--gh-blue)]/10 text-[var(--gh-blue)]',
+    'border-[var(--gh-blue)]/30 bg-[var(--gh-blue)]/10 text-[color:var(--gh-blue)]',
   conceptual:
     'border-[var(--gh-gold)]/30 bg-[var(--gh-gold)]/10 text-[var(--gh-gold)]',
 }

@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useGrowSection } from './GrowSectionContext'
+import GrowSlide from './GrowSlide'
 import StatusBadge from './StatusBadge'
 
 export default function Section03HumanData() {
@@ -9,15 +10,18 @@ export default function Section03HumanData() {
   const section = content.sections[2]
 
   return (
-    <section
+    <GrowSlide
       id={section.id}
-      data-section-id={section.id}
-      data-section-index={section.number - 1}
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
-    >
-      <div className="relative z-10 grid max-w-6xl gap-8 md:grid-cols-2 md:items-center">
-        {section.visual.src && (
-          <div className="relative aspect-[3/4] w-full max-w-md overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
+      index={section.number - 1}
+      kicker={section.kicker}
+      headline={section.headline}
+      subheadline={section.subheadline}
+      layout="split"
+      accent="teal"
+      finalStatement={section.finalStatement}
+      media={
+        section.visual.src ? (
+          <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
             <Image
               src={section.visual.src}
               alt={section.visual.alt ?? ''}
@@ -25,46 +29,35 @@ export default function Section03HumanData() {
               sizes="(max-width: 768px) 100vw, 400px"
               className="object-cover"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#080c14]/80 via-transparent to-transparent" />
           </div>
-        )}
-
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-              {section.headline}
-            </h2>
-            {section.subheadline && (
-              <h3 className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
-                {section.subheadline}
-              </h3>
-            )}
-          </div>
-
-          {section.status && (
-            <StatusBadge status={section.status} />
-          )}
-
-          <dl className="grid gap-4 border-y border-[var(--gh-border-default)] py-6">
-            {section.visual.items?.map((item) => (
-              <div key={item.label} className="flex items-baseline justify-between gap-4">
-                <dt className="text-sm uppercase tracking-wide text-[var(--gh-text-muted)]">
-                  {item.label}
-                </dt>
-                <dd className="text-right text-2xl font-medium text-[var(--gh-text-primary)] md:text-3xl">
-                  {item.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          {section.finalStatement && (
-            <p className="text-lg font-medium text-[var(--gh-text-secondary)]">
-              {section.finalStatement}
-            </p>
-          )}
-
+        ) : null
+      }
+    >
+      {section.status && (
+        <div className="self-start">
+          <StatusBadge status={section.status} />
         </div>
-      </div>
-    </section>
+      )}
+
+      {section.body.map((paragraph) => (
+        <p key={paragraph} className="text-sm text-[var(--gh-text-secondary)] md:text-base">
+          {paragraph}
+        </p>
+      ))}
+
+      <dl className="divide-y divide-[var(--gh-border-subtle)] border-y border-[var(--gh-border-subtle)]">
+        {section.visual.items?.map((item) => (
+          <div key={item.label} className="flex items-baseline justify-between gap-4 py-2">
+            <dt className="text-[0.625rem] uppercase tracking-[0.16em] text-[var(--gh-text-muted)]">
+              {item.label}
+            </dt>
+            <dd className="font-sora text-lg font-bold text-[var(--gh-text-primary)] md:text-xl">
+              {item.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </GrowSlide>
   )
 }

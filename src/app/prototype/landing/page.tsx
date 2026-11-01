@@ -17,10 +17,13 @@
 //   - getAccuracyColor from @/core/accuracyColor
 //
 // No API calls. No real event images. Self-contained prototype.
+// All copy lives in i18n: landing.lp_* (this page) + help.gm_*/faq_* (reused).
 // ============================================================================
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
 import WhenCard from "@/components/compete/WhenCard";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import { getAccuracyColor } from "@/core/accuracyColor";
@@ -140,21 +143,22 @@ const MOCK_ROUND_RESULTS: RoundResult[] = [
 const MY_PLAYER_ID = "p1";
 const MY_DISTANCE_KM = 42;
 
-const ERA_LABELS: Record<string, string> = {
-  ancient: "Ancient",
-  medieval: "Medieval",
-  earlymodern: "Early Modern",
-  modern: "Modern",
-  contemporary: "Contemporary",
+// Era/region labels resolve through i18n keys so they follow the UI locale.
+const ERA_LABEL_KEYS: Record<string, string> = {
+  ancient: "lp_era_ancient",
+  medieval: "lp_era_medieval",
+  earlymodern: "lp_era_earlymodern",
+  modern: "lp_era_modern",
+  contemporary: "lp_era_contemporary",
 };
 
-const REGION_LABELS: Record<string, string> = {
-  africa: "Africa",
-  asia: "Asia",
-  europe: "Europe",
-  north_america: "North America",
-  south_america: "South America",
-  oceania_antarctica: "Oceania & Antarctica",
+const REGION_LABEL_KEYS: Record<string, string> = {
+  africa: "lp_region_africa",
+  asia: "lp_region_asia",
+  europe: "lp_region_europe",
+  north_america: "lp_region_north_america",
+  south_america: "lp_region_south_america",
+  oceania_antarctica: "lp_region_oceania_antarctica",
 };
 
 const HERO_IMAGES = [
@@ -166,60 +170,86 @@ const HERO_IMAGES = [
 ];
 
 const PIPELINE = [
-  { label: "Real event", desc: "A documented moment in history." },
-  { label: "Research", desc: "Historians gather sources and facts." },
-  { label: "AI paints", desc: "An AI creates the scene from the research." },
-  { label: "Human check", desc: "Verified before it reaches you." },
+  { labelKey: "lp_pipe1_label", descKey: "lp_pipe1_desc" },
+  { labelKey: "lp_pipe2_label", descKey: "lp_pipe2_desc" },
+  { labelKey: "lp_pipe3_label", descKey: "lp_pipe3_desc" },
+  { labelKey: "lp_pipe4_label", descKey: "lp_pipe4_desc" },
 ];
 
 const FUN_BADGES = [
-  { src: "/badges/year_gold.webp", label: "Year" },
-  { src: "/badges/location_gold.webp", label: "Location" },
-  { src: "/badges/combo_gold.webp", label: "Combo" },
+  { src: "/badges/year_gold.webp", labelKey: "lp_badge_year" },
+  { src: "/badges/location_gold.webp", labelKey: "lp_badge_location" },
+  { src: "/badges/combo_gold.webp", labelKey: "lp_badge_combo" },
 ];
 
 const RANK_PREVIEWS = [
-  { key: "wanderer", title: "Wanderer" },
-  { key: "pathfinder", title: "Pathfinder" },
-  { key: "trailblazer", title: "Trailblazer" },
-  { key: "cartographer", title: "Cartographer" },
-  { key: "explorer", title: "Explorer" },
+  { key: "wanderer", titleKey: "lp_rank_wanderer" },
+  { key: "pathfinder", titleKey: "lp_rank_pathfinder" },
+  { key: "trailblazer", titleKey: "lp_rank_trailblazer" },
+  { key: "cartographer", titleKey: "lp_rank_cartographer" },
+  { key: "explorer", titleKey: "lp_rank_explorer" },
 ];
+
+const ACCURACY_TIERS = [
+  { label: "85%+", nameKey: "lp_tier_expert", color: "var(--gh-success)" },
+  { label: "60–84%", nameKey: "lp_tier_skilled", color: "var(--gh-gold)" },
+  { label: "40–59%", nameKey: "lp_tier_apprentice", color: "var(--gh-orange)" },
+  { label: "<40%", nameKey: "lp_tier_beginner", color: "var(--gh-danger)" },
+];
+
+const HOW_STEPS = [
+  { titleKey: "lp_step1_title", descKey: "lp_step1_desc" },
+  { titleKey: "lp_step2_title", descKey: "lp_step2_desc" },
+  { titleKey: "lp_step3_title", descKey: "lp_step3_desc" },
+];
+
+const PHASE_TITLE_KEYS = ["lp_phase1_title", "lp_phase2_title", "lp_phase3_title", "lp_phase4_title"];
+const PHASE_BODY_KEYS = ["lp_phase1_body", "lp_phase2_body", "lp_phase3_body", "lp_phase4_body"];
+
+const GAME_MODES = [
+  { key: "practice", icon: "/icons/practice.webp" },
+  { key: "daily", icon: "/icons/daily.webp" },
+  { key: "challenge", icon: "/icons/compete.webp" },
+  { key: "journey", icon: "/icons/level.webp" },
+];
+
+// help.faq_q{2,1,3,8,10}/faq_a{…}: account, scoring, modes, daily reset, badges
+const FAQ_HELP_ITEMS = [2, 1, 3, 8, 10];
 
 const AVATAR_PREVIEWS = [
   {
     name: "Albert Einstein",
-    description: "Developed the theory of relativity",
-    born: "Born: 1879-03-14, Ulm, Germany",
-    died: "Died: 1955-04-18, Princeton, USA",
+    descKey: "lp_avatar_einstein_desc",
+    born: { date: "1879-03-14", place: "Ulm, Germany" },
+    died: { date: "1955-04-18", place: "Princeton, USA" },
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F0d19257e-9a2a-4553-93d7-1edf70327c68_AlbertEinstein.jpg?alt=media&token=d008d166-da67-423f-9281-9ec2e7f6aef0",
   },
   {
     name: "Marie Curie",
-    description: "Pioneer in radioactivity; first person to win two Nobel Prizes",
-    born: "Born: 1867-11-07, Warsaw, Poland",
-    died: "Died: 1934-07-04, Passy, France",
+    descKey: "lp_avatar_curie_desc",
+    born: { date: "1867-11-07", place: "Warsaw, Poland" },
+    died: { date: "1934-07-04", place: "Passy, France" },
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fa0afd408-fa5a-43f7-8723-4d50642ce210_MarieCurie.jpg?alt=media&token=32195928-02bf-4fd8-894f-4fb95badddb4",
   },
   {
     name: "Nelson Mandela",
-    description: "Anti-apartheid revolutionary and former President of South Africa",
-    born: "Born: 1918-07-18, Mvezo, South Africa",
-    died: "Died: 2013-12-05, Johannesburg, South Africa",
+    descKey: "lp_avatar_mandela_desc",
+    born: { date: "1918-07-18", place: "Mvezo, South Africa" },
+    died: { date: "2013-12-05", place: "Johannesburg, South Africa" },
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fd93a9e35-9e9b-42cd-afd4-5d53e2329167_NelsonMandela.jpg?alt=media&token=55a85578-412a-4bf2-86ed-ba9c87c7b29e",
   },
   {
     name: "Ada Lovelace",
-    description: "Wrote the first algorithm intended for a computer",
-    born: "Born: 1815-12-10, London, United Kingdom",
-    died: "Died: 1852-11-27, Marylebone, United Kingdom",
+    descKey: "lp_avatar_lovelace_desc",
+    born: { date: "1815-12-10", place: "London, United Kingdom" },
+    died: { date: "1852-11-27", place: "Marylebone, United Kingdom" },
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fe44e050a-f408-4698-a6d0-6f607fd2579b_AdaLovelace.jpg?alt=media&token=e82217a3-9b73-45ac-a932-1815dd762368",
   },
   {
     name: "Charles Darwin",
-    description: "Naturalist known for the theory of evolution",
-    born: "Born: 1809-02-12, Shrewsbury, United Kingdom",
-    died: "Died: 1882-04-19, Downe, United Kingdom",
+    descKey: "lp_avatar_darwin_desc",
+    born: { date: "1809-02-12", place: "Shrewsbury, United Kingdom" },
+    died: { date: "1882-04-19", place: "Downe, United Kingdom" },
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F1cb7486d-da10-44ac-b068-483147b76226_CharlesDarwin.jpg?alt=media&token=487ff003-b5f3-4c2a-8510-3c1e3e6de016",
   },
 ];
@@ -281,6 +311,7 @@ const LEADERBOARD_LEVELUP: LandingLeaderboardEntry[] = [
 ];
 
 function MainLeaderboard() {
+  const t = useTranslations("landing");
   const [activeTab, setActiveTab] = useState<LandingLeaderboardTab>("overall");
   const [activeSubTab, setActiveSubTab] = useState<LandingDailySubTab>("today");
   const [filter, setFilter] = useState({ humans: false, ai: false, friends: false });
@@ -307,10 +338,10 @@ function MainLeaderboard() {
   }, [filteredRows]);
 
   const summaryLabel = activeTab === "daily"
-    ? `Daily ${activeSubTab === "today" ? "Today" : "All-Time"}`
+    ? `${t("lp_lb_daily")} ${activeSubTab === "today" ? t("lp_lb_today") : t("lp_lb_alltime")}`
     : activeTab === "levelup"
-      ? "Level Up"
-      : "Overall";
+      ? t("lp_lb_levelup")
+      : t("lp_lb_overall");
 
   const podium = useMemo(() => {
     if (filteredRows.length < 3) return [];
@@ -324,17 +355,6 @@ function MainLeaderboard() {
   const getInitials = (name: string | null): string => {
     if (!name) return "?";
     return name.trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  };
-
-  const getOrdinalSuffix = (n: number): string => {
-    const m = n % 100;
-    if (m >= 11 && m <= 13) return "th";
-    switch (n % 10) {
-      case 1: return "st";
-      case 2: return "nd";
-      case 3: return "rd";
-      default: return "th";
-    }
   };
 
   const formatNumber = (num: number | undefined): string => {
@@ -354,13 +374,11 @@ function MainLeaderboard() {
   function PlayerCell({ entry }: { entry: LandingLeaderboardEntry }) {
     let subtitle: string;
     if (activeTab === "overall") {
-      const roundsWon = entry.rounds_won ?? 0;
-      subtitle = `${roundsWon} round${roundsWon === 1 ? "" : "s"} won · ${formatNumber(entry.games_played)} played`;
+      subtitle = `${t("lp_lb_rounds_won", { won: entry.rounds_won ?? 0 })} · ${t("lp_lb_games_played", { games: entry.games_played ?? 0 })}`;
     } else if (activeTab === "daily") {
-      const games = entry.games_played ?? 0;
-      subtitle = `${formatNumber(games)} game${games === 1 ? "" : "s"} played`;
+      subtitle = t("lp_lb_games_played", { games: entry.games_played ?? 0 });
     } else {
-      subtitle = `Level ${entry.current_level ?? 0}`;
+      subtitle = t("lp_lb_level_n", { level: entry.current_level ?? 0 });
     }
     const avatarFallback = entry.is_ai ? "AI" : getInitials(entry.display_name);
     return (
@@ -404,7 +422,7 @@ function MainLeaderboard() {
             onClick={() => setActiveTab(tab)}
             className={`${lbStyles.tab} ${activeTab === tab ? lbStyles.tabActive : ""}`}
           >
-            {tab === "overall" ? "Overall" : tab === "daily" ? "Daily" : "Level Up"}
+            {tab === "overall" ? t("lp_lb_overall") : tab === "daily" ? t("lp_lb_daily") : t("lp_lb_levelup")}
           </button>
         ))}
       </div>
@@ -416,14 +434,14 @@ function MainLeaderboard() {
             onClick={() => setActiveSubTab("today")}
             className={`${lbStyles.subTab} ${activeSubTab === "today" ? lbStyles.subTabActive : ""}`}
           >
-            Today
+            {t("lp_lb_today")}
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab("alltime")}
             className={`${lbStyles.subTab} ${activeSubTab === "alltime" ? lbStyles.subTabActive : ""}`}
           >
-            All-Time
+            {t("lp_lb_alltime")}
           </button>
         </div>
       )}
@@ -435,7 +453,7 @@ function MainLeaderboard() {
           className={`${lbStyles.filterChip} ${filter.humans ? lbStyles.filterChipActive : ""}`}
           aria-pressed={filter.humans}
         >
-          Humans
+          {t("lp_lb_humans")}
         </button>
         <button
           type="button"
@@ -443,7 +461,7 @@ function MainLeaderboard() {
           className={`${lbStyles.filterChip} ${filter.ai ? lbStyles.filterChipActive : ""}`}
           aria-pressed={filter.ai}
         >
-          AI
+          {t("lp_lb_ai")}
         </button>
         <button
           type="button"
@@ -451,14 +469,13 @@ function MainLeaderboard() {
           className={`${lbStyles.friendsToggle} ${filter.friends ? lbStyles.friendsToggleActive : ""}`}
           aria-pressed={filter.friends}
         >
-          Friends
+          {t("lp_lb_friends")}
         </button>
       </div>
 
       {ownRank !== null && ownRank > 0 && (
         <div className={lbStyles.summaryLine}>
-          You are {ownRank}
-          {getOrdinalSuffix(ownRank)} in {summaryLabel}
+          {t("lp_lb_you_rank", { rank: ownRank, summary: summaryLabel })}
         </div>
       )}
 
@@ -498,23 +515,23 @@ function MainLeaderboard() {
       )}
 
       {filteredRows.length === 0 ? (
-        <div className={lbStyles.emptyState}>No players match the selected filters.</div>
+        <div className={lbStyles.emptyState}>{t("lp_lb_empty")}</div>
       ) : (
         <div className={lbStyles.tableWrapper}>
           <table className={lbStyles.table}>
             <thead>
               <tr>
                 <th className={lbStyles.th}>#</th>
-                <th className={lbStyles.th}>Player</th>
+                <th className={lbStyles.th}>{t("lp_lb_player")}</th>
                 {activeTab === "levelup" ? (
                   <>
-                    <th className={lbStyles.th}>Accuracy</th>
-                    <th className={lbStyles.th}>Level</th>
+                    <th className={lbStyles.th}>{t("lp_lb_accuracy")}</th>
+                    <th className={lbStyles.th}>{t("lp_lb_level")}</th>
                   </>
                 ) : (
                   <>
-                    <th className={lbStyles.th}>Accuracy</th>
-                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>Games</th>
+                    <th className={lbStyles.th}>{t("lp_lb_accuracy")}</th>
+                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>{t("lp_lb_games")}</th>
                   </>
                 )}
               </tr>
@@ -533,7 +550,7 @@ function MainLeaderboard() {
                     {activeTab === "levelup" ? (
                       <>
                         <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.best_accuracy} /></td>
-                        <td className={lbStyles.levelCell}><span className={lbStyles.levelValue}>Lvl {entry.current_level}</span></td>
+                        <td className={lbStyles.levelCell}><span className={lbStyles.levelValue}>{t("lp_lb_lvl", { level: entry.current_level })}</span></td>
                       </>
                     ) : (
                       <>
@@ -553,6 +570,8 @@ function MainLeaderboard() {
 }
 
 export default function LandingV2Prototype() {
+  const t = useTranslations("landing");
+  const th = useTranslations("help");
   const [topbarSolid, setTopbarSolid] = useState(false);
   const [showTopbarExtras, setShowTopbarExtras] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -681,18 +700,23 @@ export default function LandingV2Prototype() {
     };
   }, []);
 
-  const phaseTitle = ["A mysterious scene", "Drop a pin", "Pick a year", "Learn the story"][demoPhase];
-  const phaseBody = [
-    "No names. No dates. Just a picture from the past.",
-    "Where on Earth do you think this happened?",
-    "What year do you think this took place?",
-    "The true event is revealed — and you earn XP for accuracy.",
-  ][demoPhase];
+  const phaseTitle = t(PHASE_TITLE_KEYS[demoPhase]);
+  const phaseBody = t(PHASE_BODY_KEYS[demoPhase]);
 
   const eraPairs = useMemo(() => Object.entries(ERA_STOCK_IMAGES), []);
   const regionPairs = useMemo(() => Object.entries(REGION_STOCK_IMAGES), []);
   const doubleEras = useMemo(() => [...eraPairs, ...eraPairs], [eraPairs]);
   const doubleRegions = useMemo(() => [...regionPairs, ...regionPairs], [regionPairs]);
+
+  const navLinks = (
+    <>
+      <a href="#how" onClick={() => setMenuOpen(false)}>{t("lp_nav_how")}</a>
+      <a href="#modes" onClick={() => setMenuOpen(false)}>{t("lp_nav_modes")}</a>
+      <a href="#explore" onClick={() => setMenuOpen(false)}>{t("lp_nav_explore")}</a>
+      <a href="#ai" onClick={() => setMenuOpen(false)}>{t("lp_nav_ai")}</a>
+      <a href="#faq" onClick={() => setMenuOpen(false)}>{t("lp_nav_faq")}</a>
+    </>
+  );
 
   return (
     <div className={styles.page}>
@@ -701,24 +725,21 @@ export default function LandingV2Prototype() {
         className={`${styles.topbar} ${topbarSolid ? styles.topbarSolid : ""} ${showTopbarExtras ? styles.topbarHasExtras : ""}`}
       >
         {showTopbarExtras && (
-          <a className={styles.brand} href="#hero" aria-label="Back to top">
+          <a className={styles.brand} href="#hero" aria-label={t("lp_nav_back_top")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/logo.webp" alt="Guess History" width={120} height={32} className={styles.brandImg} />
+            <img src="/icons/logo.webp" alt={t("logo_alt")} width={120} height={32} className={styles.brandImg} />
           </a>
         )}
 
-        <nav className={styles.topnav} aria-label="Primary">
-          <a href="#how" onClick={() => setMenuOpen(false)}>How to play</a>
-          <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
-          <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
-          <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+        <nav className={styles.topnav} aria-label={t("lp_nav_aria")}>
+          {navLinks}
           <LanguageDropdown />
         </nav>
 
         <button
           type="button"
           className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ""}`}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? t("lp_menu_close") : t("lp_menu_open")}
           aria-expanded={menuOpen}
           aria-controls="landing-menu"
           onClick={() => setMenuOpen((v) => !v)}
@@ -731,12 +752,9 @@ export default function LandingV2Prototype() {
         <nav
           id="landing-menu"
           className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ""}`}
-          aria-label="Primary"
+          aria-label={t("lp_nav_aria")}
         >
-          <a href="#how" onClick={() => setMenuOpen(false)}>How to play</a>
-          <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
-          <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
-          <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          {navLinks}
           <LanguageDropdown />
         </nav>
 
@@ -746,13 +764,13 @@ export default function LandingV2Prototype() {
             onClick={() => requireAuth('/home')}
             className={`${styles.playNowBtn} ${styles.topbarCta}`}
           >
-            Play Now
+            {t("lp_play_now")}
           </button>
         )}
       </header>
 
       {/* ── HERO ── */}
-      <section className={styles.hero} id="hero" aria-label="Hero">
+      <section className={styles.hero} id="hero" aria-label={t("lp_hero_aria")}>
         <div className={styles.heroSlides} aria-hidden="true">
           {HERO_IMAGES.map((img, i) => (
             <div
@@ -765,24 +783,30 @@ export default function LandingV2Prototype() {
         <div className={styles.heroScrim} aria-hidden="true" />
         <div className={styles.heroInner}>
           <p className={styles.eyebrowCenter}>
-            <span className={styles.eyebrow}>Have fun. Learn history.</span>
+            <span className={styles.eyebrow}>{t("lp_hero_eyebrow")}</span>
           </p>
           <h1 ref={heroLogoRef} className={styles.heroLogo}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/logo.webp" alt="Guess History" width={440} height={118} className={styles.heroLogoImg} />
+            <img src="/icons/logo.webp" alt={t("logo_alt")} width={440} height={118} className={styles.heroLogoImg} />
           </h1>
-          <p className={styles.heroSub}>Travel through time. Guess where and when.</p>
-          <p className={styles.heroTagline}>
-            A free game — look at a picture, guess the place and year, then learn the true story.
-          </p>
-          <button
-            ref={heroCtaRef}
-            type="button"
-            onClick={() => requireAuth('/home')}
-            className={`${styles.playNowBtn} ${styles.heroCta}`}
-          >
-            Play Now
-          </button>
+          <p className={styles.heroSub}>{t("lp_hero_headline")}</p>
+          <p className={styles.heroTagline}>{t("lp_hero_tagline")}</p>
+          <div className={styles.heroTrust}>
+            <span className={styles.trustChip}>{t("lp_trust_free")}</span>
+            <span className={styles.trustChip}>{t("lp_trust_no_download")}</span>
+            <span className={styles.trustChip}>{t("lp_trust_ai")}</span>
+          </div>
+          <div className={styles.heroCtaRow}>
+            <button
+              ref={heroCtaRef}
+              type="button"
+              onClick={() => requireAuth('/home')}
+              className={`${styles.playNowBtn} ${styles.heroCta}`}
+            >
+              {t("lp_play_now")}
+            </button>
+            <a href="#how" className={styles.ghostBtn}>{t("lp_hero_how")}</a>
+          </div>
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
               <button
@@ -790,13 +814,13 @@ export default function LandingV2Prototype() {
                 type="button"
                 onClick={() => setHeroIndex(i)}
                 className={`${styles.heroDot} ${i === heroIndex ? styles.heroDotActive : ""}`}
-                aria-label={`Slide ${i + 1}`}
+                aria-label={t("lp_slide_aria", { n: i + 1 })}
               />
             ))}
           </div>
         </div>
         <div className={styles.scrollInd} aria-hidden="true">
-          <span>Scroll</span>
+          <span>{t("lp_scroll")}</span>
           <span className={styles.mouse} />
         </div>
       </section>
@@ -806,30 +830,23 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.how ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>How to play</span>
+              <span className={styles.eyebrow}>{t("lp_how_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>One scene. Three actions.</h2>
-            <p className={styles.secHeadP}>Look at the picture. Guess where and when. Then learn the real story.</p>
+            <h2 className={styles.secHeadH2}>{t("lp_how_title")}</h2>
+            <p className={styles.secHeadP}>{t("lp_how_sub")}</p>
           </div>
 
           <div className={`${styles.stepsRow} ${revealed.how ? styles.in : ""}`}>
-            <div className={styles.stepCard}>
-              <span className={styles.stepNum}>01</span>
-              <h3 className={styles.stepTitle}>Look</h3>
-              <p className={styles.stepDesc}>A mysterious scene appears. No names, no dates.</p>
-            </div>
-            <div className={styles.stepArrow} aria-hidden="true">→</div>
-            <div className={styles.stepCard}>
-              <span className={styles.stepNum}>02</span>
-              <h3 className={styles.stepTitle}>Guess</h3>
-              <p className={styles.stepDesc}>Drop a pin on the map and pick a year.</p>
-            </div>
-            <div className={styles.stepArrow} aria-hidden="true">→</div>
-            <div className={styles.stepCard}>
-              <span className={styles.stepNum}>03</span>
-              <h3 className={styles.stepTitle}>Learn</h3>
-              <p className={styles.stepDesc}>The event is revealed. Points go to the closest answers.</p>
-            </div>
+            {HOW_STEPS.map((step, i) => (
+              <Fragment key={step.titleKey}>
+                {i > 0 && <div className={styles.stepArrow} aria-hidden="true">→</div>}
+                <div className={styles.stepCard}>
+                  <span className={styles.stepNum}>{`0${i + 1}`}</span>
+                  <h3 className={styles.stepTitle}>{t(step.titleKey)}</h3>
+                  <p className={styles.stepDesc}>{t(step.descKey)}</p>
+                </div>
+              </Fragment>
+            ))}
           </div>
 
           <div className={`${styles.demo} ${revealed.how ? styles.in : ""}`}>
@@ -838,7 +855,7 @@ export default function LandingV2Prototype() {
                 {demoPhase === 0 && (
                   <div key={`see-${demoLoop}`} className={styles.demoScene}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/prototype/landing/berlinwall.webp" alt="Historical scene" className={styles.demoSceneImg} />
+                    <img src="/prototype/landing/berlinwall.webp" alt={t("lp_demo_scene_alt")} className={styles.demoSceneImg} />
                   </div>
                 )}
                 {demoPhase === 1 && (
@@ -852,13 +869,13 @@ export default function LandingV2Prototype() {
                         flyToTarget={DEMO_FLY_TO_BERLIN}
                       />
                     </div>
-                    <p className={styles.demoWhereText}>You guess: Berlin</p>
+                    <p className={styles.demoWhereText}>{t("lp_demo_where_guess", { place: "Berlin" })}</p>
                   </div>
                 )}
                 {demoPhase === 2 && (
                   <div key={`when-${demoLoop}`} className={styles.demoWhen}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/icons/when.webp" alt="When" width={40} height={40} className={styles.demoWhenIcon} />
+                    <img src="/icons/when.webp" alt={t("lp_demo_when_alt")} width={40} height={40} className={styles.demoWhenIcon} />
                     <div className={styles.demoYearPickerWrap}>
                       <YearPicker
                         value={DEMO_YEAR_END}
@@ -869,7 +886,7 @@ export default function LandingV2Prototype() {
                         className={styles.demoYearPicker}
                       />
                     </div>
-                    <p className={styles.demoWhenText}>You guess: {DEMO_YEAR_END}</p>
+                    <p className={styles.demoWhenText}>{t("lp_demo_when_guess", { year: DEMO_YEAR_END })}</p>
                   </div>
                 )}
                 {demoPhase === 3 && (
@@ -896,14 +913,14 @@ export default function LandingV2Prototype() {
                         gap: 6,
                       }}
                     >
-                      <p className={styles.demoRevealTitle}>Berlin Wall falls</p>
+                      <p className={styles.demoRevealTitle}>{t("lp_demo_reveal_title")}</p>
                       <p className={styles.demoRevealYear}>1989</p>
                       <div className={styles.demoRevealScore}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/badges/combo_gold.webp" alt="Gold badge" className={styles.demoBadge} />
+                        <img src="/badges/combo_gold.webp" alt={t("lp_demo_badge_alt")} className={styles.demoBadge} />
                         <span className={styles.demoXp}>{demoXp} XP</span>
                       </div>
-                      <p className={styles.demoFact}>A divided city reunited — the end of the Cold War began here.</p>
+                      <p className={styles.demoFact}>{t("lp_demo_fact")}</p>
                     </div>
                   </div>
                 )}
@@ -914,7 +931,7 @@ export default function LandingV2Prototype() {
                     key={p}
                     type="button"
                     className={`${styles.demoDot} ${p === demoPhase ? styles.demoDotActive : ""}`}
-                    aria-label={`Phase ${p + 1}`}
+                    aria-label={t("lp_demo_phase_aria", { n: p + 1 })}
                   />
                 ))}
               </div>
@@ -927,97 +944,100 @@ export default function LandingV2Prototype() {
         </div>
       </section>
 
+      {/* ── GAME MODES ── */}
+      <section className={styles.sec} id="modes" data-reveal="modes">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.modes ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>{t("lp_modes_eyebrow")}</span>
+            </p>
+            <h2 className={styles.secHeadH2}>{t("lp_modes_title")}</h2>
+            <p className={styles.secHeadP}>{t("lp_modes_sub")}</p>
+          </div>
+
+          <div className={`${styles.modesGrid} ${revealed.modes ? styles.in : ""}`}>
+            {GAME_MODES.map((mode) => (
+              <div key={mode.key} className={styles.modeCard}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={mode.icon} alt="" width={44} height={44} className={styles.modeIcon} loading="lazy" />
+                <h3 className={styles.modeTitle}>{th(`gm_${mode.key}_title`)}</h3>
+                <p className={styles.modeSub}>{th(`gm_${mode.key}_sub`)}</p>
+                <p className={styles.modeDesc}>{th(`gm_${mode.key}_desc`)}</p>
+                <div className={styles.modeChips}>
+                  {th(`gm_${mode.key}_features`).split("|").map((f) => (
+                    <span key={f} className={styles.modeChip}>{f}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── REAL CARDS ── */}
       <section className={`${styles.sec} ${styles.how}`} id="cards" data-reveal="cards">
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.cards ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>The real thing</span>
+              <span className={styles.eyebrow}>{t("lp_cards_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>How accurate can you be?</h2>
-            <p className={styles.secHeadP}>After each round, players see exactly how close their where and when guesses were.</p>
+            <h2 className={styles.secHeadH2}>{t("lp_cards_title")}</h2>
+            <p className={styles.secHeadP}>{t("lp_cards_sub")}</p>
+            <span className={styles.examplePill}>{t("lp_example_round")}</span>
           </div>
 
-          <div className={`${styles.howCards} ${revealed.cards ? styles.in : ""}`}>
-            <p className={styles.howStepLabel}>STEP 01 — WHERE?</p>
-            <WhereCard
-              roundResults={MOCK_ROUND_RESULTS}
-              playerId={MY_PLAYER_ID}
-              correctLat={CORRECT_LAT}
-              correctLng={CORRECT_LNG}
-              correctName={CORRECT_NAME}
-              whereAccPenalty={0}
-              guessLat={52.45}
-              guessLng={13.38}
-              myDistanceKm={MY_DISTANCE_KM}
-              whereLbExpanded={whereLbExpanded}
-              setWhereLbExpanded={setWhereLbExpanded}
-              whereCluesExpanded={whereCluesExpanded}
-              setWhereCluesExpanded={setWhereCluesExpanded}
-              roundHints={[]}
-              snapshotPlayers={MOCK_PLAYERS}
-              currentRoundIndex={0}
-              isVisible={true}
-              bare={false}
-              isPractice={false}
-            />
-
-            <p className={styles.howStepLabel}>STEP 02 — WHEN?</p>
-            <WhenCard
-              roundResults={MOCK_ROUND_RESULTS}
-              playerId={MY_PLAYER_ID}
-              correctYear={CORRECT_YEAR}
-              whenAccPenalty={0}
-              whenLbExpanded={whenLbExpanded}
-              setWhenLbExpanded={setWhenLbExpanded}
-              whenCluesExpanded={whenCluesExpanded}
-              setWhenCluesExpanded={setWhenCluesExpanded}
-              roundHints={[]}
-              snapshotPlayers={MOCK_PLAYERS}
-              isVisible={true}
-              bare={false}
-              isPractice={false}
-            />
-
-            <p className={styles.howStepLabel}>STEP 03 — WHY?</p>
-            <div className={styles.howWhyCard}>
-              <h4>The Fall of the Berlin Wall</h4>
-              <p>In 1989, crowds gathered at the Brandenburg Gate as the barrier dividing East and West Berlin was opened — a turning point that hastened German reunification and the end of the Cold War.</p>
+          <div className={`${styles.cardsGrid} ${revealed.cards ? styles.in : ""}`}>
+            <div className={styles.cardsCol}>
+              <p className={styles.howStepLabel}>{t("lp_step_where")}</p>
+              <WhereCard
+                roundResults={MOCK_ROUND_RESULTS}
+                playerId={MY_PLAYER_ID}
+                correctLat={CORRECT_LAT}
+                correctLng={CORRECT_LNG}
+                correctName={CORRECT_NAME}
+                whereAccPenalty={0}
+                guessLat={52.45}
+                guessLng={13.38}
+                myDistanceKm={MY_DISTANCE_KM}
+                whereLbExpanded={whereLbExpanded}
+                setWhereLbExpanded={setWhereLbExpanded}
+                whereCluesExpanded={whereCluesExpanded}
+                setWhereCluesExpanded={setWhereCluesExpanded}
+                roundHints={[]}
+                snapshotPlayers={MOCK_PLAYERS}
+                currentRoundIndex={0}
+                isVisible={true}
+                bare={false}
+                isPractice={false}
+              />
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── AI IMAGES ── */}
-      <section className={`${styles.sec} ${styles.ai}`} id="ai" data-reveal="ai">
-        <div className={styles.wrap}>
-          <div className={`${styles.secHead} ${revealed.ai ? styles.in : ""}`}>
-            <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Painted by AI</span>
-            </p>
-            <h2 className={styles.secHeadH2}>Every image is an <span className={styles.orangeText}>AI reconstruction.</span></h2>
-            <p className={styles.secHeadP}>No real photos. Each scene is generated by AI from real historical research, then checked by humans.</p>
-          </div>
-
-          <div className={`${styles.pipeline} ${revealed.ai ? styles.in : ""}`}>
-            <div className={styles.pipeLine} aria-hidden="true">
-              <span className={styles.pipeDot} />
+            <div className={styles.cardsCol}>
+              <p className={styles.howStepLabel}>{t("lp_step_when")}</p>
+              <WhenCard
+                roundResults={MOCK_ROUND_RESULTS}
+                playerId={MY_PLAYER_ID}
+                correctYear={CORRECT_YEAR}
+                whenAccPenalty={0}
+                whenLbExpanded={whenLbExpanded}
+                setWhenLbExpanded={setWhenLbExpanded}
+                whenCluesExpanded={whenCluesExpanded}
+                setWhenCluesExpanded={setWhenCluesExpanded}
+                roundHints={[]}
+                snapshotPlayers={MOCK_PLAYERS}
+                isVisible={true}
+                bare={false}
+                isPractice={false}
+              />
             </div>
-            {PIPELINE.map((node, i) => (
-              <div key={node.label} className={styles.pipeNode}>
-                <span className={styles.pipeRing}>{i + 1}</span>
-                <h4 className={styles.pipeNodeH4}>{node.label}</h4>
-                <p className={styles.pipeNodeP}>{node.desc}</p>
+
+            <div className={styles.cardsWide}>
+              <p className={styles.howStepLabel}>{t("lp_step_why")}</p>
+              <div className={styles.howWhyCard}>
+                <h4>{t("lp_why_title")}</h4>
+                <p>{t("lp_why_body")}</p>
               </div>
-            ))}
-          </div>
-
-          <div className={`${styles.aiNote} ${revealed.ai ? styles.in : ""}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
-            <p>
-              The illustrations help you imagine the moment, not replace primary sources.
-            </p>
+            </div>
           </div>
         </div>
       </section>
@@ -1027,35 +1047,35 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.explore ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Explore all of history</span>
+              <span className={styles.eyebrow}>{t("lp_explore_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>5 eras. 6 regions.</h2>
-            <p className={styles.secHeadP}>Pick an era or region to focus your investigation.</p>
+            <h2 className={styles.secHeadH2}>{t("lp_explore_title")}</h2>
+            <p className={styles.secHeadP}>{t("lp_explore_sub")}</p>
           </div>
 
           <div className={`${styles.marqueeWrap} ${styles.erasWrap}`}>
-            <p className={styles.marqueeLabel}>Eras</p>
+            <p className={styles.marqueeLabel}>{t("lp_eras_label")}</p>
             <div className={styles.marqueeTrack}>
               {doubleEras.map(([key, src], i) => (
                 <div key={`${key}-${i}`} className={styles.marqueeCard}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={ERA_LABELS[key] ?? key} className={styles.marqueeImg} />
+                  <img src={src} alt={ERA_LABEL_KEYS[key] ? t(ERA_LABEL_KEYS[key]) : key} className={styles.marqueeImg} />
                   <span className={styles.marqueeOverlay} />
-                  <span className={styles.marqueeText}>{ERA_LABELS[key] ?? key}</span>
+                  <span className={styles.marqueeText}>{ERA_LABEL_KEYS[key] ? t(ERA_LABEL_KEYS[key]) : key}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className={`${styles.marqueeWrap} ${styles.regionsWrap}`}>
-            <p className={styles.marqueeLabel}>Regions</p>
+            <p className={styles.marqueeLabel}>{t("lp_regions_label")}</p>
             <div className={`${styles.marqueeTrack} ${styles.marqueeReverse}`}>
               {doubleRegions.map(([key, src], i) => (
                 <div key={`${key}-${i}`} className={styles.marqueeCard}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={REGION_LABELS[key] ?? key} className={styles.marqueeImg} />
+                  <img src={src} alt={REGION_LABEL_KEYS[key] ? t(REGION_LABEL_KEYS[key]) : key} className={styles.marqueeImg} />
                   <span className={styles.marqueeOverlay} />
-                  <span className={styles.marqueeText}>{REGION_LABELS[key] ?? key}</span>
+                  <span className={styles.marqueeText}>{REGION_LABEL_KEYS[key] ? t(REGION_LABEL_KEYS[key]) : key}</span>
                 </div>
               ))}
             </div>
@@ -1068,39 +1088,34 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.fun ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Have fun. Learn history.</span>
+              <span className={styles.eyebrow}>{t("lp_fun_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>Play. <span className={styles.orangeText}>Level up.</span> Learn a story.</h2>
-            <p className={styles.secHeadP}>Earn XP, unlock rank titles, and collect badges for every kind of guess.</p>
+            <h2 className={styles.secHeadH2}>{t("lp_fun_title_a")} <span className={styles.orangeText}>{t("lp_fun_title_b")}</span> {t("lp_fun_title_c")}</h2>
+            <p className={styles.secHeadP}>{t("lp_fun_sub")}</p>
           </div>
 
           <div className={`${styles.funGrid} ${revealed.fun ? styles.in : ""}`}>
             <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Badges</h4>
+              <h4 className={styles.funCardH4}>{t("lp_badges_title")}</h4>
               <div className={styles.funBadges}>
-                {FUN_BADGES.map(({ src, label }, i) => (
+                {FUN_BADGES.map(({ src, labelKey }, i) => (
                   <div key={src} className={styles.funBadgeWrap}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt={label} className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
-                    <span className={styles.funBadgeLabel}>{label}</span>
+                    <img src={src} alt={t(labelKey)} className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                    <span className={styles.funBadgeLabel}>{t(labelKey)}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Accuracy Tiers</h4>
+              <h4 className={styles.funCardH4}>{t("lp_tiers_title")}</h4>
               <div className={styles.tierRow}>
-                {[
-                  { label: "85%+", name: "Expert", color: "var(--gh-success)" },
-                  { label: "60–84%", name: "Skilled", color: "var(--gh-gold)" },
-                  { label: "40–59%", name: "Apprentice", color: "var(--gh-orange)" },
-                  { label: "<40%", name: "Beginner", color: "var(--gh-danger)" },
-                ].map((t) => (
-                  <div key={t.name} className={styles.tier}>
-                    <span className={styles.tierDot} style={{ background: t.color }} />
-                    <span className={styles.tierLabel}>{t.label}</span>
-                    <span className={styles.tierName}>{t.name}</span>
+                {ACCURACY_TIERS.map((tier) => (
+                  <div key={tier.nameKey} className={styles.tier}>
+                    <span className={styles.tierDot} style={{ background: tier.color }} />
+                    <span className={styles.tierLabel}>{tier.label}</span>
+                    <span className={styles.tierName}>{t(tier.nameKey)}</span>
                   </div>
                 ))}
               </div>
@@ -1108,13 +1123,13 @@ export default function LandingV2Prototype() {
 
             <div className={styles.funCol}>
               <div className={styles.funCard}>
-                <h4 className={styles.funCardH4}>Ranks</h4>
+                <h4 className={styles.funCardH4}>{t("lp_ranks_title")}</h4>
                 <div className={styles.rankStrip}>
-                  {RANK_PREVIEWS.map(({ key, title }) => (
+                  {RANK_PREVIEWS.map(({ key, titleKey }) => (
                     <div key={key} className={styles.rankItem}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/images/rank-titles/${key}.jpg`} alt={title} className={styles.rankThumb} />
-                      <span className={styles.rankTitle}>{title}</span>
+                      <img src={`/images/rank-titles/${key}.jpg`} alt={t(titleKey)} className={styles.rankThumb} />
+                      <span className={styles.rankTitle}>{t(titleKey)}</span>
                     </div>
                   ))}
                 </div>
@@ -1122,115 +1137,99 @@ export default function LandingV2Prototype() {
 
               <div className={`${styles.xpBar} ${styles.xpCard} ${revealed.fun ? styles.in : ""}`}>
                 <div className={styles.xpBarHead}>
-                  <span className={styles.xpBarTitle}>Total XP</span>
+                  <span className={styles.xpBarTitle}>{t("lp_xp_title")}</span>
+                  <span className={styles.examplePill}>{t("lp_example")}</span>
                   <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
                 </div>
                 <div className={styles.xpBarTrack}>
                   <div className={styles.xpBarFill} style={{ width: "37%" }} />
                 </div>
-                <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
+                <p className={styles.xpBarHint}>{t("lp_xp_hint")}</p>
               </div>
             </div>
 
             <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Avatars</h4>
-              <p className={styles.funCardDesc}>Play as a historical figure. These are the real avatars in the app.</p>
-              <div style={{ overflow: "hidden", width: "100%", marginTop: 16 }}>
+              <h4 className={styles.funCardH4}>{t("lp_avatars_title")}</h4>
+              <p className={styles.funCardDesc}>{t("lp_avatars_desc")}</p>
+              <div className={styles.avatarViewport}>
                 <div
+                  className={styles.avatarTrack}
                   style={{
-                    display: "flex",
                     width: `${AVATAR_PREVIEWS.length * 100}%`,
                     transform: `translateX(-${(avatarIndex * 100) / AVATAR_PREVIEWS.length}%)`,
-                    transition: "transform 0.6s ease",
                   }}
                 >
                   {AVATAR_PREVIEWS.map((a) => (
                     <div
                       key={a.name}
-                      style={{
-                        width: `${100 / AVATAR_PREVIEWS.length}%`,
-                        flexShrink: 0,
-                        padding: "0 8px",
-                        boxSizing: "border-box",
-                      }}
+                      className={styles.avatarSlide}
+                      style={{ width: `${100 / AVATAR_PREVIEWS.length}%` }}
                     >
-                      <div
-                        style={{
-                          background: "var(--gh-glass-bg)",
-                          borderRadius: "var(--gh-radius-md)",
-                          padding: "20px 24px",
-                          textAlign: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 96,
-                            height: 96,
-                            borderRadius: "50%",
-                            padding: 3,
-                            background: "linear-gradient(135deg, #f9a8d4, #fde047)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            margin: "0 auto 12px",
-                          }}
-                        >
+                      <div className={styles.avatarCard}>
+                        <div className={styles.avatarRing}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={toProxiedImageUrl(a.url) ?? ""}
                             alt={a.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                              border: "2px solid var(--gh-bg-surface)",
-                            }}
+                            className={styles.avatarImg}
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                           />
                         </div>
-                        <h5
-                          className="font-bebas"
-                          style={{
-                            fontSize: 20,
-                            fontWeight: 700,
-                            marginBottom: 6,
-                            color: "var(--gh-text-primary)",
-                            letterSpacing: "0.02em",
-                          }}
-                        >
-                          {a.name}
-                        </h5>
-                        <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--gh-text-muted)", marginBottom: 10 }}>
-                          {a.description}
-                        </p>
-                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)", marginBottom: 4 }}>{a.born}</p>
-                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)" }}>{a.died}</p>
+                        <h5 className={`font-bebas ${styles.avatarTitle}`}>{a.name}</h5>
+                        <p className={styles.avatarDesc}>{t(a.descKey)}</p>
+                        <p className={styles.avatarMeta}>{t("lp_born", a.born)}</p>
+                        <p className={styles.avatarMeta}>{t("lp_died", a.died)}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+              <div className={styles.avatarDots}>
                 {AVATAR_PREVIEWS.map((a, i) => (
                   <button
                     key={a.name}
                     type="button"
-                    aria-label={`Show ${a.name}`}
+                    aria-label={t("lp_avatar_show_aria", { name: a.name })}
                     onClick={() => setAvatarIndex(i)}
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      background: i === avatarIndex ? "var(--gh-text-primary)" : "var(--gh-text-muted)",
-                      opacity: i === avatarIndex ? 1 : 0.5,
-                    }}
+                    className={`${styles.avatarDot} ${i === avatarIndex ? styles.avatarDotActive : ""}`}
                   />
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AI IMAGES ── */}
+      <section className={`${styles.sec} ${styles.ai}`} id="ai" data-reveal="ai">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.ai ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>{t("lp_ai_eyebrow")}</span>
+            </p>
+            <h2 className={styles.secHeadH2}>{t("lp_ai_title_a")} <span className={styles.orangeText}>{t("lp_ai_title_b")}</span></h2>
+            <p className={styles.secHeadP}>{t("lp_ai_sub")}</p>
+          </div>
+
+          <div className={`${styles.pipeline} ${revealed.ai ? styles.in : ""}`}>
+            <div className={styles.pipeLine} aria-hidden="true">
+              <span className={styles.pipeDot} />
+            </div>
+            {PIPELINE.map((node, i) => (
+              <div key={node.labelKey} className={styles.pipeNode}>
+                <span className={styles.pipeRing}>{i + 1}</span>
+                <h4 className={styles.pipeNodeH4}>{t(node.labelKey)}</h4>
+                <p className={styles.pipeNodeP}>{t(node.descKey)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className={`${styles.aiNote} ${revealed.ai ? styles.in : ""}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
+            <p>
+              {t("lp_ai_note")}
+            </p>
           </div>
         </div>
       </section>
@@ -1240,19 +1239,53 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.leaderboard ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Compete Rankings</span>
+              <span className={styles.eyebrow}>{t("lp_lb_eyebrow")}</span>
             </p>
-            <h2 className={lbStyles.title}>Leaderboard</h2>
-            <p className={styles.secHeadP}>See how you rank against players around the world.</p>
+            <h2 className={lbStyles.title}>{t("lp_lb_title")}</h2>
+            <p className={styles.secHeadP}>{t("lp_lb_sub")}</p>
+            <span className={styles.examplePill}>{t("lp_example_preview")}</span>
           </div>
-          <div
-            style={{
-              opacity: revealed.leaderboard ? 1 : 0,
-              transform: revealed.leaderboard ? "translateY(0)" : "translateY(24px)",
-              transition: "opacity .7s .15s ease, transform .7s .15s cubic-bezier(.2,.7,.2,1)",
-            }}
-          >
+          <div className={`${styles.lbReveal} ${revealed.leaderboard ? styles.in : ""}`}>
             <MainLeaderboard />
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className={styles.sec} id="faq" data-reveal="faq">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.faq ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>{t("lp_faq_eyebrow")}</span>
+            </p>
+            <h2 className={styles.secHeadH2}>{t("lp_faq_title")}</h2>
+            <p className={styles.secHeadP}>{t("lp_faq_sub")}</p>
+          </div>
+
+          <div className={`${styles.faqList} ${revealed.faq ? styles.in : ""}`}>
+            {FAQ_HELP_ITEMS.map((n) => (
+              <details key={n} className={styles.faqItem}>
+                <summary className={styles.faqQ}>
+                  {th(`faq_q${n}`)}
+                  <span className={styles.faqChevron} aria-hidden="true" />
+                </summary>
+                <p className={styles.faqA}>{th(`faq_a${n}`)}</p>
+              </details>
+            ))}
+            <details className={styles.faqItem}>
+              <summary className={styles.faqQ}>
+                {t("lp_faq_ai_q")}
+                <span className={styles.faqChevron} aria-hidden="true" />
+              </summary>
+              <p className={styles.faqA}>{t("lp_faq_ai_a")}</p>
+            </details>
+            <details className={styles.faqItem}>
+              <summary className={styles.faqQ}>
+                {t("lp_faq_free_q")}
+                <span className={styles.faqChevron} aria-hidden="true" />
+              </summary>
+              <p className={styles.faqA}>{t("lp_faq_free_a")}</p>
+            </details>
           </div>
         </div>
       </section>
@@ -1266,10 +1299,10 @@ export default function LandingV2Prototype() {
         <div className={styles.finalScrim} aria-hidden="true" />
         <div className={`${styles.finalInner} ${revealed.play ? styles.in : ""}`}>
           <p className={styles.eyebrowCenter}>
-            <span className={styles.eyebrow}>Ready when you are</span>
+            <span className={styles.eyebrow}>{t("lp_final_eyebrow")}</span>
           </p>
-          <h2 className={styles.finalH2}>Ready for your first trip through time?</h2>
-          <p className={styles.finalP}>No download. No cost. Just curiosity.</p>
+          <h2 className={styles.finalH2}>{t("lp_final_title")}</h2>
+          <p className={styles.finalP}>{t("lp_final_sub")}</p>
           <div className={styles.finalCtaRow}>
             <button
               type="button"
@@ -1277,7 +1310,7 @@ export default function LandingV2Prototype() {
               className={`${styles.playNowBtn} ${styles.ctaBig}`}
             >
               <span className={styles.ctaPulse} />
-              Play Now
+              {t("lp_play_now")}
             </button>
           </div>
         </div>
@@ -1285,17 +1318,19 @@ export default function LandingV2Prototype() {
 
       {/* ── FOOTER ── */}
       <footer className={styles.footer}>
-        <p className={styles.footerDisc}>
-          All event images are AI-generated reconstructions based on historical research. They are illustrations, not photographs.
-        </p>
+        <p className={styles.footerDisc}>{t("lp_footer_disc")}</p>
         <div className={styles.footerLinks}>
-          <a href="#how">How to Play</a>
-          <a href="#ai">AI Images</a>
-          <a href="#explore">Explore</a>
-          <a href="#fun">Why Play</a>
-          <a href="/" onClick={(e) => { e.preventDefault(); requireAuth('/home'); }}>Play Now</a>
+          <a href="#how">{t("lp_nav_how")}</a>
+          <a href="#modes">{t("lp_nav_modes")}</a>
+          <a href="#ai">{t("lp_nav_ai")}</a>
+          <a href="#explore">{t("lp_nav_explore")}</a>
+          <a href="#faq">{t("lp_nav_faq")}</a>
+          <Link href="/help">{t("lp_footer_help")}</Link>
+          <Link href="/privacy">{t("lp_footer_privacy")}</Link>
+          <Link href="/terms">{t("lp_footer_terms")}</Link>
+          <a href="/" onClick={(e) => { e.preventDefault(); requireAuth('/home'); }}>{t("lp_play_now")}</a>
         </div>
-        <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
+        <p className={styles.footerCopy}>{t("lp_footer_copy", { year: new Date().getFullYear() })}</p>
       </footer>
       <AuthModal isOpen={isModalOpen} onClose={closeModal} required={false} />
     </div>

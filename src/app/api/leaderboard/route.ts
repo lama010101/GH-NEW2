@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 const VALID_TABS = ["overall", "daily_today", "daily_alltime", "levelup"] as const;
 type TabName = (typeof VALID_TABS)[number];
 
+const VALID_SORTS = ["accuracy", "xp"] as const;
+type SortName = (typeof VALID_SORTS)[number];
+
 const VALID_FILTERS = ["all", "favorites"] as const;
 type LegacyFilterName = (typeof VALID_FILTERS)[number];
 
@@ -105,7 +108,10 @@ type RawRankedRow = {
   best_accuracy: number | null;
 };
 
-async function loadOverallRanked(): Promise<RawRankedRow[]> {
+async function loadOverallRanked(sort: SortName): Promise<RawRankedRow[]> {
+  const rankOrder = sort === "xp"
+    ? "total_xp DESC, avg_accuracy DESC"
+    : "avg_accuracy DESC, total_xp DESC";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_stats AS (
       SELECT player_id, avg_accuracy, total_xp, games_played, rounds_played, rounds_won
@@ -140,7 +146,7 @@ async function loadOverallRanked(): Promise<RawRankedRow[]> {
         NULL::timestamptz AS completed_at,
         NULL::int AS current_level,
         NULL::numeric(5,2) AS best_accuracy,
-        RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
+        RANK() OVER (ORDER BY ${rankOrder}) AS rank
       FROM combined
     )
     SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
@@ -151,7 +157,10 @@ async function loadOverallRanked(): Promise<RawRankedRow[]> {
   return result.rows;
 }
 
-async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
+async function loadDailyTodayRanked(date: string, sort: SortName): Promise<RawRankedRow[]> {
+  const rankOrder = sort === "xp"
+    ? "total_xp DESC, avg_accuracy DESC"
+    : "avg_accuracy DESC, best_accuracy DESC NULLS LAST";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_daily AS (
       SELECT player_id, avg_accuracy, total_xp, completed_at, best_round_accuracy AS best_accuracy
@@ -187,7 +196,7 @@ async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
         completed_at,
         NULL::int AS current_level,
         best_accuracy,
-        RANK() OVER (ORDER BY avg_accuracy DESC, best_accuracy DESC NULLS LAST) AS rank
+        RANK() OVER (ORDER BY ${rankOrder}) AS rank
       FROM combined
     )
     SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
@@ -199,7 +208,10 @@ async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
   return result.rows;
 }
 
-async function loadDailyAlltimeRanked(): Promise<RawRankedRow[]> {
+async function loadDailyAlltimeRanked(sort: SortName): Promise<RawRankedRow[]> {
+  const rankOrder = sort === "xp"
+    ? "total_xp DESC, avg_accuracy DESC"
+    : "avg_accuracy DESC, total_xp DESC";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_alltime AS (
       SELECT player_id, games_played, avg_accuracy, total_xp
@@ -232,7 +244,7 @@ async function loadDailyAlltimeRanked(): Promise<RawRankedRow[]> {
         NULL::timestamptz AS completed_at,
         NULL::int AS current_level,
         NULL::numeric(5,2) AS best_accuracy,
-        RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
+        RANK() OVER (ORDER BY ${rankOrder}) AS rank
       FROM combined
     )
     SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
@@ -243,7 +255,10 @@ async function loadDailyAlltimeRanked(): Promise<RawRankedRow[]> {
   return result.rows;
 }
 
-async function loadLevelupRanked(): Promise<RawRankedRow[]> {
+async function loadLevelupRanked(sort: SortName): Promise<RawRankedRow[]> {
+  const rankOrder = sort === "xp"
+    ? "current_level DESC, best_accuracy DESC"
+    : "best_accuracy DESC, current_level DESC";
   const result = await dbPool.query<RawRankedRow>(
     `SELECT
        player_id,
@@ -255,7 +270,7 @@ async function loadLevelupRanked(): Promise<RawRankedRow[]> {
        NULL::timestamptz AS completed_at,
        NULL::numeric(5,2) AS avg_accuracy,
        NULL::int AS total_xp,
-       RANK() OVER (ORDER BY current_level DESC, best_accuracy DESC) AS rank
+       RANK() OVER (ORDER BY ${rankOrder}) AS rank
      FROM leaderboard_levelup
      ORDER BY rank`
   );
@@ -301,6 +316,15 @@ export async function GET(request: Request) {
     }
     const tab = rawTab as TabName;
 
+    const rawSort = searchParams.get("sort") ?? "accuracy";
+    if (!VALID_SORTS.includes(rawSort as SortName)) {
+      return formatError(
+        `Invalid sort. Must be one of: ${VALID_SORTS.join(", ")}`,
+        400
+      );
+    }
+    const sort = rawSort as SortName;
+
     if (!VALID_FILTERS.includes(legacyFilter as LegacyFilterName)) {
       return formatError(
         `Invalid filter. Must be one of: ${VALID_FILTERS.join(", ")}`,
@@ -321,17 +345,17 @@ export async function GET(request: Request) {
       loadFollowedIds(userId),
       (async () => {
         switch (tab) {
-          case "overall": return loadOverallRanked();
+          case "overall": return loadOverallRanked(sort);
           case "daily_today": {
             const rawDate = searchParams.get("date");
             const targetDate = rawDate ?? getDailyChallengeDate();
             if (!DATE_REGEX.test(targetDate)) {
               throw new Error("Invalid date format. Use YYYY-MM-DD.");
             }
-            return loadDailyTodayRanked(targetDate);
+            return loadDailyTodayRanked(targetDate, sort);
           }
-          case "daily_alltime": return loadDailyAlltimeRanked();
-          case "levelup": return loadLevelupRanked();
+          case "daily_alltime": return loadDailyAlltimeRanked(sort);
+          case "levelup": return loadLevelupRanked(sort);
         }
       })(),
     ]);
@@ -415,6 +439,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       tab,
+      sort,
       filter: legacyFilter,
       humans: includeHumans,
       ai: includeAi,

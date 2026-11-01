@@ -24,111 +24,129 @@
   "help": {
     "title": "Help Center",
     "hero_title": "How can we help?",
-    "hero_subtitle": "Find answers, learn the rules, and get the most out of Guess-History.",
-    "search_placeholder": "Search the help center…",
+    "hero_subtitle": "Rules, scoring, game modes and quick fixes — everything about Guess-History in one place.",
+    "search_placeholder": "Search help — e.g. hints, timer, badges",
     "search_label": "Search the help center",
     "clear_search": "Clear search",
     "go_back": "Go back",
-    "no_results": "No results. Try another search.",
+    "nav_label": "Help topics",
+    "no_results": "No results. Try another word, or clear the search to browse all topics.",
     "results_for": "Results for \"{q}\"",
-    "quick_start": "Quick Start",
-    "getting_started_walkthrough": "Getting Started Walkthrough",
-    "play_four_steps": "Play in Four Steps",
-    "game_modes": "Game Modes",
-    "browse_by_topic": "Browse by Topic",
-    "faq_title": "Frequently Asked Questions",
-    "keyboard_shortcuts": "Keyboard Shortcuts",
+    "results_count": "{count, plural, =0 {No results} one {# result} other {# results}}",
+    "getting_started_walkthrough": "Getting started",
+    "play_four_steps": "How to play",
+    "game_modes": "Game modes",
+    "scoring_title": "Scoring & XP",
+    "hints_title": "Hints",
+    "badges_title": "Badges",
+    "account_title": "Account & notifications",
+    "faq_title": "FAQ",
     "troubleshooting": "Troubleshooting",
     "still_need_help": "Still need help?",
     "contact_text": "Cannot find what you are looking for? Reach out and we will get back to you shortly.",
     "contact_support": "Contact Support",
     "join_community": "Join Community",
     "back_to_top": "Back to top",
-    "expand_section": "Expand section",
-    "collapse_section": "Collapse section",
-    "ql_gs_title": "Getting Started",
-    "ql_gs_blurb": "Learn the basics and start your first game in under a minute.",
-    "ql_steps_title": "How to Play",
-    "ql_steps_blurb": "Understand the map, year slider, hints, and submission flow.",
-    "ql_faq_title": "Scoring & XP",
-    "ql_faq_blurb": "See how location and time accuracy translate into points.",
-    "ql_mp_title": "Multiplayer",
-    "ql_mp_blurb": "Create a lobby, invite friends, and compete in real time.",
-    "gs_01_title": "Create your account",
-    "gs_01_desc": "Sign up with email or use a social login. Choose a display name and pick a historical figure as your avatar.",
-    "gs_02_title": "Play a Practice round",
-    "gs_02_desc": "Start with Practice mode to learn the ropes. No timer, unlimited retries—just explore and get comfortable.",
-    "gs_03_title": "Try the Daily Challenge",
-    "gs_03_desc": "Once ready, tackle the Daily Challenge. Same events as everyone else—see how you rank on the global leaderboard.",
-    "gs_04_title": "Invite friends",
-    "gs_04_desc": "Create a Compete lobby, copy the room code, and invite friends. Choose Live for real-time action or Anytime for turn-based play.",
-    "step_observe": "Observe",
-    "step_observe_blurb": "Study the historical image and any visible clues in the photo.",
-    "step_locate": "Locate",
-    "step_locate_blurb": "Drop a pin on the map where you believe the event took place.",
-    "step_date": "Date It",
-    "step_date_blurb": "Set the year using the slider or by typing directly.",
+    "grow_cta": "Grow With Us",
+    "gs_01_title": "Create your free account",
+    "gs_01_desc": "Sign up with email or Google, choose a username and pick a historical figure as your avatar.",
+    "gs_02_title": "Warm up in Practice",
+    "gs_02_desc": "Practice is solo and unlimited. Choose the eras and regions you like, set the round timer or turn it off, and play 5-round games at your own pace.",
+    "gs_03_title": "Play the Daily",
+    "gs_03_desc": "Every day, everyone gets the same 5 events and one attempt. See where you rank worldwide and keep your streak going.",
+    "gs_04_title": "Go further",
+    "gs_04_desc": "Climb the 100 stages of Your Journey, or create a Challenge lobby and play with friends — Live or Anytime.",
+    "step_observe": "Study the photo",
+    "step_observe_blurb": "Look for clues: buildings, clothing, vehicles, signs, landscape. Pinch or scroll to zoom, drag to pan, double-click to toggle zoom.",
+    "step_locate": "Place your pin",
+    "step_locate_blurb": "Tap the map where you think the photo was taken. Zoom, pan or search for a place; tap again to move your pin.",
+    "step_date": "Pick the year",
+    "step_date_blurb": "Narrow it down with the year picker — century, decade, then year — or type the year directly.",
     "step_submit": "Submit",
-    "step_submit_blurb": "Lock in your guess before the timer runs out (if enabled).",
-    "practice": "Practice",
-    "solo_warmup": "Solo warm-up",
-    "gm_practice_desc": "Hone your skills with unlimited practice games. No pressure, no timer required.",
-    "gm_practice_features": "Unlimited retries, No timer, Custom era filters, Instant feedback",
-    "daily_challenge": "Daily Challenge",
-    "same_events": "Same events for everyone",
-    "gm_daily_desc": "A new challenge every day. Same events for everyone. Climb the global leaderboard.",
-    "gm_daily_features": "24-hour window, Global leaderboard, One attempt per day, XP multiplier",
-    "level_up": "Level Up",
-    "progressive_runs": "Progressive runs",
-    "gm_levelup_desc": "Beat levels and earn XP to unlock harder challenges. A true test of skill.",
-    "gm_levelup_features": "Progressive difficulty, Unlockable content, Streak bonuses, Level-specific eras",
-    "compete": "Compete",
-    "play_with_friends": "Play with friends",
-    "gm_compete_desc": "Real-time Live or turn-based Anytime. Create a lobby, invite friends, compete.",
-    "gm_compete_features": "Live (timed), Anytime (async), Up to 8 players, Room codes",
-    "cat_placing": "Placing Your Guess",
-    "cat_placing_desc": "Click anywhere on the world map to drop a pin. You can zoom, pan, and search for locations. The closer your pin is to the actual event location, the higher your score. You can move the pin as many times as you want before submitting.",
-    "cat_year": "Choosing the Year",
-    "cat_year_desc": "Use the year slider or type directly to pick when you think the event occurred. The year range is customizable per game (default is from 400 BC to the current year). The smaller the gap between your guess and the actual year, the more points you earn.",
-    "cat_hints": "Using Hints",
-    "cat_hints_desc": "Each round offers hints organized in five tiers. Hint types include Century, Historical Event, Decade, Contemporary Event, Visual Clues, Continent, Remote Landmark, Region, and Nearby Landmark. Hints are independently purchasable—no prerequisites required. Each hint costs accuracy and XP penalty. Use them wisely.",
-    "cat_badges": "Badges & Rewards",
-    "cat_badges_desc": "Earn Gold (100%), Silver (95–99%), or Bronze (90–94%) badges for Year accuracy, Location accuracy, or a balanced Combo score. Near-misses (88–89%) are shown when you just miss a badge. Badges are for instant feedback; your stats and XP are what persist.",
-    "cat_account": "Account & Settings",
-    "cat_account_desc": "Set your display name and choose a historical figure as your avatar. View your overall accuracy, total XP, member since date, and manage your account details from the Account page.",
-    "cat_notifications": "Notifications",
-    "cat_notifications_desc": "Get notified when a friend invites you to a game. Tap the bell icon on the top bar to view recent activity.",
-    "cat_read_more": "Read more",
+    "step_submit_blurb": "Lock in your guess. If the round has a timer and it runs out, whatever you have set is submitted automatically.",
+    "gm_daily_title": "Daily",
+    "gm_daily_sub": "Same 5 events for everyone",
+    "gm_daily_desc": "One shared challenge a day and one attempt each. A new Daily starts at 10:00 UTC — rank against players worldwide and keep your streak alive.",
+    "gm_daily_features": "5 rounds|90 s per round|One attempt per day|World ranking|Daily streak",
+    "gm_journey_title": "Your Journey",
+    "gm_journey_sub": "100 stages",
+    "gm_journey_desc": "Each stage reaches 40 years further back in time and gives you less time per round. Hit the stage's accuracy gate to unlock the next one — retry as often as you like.",
+    "gm_journey_features": "100 stages|Accuracy gate|5–10 rounds per stage|5 min → 30 s per round|Unlimited retries",
+    "gm_practice_title": "Practice",
+    "gm_practice_sub": "Solo · Unlimited",
+    "gm_practice_desc": "Play as many 5-round games as you like. Pick the eras and regions you want and set a round timer from 15 s to 5 min, or turn it off.",
+    "gm_practice_features": "5 rounds|Unlimited games|Era & region filters|Optional timer",
+    "gm_challenge_title": "Challenge",
+    "gm_challenge_sub": "Play with friends",
+    "gm_challenge_desc": "Create a lobby, invite players or share the join link, then choose Live or Anytime. The host sets the timer, year range and deadline.",
+    "gm_challenge_features": "5 rounds|Live: up to 8 players|Anytime: up to 30 players|Invites & share link",
+    "sc_intro": "Every round is scored on two axes, each from 0 to 100%: WHERE (how close your pin is) and WHEN (how close your year is).",
+    "sc_where_title": "WHERE accuracy",
+    "sc_where_desc": "An exact hit scores 100%. Accuracy then falls smoothly with distance, so the first few hundred kilometres matter most.",
+    "sc_when_title": "WHEN accuracy",
+    "sc_when_desc": "Based on how many years off you are. Older events are more forgiving: the further back an event is, the less the same miss costs.",
+    "sc_col_distance": "Distance",
+    "sc_col_accuracy": "Accuracy",
+    "sc_col_years_off": "Years off",
+    "sc_col_event_year": "Event from {year}",
+    "sc_years_off_value": "{n, plural, one {# year} other {# years}}",
+    "sc_xp_title": "XP",
+    "sc_xp_desc": "Round XP = WHERE accuracy + WHEN accuracy, after hint costs. A perfect round earns 200 XP, so a 5-round game is worth up to 1,000 XP. Your round accuracy is the average of the two.",
+    "sc_missing": "No pin or no year when the round ends? That axis scores 0.",
+    "hints_intro": "Open Hints during a round to see 5 WHEN and 5 WHERE hints. Tap any hint to reveal it instantly — there is no confirmation and no required order.",
+    "hints_col_hint": "Hint",
+    "hints_col_cost": "Cost",
+    "hints_cost": "Each hint shows its cost: a percentage taken off that axis's accuracy for the round. Costs on the same axis add up (capped at 100%), and WHEN costs are reduced for older events.",
+    "hints_xp": "Because XP is the sum of both accuracies, every hint also lowers your XP.",
+    "badges_intro": "After every round you can earn a badge for WHERE, WHEN and Combo accuracy. Combo uses the lower of your two scores, so it rewards rounds that are strong on both.",
+    "badges_gold": "Gold",
+    "badges_gold_range": "100%",
+    "badges_silver": "Silver",
+    "badges_silver_range": "95–99%",
+    "badges_bronze": "Bronze",
+    "badges_bronze_range": "90–94%",
+    "badges_near_miss": "Near-miss (88–89%): shown when you just miss Bronze.",
+    "badges_after_hints": "Badges use your accuracy after hint costs.",
+    "acc_account_title": "Account page",
+    "acc_account_desc": "Change your username, see your email and member-since date, adjust settings and sign out.",
+    "acc_settings_title": "Settings",
+    "acc_settings_desc": "Turn sound and vibration on or off, and choose kilometres or miles for distances.",
+    "acc_avatar_title": "Avatar",
+    "acc_avatar_desc": "Pick a historical figure as your avatar when you sign up, and change it any time from your Profile.",
+    "acc_notif_title": "Notifications",
+    "acc_notif_desc": "On the Account page, choose how you receive game invitations and \"a player finished a game\" alerts: push, in-app, both or none. Tap the bell in the top bar to see recent notifications.",
     "faq_q1": "How is my score calculated?",
-    "faq_a1": "Each round gives you up to 200 XP: 100 for location accuracy and 100 for year accuracy. Location score decays with distance from the actual place (max 20,000 km). Year score decays with the difference from the actual year (max 200 years). Hint penalties are subtracted after the round.",
-    "faq_q2": "Can I play without an account?",
-    "faq_a2": "You can browse the home page, but you need an account to play games, save progress, earn XP, and compete against friends. Signing up is free and only takes a moment.",
-    "faq_q3": "What are the different game modes?",
-    "faq_a3": "Practice is a solo warm-up with unlimited retries. Daily Challenge offers the same events for everyone every 24 hours with a global leaderboard. Level Up is a progressive run where you beat levels to unlock harder challenges. Compete lets you face friends in real-time Live or turn-based Anytime matches.",
+    "faq_a1": "Each round scores WHERE (distance from the real location) and WHEN (years off) from 0 to 100%. Your round XP is the sum of both — up to 200 per round. Hints lower the accuracy of the axis they belong to. See Scoring & XP for examples.",
+    "faq_q2": "Do I need an account to play?",
+    "faq_a2": "Yes. Sign up for free with email or Google to play, save your stats and XP, appear in rankings and play with friends.",
+    "faq_q3": "What game modes are there?",
+    "faq_a3": "Daily (the same 5 events for everyone, one attempt per day), Your Journey (100 stages with an accuracy gate), Practice (unlimited solo games with your own filters) and Challenge (play with friends, Live or Anytime).",
     "faq_q4": "How do hints work?",
-    "faq_a4": "Hints are purchased per round using accuracy debt. Each hint reveals information like nearby landmarks, country, century clues, or distances. Hints are organized in five tiers and are independently purchasable—no prerequisites. The total hint debt is subtracted from your round score.",
-    "faq_q5": "How do multiplayer games work?",
-    "faq_a5": "In Compete mode, create a lobby and invite friends via a 6-character room code. You can play synchronous Live (timed, all players guess together) or asynchronous Anytime (take turns at your own pace). Games support up to 8 players with host-controlled settings.",
-    "faq_q6": "Can I zoom into the image?",
-    "faq_a6": "Yes, the historical image can be zoomed. Use pinch-to-zoom on mobile, scroll-wheel zoom on desktop, or tap the zoom controls. You can also open a fullscreen viewer with pan and zoom. Study the photo carefully—look for architecture, clothing, vegetation, landmarks, and any visible text or flags.",
-    "faq_q7": "What happens if the timer runs out?",
-    "faq_a7": "In Live mode, if you do not submit before the timer expires, your guess is automatically submitted at the current pin location and selected year. In Anytime mode, there is no timer—take your time.",
-    "faq_q8": "Why did not my invite arrive?",
-    "faq_a8": "Make sure your friend has an account and is logged in. Invites appear in the notification bell. If they still do not see it, try refreshing the page or sending the room code directly via chat.",
-    "faq_q9": "How do I earn badges?",
-    "faq_a9": "Badges are awarded based on accuracy per round: Gold (100%), Silver (95–99%), Bronze (90–94%). You can earn Year badges, Location badges, or Combo badges when both scores are high. Near-misses at 88–89% are also shown.",
-    "kb_esc_action": "Close modals / Cancel",
-    "ts_t1_problem": "Game is not loading or stuck on black screen",
-    "ts_t1_solution": "Try refreshing the page. If the issue persists, clear your browser cache and cookies, then reload. Ensure you are using a modern browser (Chrome, Firefox, Safari, Edge).",
-    "ts_t2_problem": "My friend did not receive the invite",
-    "ts_t2_solution": "Make sure your friend is logged in. Invites appear in the notification bell at the top right. As a fallback, copy the 6-character room code and share it directly via any messaging app.",
-    "ts_t3_problem": "Timer ran out before I could submit",
-    "ts_t3_solution": "In Live mode, guesses are auto-submitted when time expires. If you need more time, ask the host to disable the timer or switch to Anytime mode which has no time limit.",
-    "ts_t4_problem": "Hints are not showing any information",
-    "ts_t4_solution": "Hints must be purchased before they reveal content. Click the hint button, confirm the purchase, and the information will appear. Each hint reduces your final score.",
-    "ts_t5_problem": "Score seems lower than expected",
-    "ts_t5_solution": "Check if you used hints—they apply penalties to both accuracy and XP. Also verify your distance from the actual location and year difference. The max per round is 200 XP (100 location + 100 year).",
-    "grow_cta": "Grow With Us"
+    "faq_a4": "Open Hints during a round. There are 5 WHEN and 5 WHERE hints; tap one to reveal it instantly. Each costs a percentage of that axis's accuracy (shown on the hint), and costs on the same axis add up.",
+    "faq_q5": "What is the difference between Live and Anytime?",
+    "faq_a5": "Live: everyone plays the same round at the same time (up to 8 players), with an optional round timer and shared results between rounds. Anytime: each player plays the 5 rounds at their own pace before the deadline set by the host (1–14 days), up to 30 players.",
+    "faq_q6": "Can I zoom into the photo?",
+    "faq_a6": "Yes. Pinch to zoom on mobile or use the mouse wheel on desktop, drag to pan, and double-click to toggle zoom. On the results screen you can also open the photo full screen.",
+    "faq_q7": "What happens when the timer runs out?",
+    "faq_a7": "Whatever you have set — pin, year or both — is submitted automatically. Anything you didn't set scores 0 on that axis. In Anytime games only your own round is affected.",
+    "faq_q8": "When does the Daily reset?",
+    "faq_a8": "A new Daily starts every day at 10:00 UTC (midnight in UTC+14, the first time zone to reach the new day). The home page shows a countdown. You get one attempt per Daily, and an unfinished attempt can be resumed.",
+    "faq_q9": "How do Journey stages unlock?",
+    "faq_a9": "Each stage shows its pass mark. Finish the stage with an accuracy at or above it to unlock the next stage. Retry as often as you like — later stages cover a wider span of history with less time per round.",
+    "faq_q10": "How do I earn badges?",
+    "faq_a10": "Score 90% or more on WHERE, WHEN or Combo in a round: Bronze from 90%, Silver from 95% and Gold at 100%. See Badges for details.",
+    "ts_t1_problem": "The game doesn't load or shows a black screen",
+    "ts_t1_solution": "Refresh the page. If it persists, clear this site's cache and cookies and reload in an up-to-date Chrome, Firefox, Safari or Edge.",
+    "ts_t2_problem": "My friend didn't receive the invite",
+    "ts_t2_solution": "Invites appear in the bell in the top bar and under Invitations on the home page. Make sure your friend is signed in, or send them the share link from the lobby.",
+    "ts_t3_problem": "The timer ran out before I could submit",
+    "ts_t3_solution": "Guesses are submitted automatically when time is up. In Challenge the host can set a longer round timer or turn it off, and in Practice you choose your own timer. Daily (90 s) and Journey timers are fixed.",
+    "ts_t4_problem": "A hint shows no information",
+    "ts_t4_solution": "A hint's content appears only after you tap it. Hints you've already revealed show a check mark and stay visible for the rest of the round.",
+    "ts_t5_problem": "My score is lower than expected",
+    "ts_t5_solution": "Check the hints you used — each one lowers that axis's accuracy. Location accuracy also drops quickly with distance, and a missing pin or year scores 0 on that axis.",
+    "ts_t6_problem": "I don't get push notifications",
+    "ts_t6_solution": "Choose Push or Both in the Notifications settings on the Account page and allow notifications in your browser. On iPhone, push only works after adding Guess-History to your Home Screen."
   },
   "home": {
     "logo_guess": "GUESS-",
@@ -676,7 +694,10 @@
     "rank_suffix_many": "th",
     "rank_suffix_other": "th",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "No more ranked players.",
+    "sort_by_accuracy": "Accuracy",
+    "sort_by_xp": "XP",
+    "back_to_top": "Back to top"
   },
   "profile": {
     "accuracy_breakdown": "Accuracy breakdown",
@@ -807,7 +828,163 @@
     "waitlist_already": "You're already on the list!",
     "waitlist_err_invalid_email": "Please enter a valid email address.",
     "waitlist_err_generic": "Something went wrong. Please try again.",
-    "waitlist_err_network": "Network error. Please try again."
+    "waitlist_err_network": "Network error. Please try again.",
+    "lp_nav_aria": "Primary",
+    "lp_nav_how": "How to play",
+    "lp_nav_modes": "Game modes",
+    "lp_nav_explore": "Explore",
+    "lp_nav_ai": "AI images",
+    "lp_nav_faq": "FAQ",
+    "lp_nav_back_top": "Back to top",
+    "lp_menu_open": "Open menu",
+    "lp_menu_close": "Close menu",
+    "lp_play_now": "Play Now",
+    "lp_hero_aria": "Hero",
+    "lp_hero_eyebrow": "A historical guessing game",
+    "lp_hero_headline": "See a moment in history. Guess where — and when.",
+    "lp_hero_tagline": "Look at an AI-painted scene, drop a pin on the map, pick a year — then uncover the true story.",
+    "lp_trust_free": "Free",
+    "lp_trust_no_download": "No download",
+    "lp_trust_ai": "AI-reconstructed images",
+    "lp_hero_how": "See how it works",
+    "lp_slide_aria": "Slide {n}",
+    "lp_scroll": "Scroll",
+    "lp_how_eyebrow": "How to play",
+    "lp_how_title": "One scene. Three actions.",
+    "lp_how_sub": "Look at the picture. Guess where and when. Then learn the real story.",
+    "lp_step1_title": "Look",
+    "lp_step1_desc": "A mysterious scene appears. No names, no dates.",
+    "lp_step2_title": "Guess",
+    "lp_step2_desc": "Drop a pin on the map and pick a year.",
+    "lp_step3_title": "Learn",
+    "lp_step3_desc": "The event is revealed. Points go to the closest answers.",
+    "lp_demo_scene_alt": "Historical scene",
+    "lp_demo_where_guess": "You guess: {place}",
+    "lp_demo_when_alt": "When",
+    "lp_demo_when_guess": "You guess: {year}",
+    "lp_demo_reveal_title": "Berlin Wall falls",
+    "lp_demo_badge_alt": "Gold badge",
+    "lp_demo_fact": "A divided city reunited — the end of the Cold War began here.",
+    "lp_demo_phase_aria": "Phase {n}",
+    "lp_phase1_title": "A mysterious scene",
+    "lp_phase1_body": "No names. No dates. Just a picture from the past.",
+    "lp_phase2_title": "Drop a pin",
+    "lp_phase2_body": "Where on Earth do you think this happened?",
+    "lp_phase3_title": "Pick a year",
+    "lp_phase3_body": "What year do you think this took place?",
+    "lp_phase4_title": "Learn the story",
+    "lp_phase4_body": "The true event is revealed — and you earn XP for accuracy.",
+    "lp_modes_eyebrow": "Game modes",
+    "lp_modes_title": "Four ways to time-travel.",
+    "lp_modes_sub": "A shared daily puzzle, a 100-stage journey, unlimited practice, or a showdown with friends.",
+    "lp_cards_eyebrow": "The real thing",
+    "lp_cards_title": "How accurate can you be?",
+    "lp_cards_sub": "After each round, players see exactly how close their where and when guesses were.",
+    "lp_example_round": "Example round",
+    "lp_step_where": "STEP 01 — WHERE?",
+    "lp_step_when": "STEP 02 — WHEN?",
+    "lp_step_why": "STEP 03 — WHY?",
+    "lp_why_title": "The Fall of the Berlin Wall",
+    "lp_why_body": "In 1989, crowds gathered at the Brandenburg Gate as the barrier dividing East and West Berlin was opened — a turning point that hastened German reunification and the end of the Cold War.",
+    "lp_explore_eyebrow": "Explore all of history",
+    "lp_explore_title": "5 eras. 6 regions.",
+    "lp_explore_sub": "Pick an era or region to focus your investigation.",
+    "lp_eras_label": "Eras",
+    "lp_regions_label": "Regions",
+    "lp_era_ancient": "Ancient",
+    "lp_era_medieval": "Medieval",
+    "lp_era_earlymodern": "Early Modern",
+    "lp_era_modern": "Modern",
+    "lp_era_contemporary": "Contemporary",
+    "lp_region_africa": "Africa",
+    "lp_region_asia": "Asia",
+    "lp_region_europe": "Europe",
+    "lp_region_north_america": "North America",
+    "lp_region_south_america": "South America",
+    "lp_region_oceania_antarctica": "Oceania & Antarctica",
+    "lp_fun_eyebrow": "Have fun. Learn history.",
+    "lp_fun_title_a": "Play.",
+    "lp_fun_title_b": "Level up.",
+    "lp_fun_title_c": "Learn a story.",
+    "lp_fun_sub": "Earn XP, unlock rank titles, and collect badges for every kind of guess.",
+    "lp_badges_title": "Badges",
+    "lp_badge_year": "Year",
+    "lp_badge_location": "Location",
+    "lp_badge_combo": "Combo",
+    "lp_tiers_title": "Accuracy Tiers",
+    "lp_tier_expert": "Expert",
+    "lp_tier_skilled": "Skilled",
+    "lp_tier_apprentice": "Apprentice",
+    "lp_tier_beginner": "Beginner",
+    "lp_ranks_title": "Ranks",
+    "lp_rank_wanderer": "Wanderer",
+    "lp_rank_pathfinder": "Pathfinder",
+    "lp_rank_trailblazer": "Trailblazer",
+    "lp_rank_cartographer": "Cartographer",
+    "lp_rank_explorer": "Explorer",
+    "lp_xp_title": "Total XP",
+    "lp_xp_hint": "Keep playing to reach the next rank title.",
+    "lp_example": "Example",
+    "lp_avatars_title": "Avatars",
+    "lp_avatars_desc": "Play as a historical figure. These are the real avatars in the app.",
+    "lp_born": "Born: {date}, {place}",
+    "lp_died": "Died: {date}, {place}",
+    "lp_avatar_show_aria": "Show {name}",
+    "lp_avatar_einstein_desc": "Developed the theory of relativity",
+    "lp_avatar_curie_desc": "Pioneer in radioactivity; first person to win two Nobel Prizes",
+    "lp_avatar_mandela_desc": "Anti-apartheid revolutionary and former President of South Africa",
+    "lp_avatar_lovelace_desc": "Wrote the first algorithm intended for a computer",
+    "lp_avatar_darwin_desc": "Naturalist known for the theory of evolution",
+    "lp_ai_eyebrow": "Painted by AI",
+    "lp_ai_title_a": "Every image is an",
+    "lp_ai_title_b": "AI reconstruction.",
+    "lp_ai_sub": "No real photos. Each scene is generated by AI from real historical research, then checked by humans.",
+    "lp_pipe1_label": "Real event",
+    "lp_pipe1_desc": "A documented moment in history.",
+    "lp_pipe2_label": "Research",
+    "lp_pipe2_desc": "Historians gather sources and facts.",
+    "lp_pipe3_label": "AI paints",
+    "lp_pipe3_desc": "An AI creates the scene from the research.",
+    "lp_pipe4_label": "Human check",
+    "lp_pipe4_desc": "Verified before it reaches you.",
+    "lp_ai_note": "The illustrations help you imagine the moment, not replace primary sources.",
+    "lp_lb_eyebrow": "Compete Rankings",
+    "lp_lb_title": "Leaderboard",
+    "lp_lb_sub": "See how you rank against players around the world.",
+    "lp_example_preview": "Example preview",
+    "lp_lb_overall": "Overall",
+    "lp_lb_daily": "Daily",
+    "lp_lb_levelup": "Level Up",
+    "lp_lb_today": "Today",
+    "lp_lb_alltime": "All-Time",
+    "lp_lb_humans": "Humans",
+    "lp_lb_ai": "AI",
+    "lp_lb_friends": "Friends",
+    "lp_lb_you_rank": "You are #{rank} in {summary}",
+    "lp_lb_empty": "No players match the selected filters.",
+    "lp_lb_player": "Player",
+    "lp_lb_accuracy": "Accuracy",
+    "lp_lb_games": "Games",
+    "lp_lb_level": "Level",
+    "lp_lb_rounds_won": "{won, plural, one {# round won} other {# rounds won}}",
+    "lp_lb_games_played": "{games, plural, one {# game played} other {# games played}}",
+    "lp_lb_level_n": "Level {level}",
+    "lp_lb_lvl": "Lvl {level}",
+    "lp_faq_eyebrow": "Questions",
+    "lp_faq_title": "Frequently asked questions",
+    "lp_faq_sub": "Quick answers for new players — more detail in the Help Center.",
+    "lp_faq_ai_q": "Are the images real photos?",
+    "lp_faq_ai_a": "No. Every scene is an AI reconstruction built from historical research and checked by humans — an illustration of the moment, not a photograph.",
+    "lp_faq_free_q": "Is it free?",
+    "lp_faq_free_a": "Yes — the game is free to play. You sign up for free with email or Google, and your account saves your XP, stats and rankings.",
+    "lp_final_eyebrow": "Ready when you are",
+    "lp_final_title": "Ready for your first trip through time?",
+    "lp_final_sub": "No download. No cost. Just curiosity.",
+    "lp_footer_disc": "All event images are AI-generated reconstructions based on historical research. They are illustrations, not photographs.",
+    "lp_footer_help": "Help Center",
+    "lp_footer_privacy": "Privacy",
+    "lp_footer_terms": "Terms",
+    "lp_footer_copy": "© {year} Guess History"
   },
   "rank": {
     "rank_label": "Rank",
@@ -1480,45 +1657,63 @@
     "meta_image_alt": "Guess History investor deck",
     "title": "Guess History",
     "progress_label": "GUESS HISTORY",
-    "cta_register": "Register Your Interest",
+    "cta_register": "Register your interest",
     "cta_play": "Play Guess History",
-    "cta_test": "Register Interest",
+    "cta_test": "Register interest",
     "status_verified": "VERIFIED",
     "status_illustrative": "ILLUSTRATIVE",
     "status_roadmap": "ROADMAP",
     "status_conceptual": "CONCEPTUAL",
     "model_tag": "MODEL",
     "s01": {
-      "headline": "What if a game could become an AI benchmark?",
+      "kicker": "THE HOOK",
+      "headline": "Every round of this game makes an AI benchmark harder to fake.",
       "body": [
-        "Guess History is a game where players reconstruct where and when historical events happened.",
-        "But the game can create something much larger: a human-grounded visual AI benchmark."
+        "Guess History is a game: a historical scene appears, and players say where and when it happened.",
+        "Every answer is recorded. Together they become a human baseline for how well machines understand history."
       ],
       "statements": [
-        "The game is the beginning."
+        "The game is the distribution. The benchmark is the product."
       ],
+      "stats": [
+        {
+          "value": "10,281",
+          "label": "Human attempts"
+        },
+        {
+          "value": "8 yr",
+          "label": "Median year error"
+        },
+        {
+          "value": "74 km",
+          "label": "Median location error"
+        }
+      ],
+      "scroll_hint": "12 chapters",
       "alt": "Cinematic historical scene with depth, human figures, and visually ambiguous clues"
     },
     "s02": {
-      "headline": "A simple game with an unusual data engine.",
+      "kicker": "THE GAME",
+      "headline": "Two questions. No instructions.",
       "body": [
-        "The visitor should understand the game without reading instructions."
+        "A scene appears. Players mark the place on a map and set the year on a slider. The reveal shows the truth and the distance from it."
       ],
       "alt": "Historical scene used for the where-and-when mini-demo",
       "steps": [
-        "Historical scene",
+        "Scene",
         "Where?",
         "When?",
         "Reveal"
       ]
     },
     "s03": {
-      "headline": "Players aren't just players.",
-      "subheadline": "They are creating a human benchmark.",
+      "kicker": "HUMAN DATA",
+      "headline": "Players aren't just playing.",
+      "subheadline": "They are annotating history.",
       "body": [
-        "Every answer makes the benchmark more informative."
+        "Each round produces a place guess, a year guess and a confidence. Aggregated per image, that becomes measured difficulty instead of curated difficulty."
       ],
-      "final": "Every answer makes the benchmark more informative.",
+      "final": "The benchmark is a by-product of play.",
       "alt": "The same historical image used to anchor the accumulating human observations",
       "items": [
         {
@@ -1540,97 +1735,101 @@
       ]
     },
     "s04": {
-      "headline": "Now give the same challenge to AI.",
+      "kicker": "HUMAN VS AI",
+      "headline": "Then ask the same questions of a model.",
       "body": [
-        "Human and AI are given the same image and the same two questions. Their results can be compared directly."
+        "Same image, same two questions, same scoring. A human baseline only matters if a model can be measured against it."
       ],
-      "final": "Now we can compare them.",
+      "final": "Same image. Same questions. Comparable answers.",
       "alt": "Split-screen visual showing the same image tested against a human and an AI model",
       "status_label": "Planned evaluation capability",
-      "columns": [
+      "rows": [
         {
-          "title": "HUMAN",
-          "items": [
-            "Where?",
-            "When?",
-            "Result"
-          ]
+          "label": "WHERE",
+          "human": "±74 km median",
+          "model": "±182 km median"
         },
         {
-          "title": "AI MODEL",
-          "items": [
-            "Where?",
-            "When?",
-            "Result"
-          ]
+          "label": "WHEN",
+          "human": "±8 years median",
+          "model": "±23 years median"
+        },
+        {
+          "label": "CONFIDENCE",
+          "human": "Calibrated",
+          "model": "9% high-confidence errors"
         }
-      ]
+      ],
+      "human": "HUMAN",
+      "model": "MODEL"
     },
     "s05": {
-      "headline": "A new layer of AI evaluation.",
+      "kicker": "EVALUATION",
+      "headline": "The report is the product.",
       "body": [
-        "A clean evaluation report. The benchmark is not just \"right or wrong.\""
+        "Not a leaderboard position: a breakdown of how a model reasons about time, space and its own certainty."
       ],
-      "final": "Not just 'right or wrong.'",
+      "final": "Right or wrong is the least interesting output.",
+      "baseline": "Human baseline on the same scenes: 8 yr · 74 km",
       "metrics": [
         {
           "label": "TEMPORAL REASONING",
-          "value": "Median error: 8 years"
+          "value": "Median error 23 yr"
         },
         {
           "label": "SPATIAL REASONING",
-          "value": "Median distance: 182 km"
+          "value": "Median distance 182 km"
         },
         {
           "label": "CALIBRATION",
-          "value": "High-confidence error: 9%"
+          "value": "9% high-confidence errors"
         },
         {
           "label": "LATENCY",
-          "value": "P95: 3.1 s"
+          "value": "P95 3.1 s"
         },
         {
           "label": "COST",
-          "value": "$0.014 / evaluation"
+          "value": "$0.014 per evaluation"
         }
       ],
       "flow": [
         "MODEL",
         "BENCHMARK",
         "HUMAN BASELINE",
-        "PERFORMANCE"
+        "REPORT"
       ]
     },
     "s06": {
-      "headline": "The valuable asset isn't the image.",
+      "kicker": "DATA MOAT",
+      "headline": "The image is not the asset.",
       "body": [
-        "The moat grows through usage.",
-        "More human observations → stronger benchmark.",
-        "More model evaluations → richer comparison.",
-        "More history → stronger longitudinal dataset."
+        "Anyone can license a photograph. What compounds is the record around it: who answered, how confidently, how wrong, and which model version was measured against it."
       ],
-      "final": "It is the dataset around the image.",
+      "final": "The dataset around the image is the moat.",
       "alt": "Historical image with progressively denser data layers building around it",
       "stack": [
         "Verified ground truth",
         "Human observations",
         "Human difficulty",
         "Confidence",
-        "AI responses",
+        "Model responses",
         "Model versions",
-        "Evaluation methodology"
+        "Evaluation method"
       ]
     },
     "s07": {
-      "headline": "Test your model.",
+      "kicker": "TEST MODEL",
+      "headline": "Test a model in one run.",
       "body": [
-        "A model provider submits a vision model, runs the benchmark, and receives a reproducible, human-grounded evaluation."
+        "A provider submits a vision model. The benchmark runs the same scenes through the same scoring code and returns a report anyone can reproduce from the dataset version."
       ],
       "final": "Independent. Human-grounded. Reproducible.",
       "status_label": "Planned evaluation capability",
       "steps": [
-        "Vision Model v4.2",
-        "RUN BENCHMARK"
+        "Submit model",
+        "Run benchmark",
+        "Receive report"
       ],
       "metrics": [
         {
@@ -1656,22 +1855,47 @@
       ]
     },
     "s08": {
+      "kicker": "RECURRING REVENUE",
       "headline": "Don't test a model once.",
       "subheadline": "Track every version.",
       "body": [
-        "Three model versions travel through the same benchmark. A line graph evolves. Metrics improve or regress."
+        "A single score is a snapshot. The recurring product is the line: the same benchmark re-run on every release, so a regression is visible the day it ships."
       ],
       "final": "Did your model actually improve?",
       "steps": [
-        "MODEL v1 → BENCHMARK",
-        "MODEL v2 → BENCHMARK",
-        "MODEL v3 → BENCHMARK"
-      ]
+        "v1 → benchmark",
+        "v2 → benchmark",
+        "v3 → benchmark"
+      ],
+      "chart": {
+        "labels": [
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8"
+        ],
+        "values": [
+          41,
+          52,
+          49,
+          63,
+          61,
+          74,
+          71,
+          86
+        ],
+        "caption": "Score per model version"
+      }
     },
     "s09": {
-      "headline": "Four ways to monetize the benchmark.",
+      "kicker": "BUSINESS MODEL",
+      "headline": "Four ways the benchmark becomes revenue.",
       "body": [
-        "No hypothetical revenue numbers are presented. The four primary products and secondary opportunities are described."
+        "Evaluation is sold as access, not as a score: automated runs, continuous monitoring, custom programs and controlled data licensing."
       ],
       "nodes": [
         {
@@ -1699,9 +1923,10 @@
       ]
     },
     "s10": {
-      "headline": "The game feeds the benchmark.",
+      "kicker": "FLYWHEEL",
+      "headline": "The game feeds the benchmark. The benchmark funds the game.",
       "body": [
-        "The loop progressively accelerates. Consumer gameplay and B2B evaluation reinforce one another."
+        "Consumer play produces the data. B2B evaluation pays for it. Neither side works without the other."
       ],
       "final": "Two products. One reinforcing system.",
       "flow": [
@@ -1716,11 +1941,12 @@
       ]
     },
     "s11": {
-      "headline": "History is the starting point.",
+      "kicker": "PLATFORM",
+      "headline": "History is the first domain, not the only one.",
       "body": [
-        "The platform can expand from historical imagery into broader visual-reasoning evaluation categories."
+        "The method is portable: real scenes, two questions, a human baseline. Anywhere ground truth exists, the same benchmark can be rebuilt."
       ],
-      "final": "Human-grounded visual AI evaluation.",
+      "final": "Human-grounded visual evaluation, domain by domain.",
       "status_label": "Long-term platform opportunity",
       "branches_root": "HISTORY",
       "branches_children": [
@@ -1734,15 +1960,23 @@
       ]
     },
     "s12": {
-      "headline": "We are building two businesses that strengthen each other.",
-      "body": [
-        "GUESS HISTORY: A game that attracts players and generates proprietary human intelligence.",
-        "GUESS HISTORY EVALUATION: A platform that measures AI performance against that intelligence."
+      "kicker": "INVESTMENT",
+      "headline": "Two businesses, one engine.",
+      "businesses": [
+        {
+          "title": "GUESS HISTORY",
+          "description": "A game that attracts players and produces proprietary human annotation."
+        },
+        {
+          "title": "GUESS HISTORY EVALUATION",
+          "description": "A platform that measures AI performance against that annotation."
+        }
       ],
       "statements": [
-        "Game → Data → Benchmark",
-        "Benchmark → Evaluation → Revenue",
-        "Revenue → More Data → Stronger Platform"
+        "Game → Data",
+        "Data → Benchmark",
+        "Benchmark → Revenue",
+        "Revenue → More data"
       ],
       "final": "Can AI understand history as well as humans?"
     },

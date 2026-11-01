@@ -2,54 +2,55 @@
 
 import Image from 'next/image'
 import { useGrowSection } from './GrowSectionContext'
+import GrowSlide from './GrowSlide'
 
 export default function Section02Game() {
   const { content } = useGrowSection()
   const section = content.sections[1]
+  const steps = section.visual.steps ?? []
 
   return (
-    <section
+    <GrowSlide
       id={section.id}
-      data-section-id={section.id}
-      data-section-index={section.number - 1}
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
+      index={section.number - 1}
+      kicker={section.kicker}
+      headline={section.headline}
+      accent="orange"
     >
-      <div className="relative z-10 flex max-w-4xl flex-col items-center gap-8 text-center">
-        <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-          {section.headline}
-        </h2>
-        {section.body.map((paragraph) => (
-          <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
-            {paragraph}
-          </p>
-        ))}
+      {section.body.map((paragraph) => (
+        <p key={paragraph} className="max-w-2xl text-base text-[var(--gh-text-secondary)] md:text-lg">
+          {paragraph}
+        </p>
+      ))}
 
-        {section.visual.src && (
-          <div className="relative mt-6 aspect-video w-full max-w-2xl overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
-            <Image
-              src={section.visual.src}
-              alt={section.visual.alt ?? ''}
-              fill
-              sizes="(max-width: 768px) 100vw, 800px"
-              className="object-cover"
-            />
-          </div>
-        )}
+      {section.visual.src && (
+        <div className="relative mt-1 aspect-video w-full max-w-2xl overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
+          <Image
+            src={section.visual.src}
+            alt={section.visual.alt ?? ''}
+            fill
+            sizes="(max-width: 768px) 100vw, 800px"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#080c14]/70 via-transparent to-transparent" />
+        </div>
+      )}
 
-        <ol className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-[var(--gh-text-secondary)] md:gap-6">
-          {section.visual.steps?.map((step, index) => (
-            <li key={step} className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--gh-border-default)] text-xs font-semibold text-[var(--gh-gold)]">
-                {index + 1}
+      <ol className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        {steps.map((step, index) => (
+          <li key={step} className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full grow-accent-soft font-sora text-[0.625rem] font-bold grow-accent">
+              {index + 1}
+            </span>
+            <span className="text-xs text-[var(--gh-text-secondary)] md:text-sm">{step}</span>
+            {index < steps.length - 1 && (
+              <span className="ml-1 text-[var(--gh-text-muted)]" aria-hidden="true">
+                →
               </span>
-              <span>{step}</span>
-              {index < (section.visual.steps?.length ?? 0) - 1 && (
-                <span className="hidden text-[var(--gh-text-muted)] md:inline">↓</span>
-              )}
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
+            )}
+          </li>
+        ))}
+      </ol>
+    </GrowSlide>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { useGrowSection } from './GrowSectionContext'
+import GrowSlide from './GrowSlide'
 import StatusBadge from './StatusBadge'
 
 export default function Section04HumanVsAI() {
@@ -9,64 +9,67 @@ export default function Section04HumanVsAI() {
   const section = content.sections[3]
 
   return (
-    <section
+    <GrowSlide
       id={section.id}
-      data-section-id={section.id}
-      data-section-index={section.number - 1}
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
+      index={section.number - 1}
+      kicker={section.kicker}
+      headline={section.headline}
+      accent="blue"
+      finalStatement={section.finalStatement}
     >
-      <div className="relative z-10 flex max-w-5xl flex-col items-center gap-8 text-center">
-        <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-          {section.headline}
-        </h2>
+      {section.body.map((paragraph) => (
+        <p key={paragraph} className="max-w-2xl text-base text-[var(--gh-text-secondary)] md:text-lg">
+          {paragraph}
+        </p>
+      ))}
 
-        {section.body.map((paragraph) => (
-          <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
-            {paragraph}
-          </p>
-        ))}
+      {section.status && (
+        <StatusBadge status={section.status} label={section.statusLabel} />
+      )}
 
-        {section.status && (
-          <StatusBadge status={section.status} label={section.statusLabel} />
-        )}
-
-        {section.visual.src && (
-          <div className="relative aspect-video w-full max-w-3xl overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
-            <Image
-              src={section.visual.src}
-              alt={section.visual.alt ?? ''}
-              fill
-              sizes="(max-width: 768px) 100vw, 1000px"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-black/40" />
-          </div>
-        )}
-
-        <div className="grid w-full max-w-3xl gap-6 md:grid-cols-2">
-          {section.visual.columns?.map((column) => (
-            <div
-              key={column.title}
-              className="rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-6"
-            >
-              <h3 className="mb-4 text-xl font-semibold text-[var(--gh-text-primary)]">
-                {column.title}
-              </h3>
-              <ul className="flex flex-col gap-2 text-[var(--gh-text-secondary)]">
-                {column.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+      {section.rows && (
+        <div className="w-full max-w-3xl overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] px-4 py-1">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-[var(--gh-border-default)]">
+                <th scope="col" className="py-2 pr-2">
+                  <span className="sr-only">{section.kicker}</span>
+                </th>
+                <th
+                  scope="col"
+                  className="px-2 py-2 font-sora text-[0.625rem] font-bold uppercase tracking-[0.2em] grow-accent md:text-xs"
+                >
+                  {section.columnLabels?.human}
+                </th>
+                <th
+                  scope="col"
+                  className="px-2 py-2 font-sora text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[color:var(--gh-blue)] md:text-xs"
+                >
+                  {section.columnLabels?.model}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.rows.map((row) => (
+                <tr key={row.label} className="border-b border-[var(--gh-border-subtle)] last:border-0">
+                  <th
+                    scope="row"
+                    className="py-2 pr-2 text-[0.5625rem] font-semibold uppercase tracking-[0.14em] text-[var(--gh-text-muted)] md:text-[0.625rem]"
+                  >
+                    {row.label}
+                  </th>
+                  <td className="px-2 py-2 text-xs text-[var(--gh-text-primary)] md:text-sm">
+                    {row.human}
+                  </td>
+                  <td className="px-2 py-2 text-xs text-[var(--gh-text-secondary)] md:text-sm">
+                    {row.model}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        {section.finalStatement && (
-          <p className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
-            {section.finalStatement}
-          </p>
-        )}
-      </div>
-    </section>
+      )}
+    </GrowSlide>
   )
 }

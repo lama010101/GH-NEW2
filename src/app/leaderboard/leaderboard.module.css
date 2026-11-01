@@ -11,13 +11,21 @@
   flex-direction: column;
 }
 
-/* Header */
+/* Header — sticky so back button + title stay visible while scrolling.
+   Negative horizontal margins let the opaque background span the full
+   container width (container has padding: 16px). top clears the fixed
+   TopBar (56px + safe-area). */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
-  padding-top: 8px;
+  margin: 0 -16px 22px;
+  padding: 8px 16px 12px;
+  position: sticky;
+  top: calc(56px + env(safe-area-inset-top, 0px));
+  z-index: 40;
+  background: var(--gh-bg-base);
+  border-bottom: 1px solid var(--gh-border-subtle);
 }
 
 .backBtn {
@@ -133,19 +141,38 @@
   color: var(--gh-orange);
 }
 
-/* Filter chips */
+/* Filter controls — one line, three visually distinct groups:
+   1. identityGroup (Humans/AI and/or): rounded pill chips, orange accent
+   2. friendsToggle (on/off): square-ish button, teal accent
+   3. sortToggle (%/XP exclusive): segmented control, blue accent */
 .filterRow {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterRow::-webkit-scrollbar {
+  display: none;
+}
+
+.identityGroup {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .filterChip,
 .friendsToggle {
-  font-size: var(--font-xs);
+  font-size: var(--font-2xs);
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 7px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
   background: var(--gh-glass-bg);
   border: 1px solid var(--gh-border-default);
   border-radius: 20px;
@@ -160,15 +187,52 @@
   color: var(--gh-text-primary);
 }
 
-.filterChipActive,
-.friendsToggleActive {
+.filterChipActive {
   background: rgba(var(--gh-orange-rgb), 0.15);
   border-color: rgba(var(--gh-orange-rgb), 0.3);
   color: var(--gh-orange);
 }
 
 .friendsToggle {
-  margin-left: auto;
+  border-radius: 10px;
+}
+
+.friendsToggleActive {
+  background: rgba(var(--gh-teal-rgb), 0.15);
+  border-color: rgba(var(--gh-teal-rgb), 0.35);
+  color: var(--gh-teal);
+}
+
+/* Metric sort — segmented control (exclusive %/XP choice) */
+.sortToggle {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 10px;
+}
+
+.sortSegment {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  padding: 5px 9px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--gh-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortSegment:hover {
+  color: var(--gh-text-primary);
+}
+
+.sortSegmentActive {
+  background: rgba(var(--gh-blue-rgb), 0.22);
+  color: var(--gh-blue);
 }
 
 .avatarAi {
@@ -504,4 +568,30 @@
 
 .podiumGold .podiumScore {
   font-size: var(--font-lg);
+}
+
+/* Back-to-top floating button (shown while scrolling up) */
+.scrollTopBtn {
+  position: fixed;
+  bottom: 24px;
+  right: max(16px, calc(50vw - 224px));
+  z-index: 45;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--gh-orange), rgba(var(--gh-orange-rgb), 0.85));
+  border: none;
+  color: var(--gh-btn-text);
+  font-size: var(--font-lg);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(var(--gh-orange-rgb), 0.4);
+  transition: transform 0.2s ease;
+}
+
+.scrollTopBtn:hover {
+  transform: translateY(-2px);
 }

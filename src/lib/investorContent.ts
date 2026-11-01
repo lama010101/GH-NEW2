@@ -3,17 +3,24 @@ export type SectionStatus = 'verified' | 'illustrative' | 'roadmap' | 'conceptua
 export type InvestorSection = {
   id: string
   number: number
+  kicker: string
   headline: string
   subheadline?: string
   body: string[]
   statements?: string[]
+  stats?: { value: string; label: string }[]
+  rows?: { label: string; human: string; model: string }[]
+  columnLabels?: { human: string; model: string }
+  businesses?: { title: string; description: string }[]
+  chart?: { labels: string[]; values: number[]; caption: string }
+  baseline?: string
+  scrollHint?: string
   visual: {
     type: string
     src?: string
     alt?: string
     steps?: string[]
     items?: { label: string; value?: string; status?: SectionStatus }[]
-    columns?: { title: string; items: string[] }[]
     metrics?: { label: string; value: string; status?: SectionStatus }[]
     stack?: string[]
     nodes?: { label: string; description?: string }[]
@@ -55,9 +62,17 @@ type DeckTranslator = {
 
 type LV = { label: string; value?: string }
 type LVN = { label: string; description?: string }
+type LVV = { value: string; label: string }
+type Row = { label: string; human: string; model: string }
+type Business = { title: string; description: string }
+type Chart = { labels: string[]; values: number[]; caption: string }
 
 const asStrings = (v: unknown) => v as string[]
 const asLVN = (v: unknown) => v as LVN[]
+const asLVV = (v: unknown) => v as LVV[]
+const asRows = (v: unknown) => v as Row[]
+const asBusinesses = (v: unknown) => v as Business[]
+const asChart = (v: unknown) => v as Chart
 const illustrative = <T extends LV>(v: unknown): (T & { status: SectionStatus })[] =>
   (v as T[]).map((i) => ({ ...i, status: 'illustrative' as const }))
 
@@ -96,9 +111,12 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'hook',
         number: 1,
+        kicker: t('s01.kicker'),
         headline: t('s01.headline'),
         body: asStrings(t.raw('s01.body')),
         statements: asStrings(t.raw('s01.statements')),
+        stats: asLVV(t.raw('s01.stats')),
+        scrollHint: t('s01.scroll_hint'),
         visual: {
           type: 'image',
           src: '/home_background.webp',
@@ -109,6 +127,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'game',
         number: 2,
+        kicker: t('s02.kicker'),
         headline: t('s02.headline'),
         body: asStrings(t.raw('s02.body')),
         visual: {
@@ -122,6 +141,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'insight',
         number: 3,
+        kicker: t('s03.kicker'),
         headline: t('s03.headline'),
         subheadline: t('s03.subheadline'),
         body: asStrings(t.raw('s03.body')),
@@ -138,14 +158,16 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'human-ai',
         number: 4,
+        kicker: t('s04.kicker'),
         headline: t('s04.headline'),
         body: asStrings(t.raw('s04.body')),
+        rows: asRows(t.raw('s04.rows')),
+        columnLabels: { human: t('s04.human'), model: t('s04.model') },
         finalStatement: t('s04.final'),
         visual: {
           type: 'split',
           src: '/prototype/landing/hero/hero-3.webp',
           alt: t('s04.alt'),
-          columns: t.raw('s04.columns') as { title: string; items: string[] }[],
         },
         status: 'roadmap',
         statusLabel: t('s04.status_label'),
@@ -154,9 +176,11 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'evaluation',
         number: 5,
+        kicker: t('s05.kicker'),
         headline: t('s05.headline'),
         body: asStrings(t.raw('s05.body')),
         finalStatement: t('s05.final'),
+        baseline: t('s05.baseline'),
         visual: {
           type: 'report',
           metrics: illustrative<{ label: string; value: string }>(t.raw('s05.metrics')),
@@ -168,6 +192,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'moat',
         number: 6,
+        kicker: t('s06.kicker'),
         headline: t('s06.headline'),
         body: asStrings(t.raw('s06.body')),
         finalStatement: t('s06.final'),
@@ -182,6 +207,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'test-model',
         number: 7,
+        kicker: t('s07.kicker'),
         headline: t('s07.headline'),
         body: asStrings(t.raw('s07.body')),
         finalStatement: t('s07.final'),
@@ -199,10 +225,12 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'recurring-revenue',
         number: 8,
+        kicker: t('s08.kicker'),
         headline: t('s08.headline'),
         subheadline: t('s08.subheadline'),
         body: asStrings(t.raw('s08.body')),
         finalStatement: t('s08.final'),
+        chart: asChart(t.raw('s08.chart')),
         visual: {
           type: 'version-line',
           steps: asStrings(t.raw('s08.steps')),
@@ -212,6 +240,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'business-model',
         number: 9,
+        kicker: t('s09.kicker'),
         headline: t('s09.headline'),
         body: asStrings(t.raw('s09.body')),
         visual: {
@@ -227,6 +256,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'flywheel',
         number: 10,
+        kicker: t('s10.kicker'),
         headline: t('s10.headline'),
         body: asStrings(t.raw('s10.body')),
         finalStatement: t('s10.final'),
@@ -239,6 +269,7 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'platform',
         number: 11,
+        kicker: t('s11.kicker'),
         headline: t('s11.headline'),
         body: asStrings(t.raw('s11.body')),
         finalStatement: t('s11.final'),
@@ -256,8 +287,10 @@ export function getInvestorContent(t: DeckTranslator): InvestorContent {
       {
         id: 'investment',
         number: 12,
+        kicker: t('s12.kicker'),
         headline: t('s12.headline'),
-        body: asStrings(t.raw('s12.body')),
+        body: [],
+        businesses: asBusinesses(t.raw('s12.businesses')),
         statements: asStrings(t.raw('s12.statements')),
         finalStatement: t('s12.final'),
         visual: {
