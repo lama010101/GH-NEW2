@@ -7,6 +7,7 @@ import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, u
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { PushSoftAsk } from '@/components/PushSoftAsk'
+import GetAppCard from '@/components/GetAppCard'
 import { JourneyCard } from '@/components/home/JourneyCard'
 import { DailyCard } from '@/components/home/DailyCard'
 import { ChallengeCard } from '@/components/home/ChallengeCard'
@@ -443,6 +444,12 @@ function HomePageInner() {
           <div className={styles['hv2-grid']}>
             {visibleHomeOrder.map((id) => homeCards[id])}
           </div>
+          {/* Get the app (Android APK / iOS Add to Home Screen) — below the mode cards;
+              hidden while the WelcomeModal or PushSoftAsk overlay is up. */}
+          <GetAppCard
+            style={{ marginBlockStart: 16 }}
+            suppress={welcomeData !== null || (pushSoftAskDismissed === false && !identity.isAnonymous)}
+          />
         </div>
       </div>
 
