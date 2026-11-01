@@ -2,18 +2,15 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDbPool } from "@/server/db";
-import { ModeToggle } from "./ModeToggle";
 import { ResultsModal } from "./ResultsModal";
 import { AddModelModal } from "./models/AddModelModal";
-import { ModelRowActions } from "./models/ModelRowActions";
+import { ModelControls } from "./models/ModelControls";
 import { updateDailyCostCap } from "./models/actions";
 import { scheduleAiPlayerModeChange } from "./scheduling/actions";
-import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRosterHealth, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RosterHealthRow, type RecentErrorRow, type ScheduledChangeRow } from "./queries";
+import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RecentErrorRow, type ScheduledChangeRow } from "./queries";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
-import { KpiCard, type KpiTone } from "./KpiCard";
-import { StatusBadge } from "./StatusBadge";
-import { deriveStatus, statusTier, type RosterHealthDisplayRow } from "./rosterStatus";
+import { classifyFailure, coveragePct, deriveFailing, deriveModelState, derivePrice, deriveTrack, modelGroupKey, trackPriceGroupLabel, FAILURE_CAUSES, TRACK_LABEL, PRICE_LABEL, TRACK_PRICE_GROUP_ORDER, TRACK_GROUP_ORDER, PRICE_GROUP_ORDER, type FleetModelState, type GroupMode } from "./fleetMetrics";
 import { RecordDrawer, type DrawerField } from "./components/RecordDrawer";
 
 export const dynamic = "force-dynamic";
@@ -22,26 +19,89 @@ const PAGE_SIZE = 25;
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
-type ModelSummaryRow = {
-  id: string;
+// Row shape of the read-only admin_fleet_model_stats view
+// (supabase/migrations/20261101090000_admin_fleet_truth_views.sql).
+type FleetStatRow = {
+  ai_player_id: string;
   name: string;
   model_id: string;
   is_active: boolean;
   is_active_practice: boolean;
   is_active_daily: boolean;
   daily_cost_cap_usd: string | number | null;
-  cost_today: string | number | null;
-  cost_week: string | number | null;
-  total_calls: number;
-  error_count: number;
-  total_cost: string | number | null;
-  total_tokens: number;
-  last_call_at: string | null;
-  final_error_total: number;
-  rate_limit_count: number;
-  not_found_count: number;
-  parse_count: number;
+  has_catalog_row: boolean;
+  is_vision: boolean | null;
+  is_free: boolean | null;
+  availability_status: string | null;
+  ok_plays: number;
+  failed_plays: number;
+  failed_auth: number;
+  failed_gone: number;
+  failed_rate_limit: number;
+  failed_bad_output: number;
+  failed_other: number;
+  distinct_events_ok: number;
+  ok_event_ids: string[] | null;
+  avg_year_diff: number | null;
+  avg_distance_km: number | null;
+  last_ok_at: string | null;
+  last_play_at: string | null;
+  plays_7d: number;
+  ok_7d: number;
+  auth_7d: number;
 };
+
+type FleetCoverageRow = {
+  eligible_total: number;
+  covered_total: number;
+  depth_0: number;
+  depth_1: number;
+  depth_2: number;
+  depth_3plus: number;
+  covered_vision: number;
+  covered_text: number;
+  covered_unknown: number;
+};
+
+type FleetRow = FleetStatRow & {
+  state: ReturnType<typeof deriveModelState>;
+  failing: boolean;
+  failingRate: number | null;
+  track: ReturnType<typeof deriveTrack>;
+  price: ReturnType<typeof derivePrice>;
+  coveredN: number;
+  coveredPct: number;
+  totalCost: number;
+  costPerOk: number | null;
+};
+
+// One badge per model + one-line reason (ADMIN-BUILD-FLEETTRUTH-1101-031).
+function FleetBadge({
+  state,
+  failing,
+}: {
+  state: FleetModelState;
+  failing: boolean;
+}) {
+  const [label, cls] = failing
+    ? ["Failing", "ops-chip-bad"]
+    : state === "running"
+    ? ["Running", "ops-chip-ok"]
+    : state === "blocked"
+    ? ["Blocked", "ops-chip-warn"]
+    : ["Paused", "ops-chip-muted"];
+  return <span className={`ops-chip ${cls}`}>{label}</span>;
+}
+
+function fleetStateTier(
+  state: FleetModelState,
+  failing: boolean
+): "ok" | "warn" | "bad" | "off" {
+  if (failing) return "bad";
+  if (state === "running") return "ok";
+  if (state === "blocked") return "warn";
+  return "off";
+}
 
 type ActivityRow = {
   id: string;
@@ -123,31 +183,43 @@ function defaultDir(column: string): "asc" | "desc" {
     : "desc";
 }
 
-function modelSortExpression(
-  column: string,
-  direction: "asc" | "desc"
-): string {
-  const dir = direction.toUpperCase();
-  const nulls = direction === "asc" ? "NULLS FIRST" : "NULLS LAST";
+// Client-side sort of the fleet rows (data set is small — one row per live
+// ai_player). Sort keys match the Models tab columns; state sorts by
+// severity: failing > blocked > running > paused.
+const STATE_RANK: Record<FleetModelState, number> = {
+  paused: 0,
+  running: 1,
+  blocked: 2,
+};
+
+function fleetSortValue(row: FleetRow, column: string): number | string {
   switch (column) {
     case "name":
-      return `p.name ${dir}`;
-    case "total_calls":
-      return `COALESCE(mc.total_calls, 0) ${dir} ${nulls}`;
-    case "error_count":
-      return `COALESCE(mc.error_count, 0) ${dir} ${nulls}`;
-    case "final_errors":
-      return `COALESCE(mae.final_error_total, 0) ${dir} ${nulls}`;
-    case "total_cost":
-      return `COALESCE(mc.total_cost, 0) ${dir} ${nulls}`;
-    case "cost_today":
-      return `COALESCE(mc.cost_today, 0) ${dir} ${nulls}`;
-    case "total_tokens":
-      return `COALESCE(mc.total_tokens, 0) ${dir} ${nulls}`;
-    case "last_call_at":
-      return `mc.last_call_at ${dir} ${nulls}`;
+      return row.name;
+    case "state":
+      return (row.failing ? 3 : STATE_RANK[row.state.state]);
+    case "track":
+      return TRACK_LABEL[row.track];
+    case "price":
+      return PRICE_LABEL[row.price];
+    case "ok_plays":
+      return row.ok_plays;
+    case "failed":
+      return row.failed_plays;
+    case "covered":
+      return row.coveredN;
+    case "avg_year":
+      return row.avg_year_diff ?? -1;
+    case "avg_km":
+      return row.avg_distance_km ?? -1;
+    case "cost_total":
+      return row.totalCost;
+    case "cost_per_ok":
+      return row.costPerOk ?? -1;
+    case "last_ok":
+      return row.last_ok_at ?? "";
     default:
-      return `COALESCE(mc.total_cost, 0) DESC NULLS LAST`;
+      return row.ok_plays;
   }
 }
 
@@ -231,12 +303,17 @@ export default async function OpenRouterAdminPage({
   const modelFilterRaw = getParam(searchParams, "model");
   const modelFilter = modelFilterRaw || null;
 
-  const mSort = getParam(searchParams, "m_sort") || "total_cost";
+  const mSort = getParam(searchParams, "m_sort") || "ok_plays";
   const capFilterRaw = getParam(searchParams, "cap_filter") || "";
   const capFilter =
     capFilterRaw === "capped" || capFilterRaw === "uncapped" ? capFilterRaw : null;
   const mDirRaw = getParam(searchParams, "m_dir") || "desc";
   const mDir: "asc" | "desc" = mDirRaw === "asc" ? "asc" : "desc";
+  const mGroupRaw = getParam(searchParams, "m_group") || "track_price";
+  const mGroup: GroupMode =
+    mGroupRaw === "track" || mGroupRaw === "price" || mGroupRaw === "none"
+      ? mGroupRaw
+      : "track_price";
 
   const aSort = getParam(searchParams, "a_sort") || "created_at";
   const aDirRaw = getParam(searchParams, "a_dir") || "desc";
@@ -330,107 +407,57 @@ export default async function OpenRouterAdminPage({
     return makeLink({ c_sort: column, c_dir: nextDir });
   }
 
-  const needModelSummary = tab === "models";
+  const needFleet = tab === "overview" || tab === "models";
   const needActivity = tab === "analytics";
-  const needKpi = tab === "overview";
-  const needRosterHealth = tab === "overview" || tab === "models";
+  const needOverview = tab === "overview";
   const needRecentErrors = tab === "overview";
   const needCostWeek = tab === "overview";
   const needScheduled = tab === "overview";
 
-  const modelOrderBy = modelSortExpression(mSort, mDir);
-  const { rows: modelRows } = needModelSummary
-    ? await pool.query<ModelSummaryRow>(
-    `
-    WITH model_calls AS (
-      SELECT
-        ab.ai_player_id,
-        COUNT(*)::int AS total_calls,
-        COUNT(*) FILTER (WHERE c.response_payload IS NULL OR c.error IS NOT NULL)::int AS error_count,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-          FILTER (WHERE c.response_payload IS NOT NULL),
-          0
-        ) AS total_cost,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-          FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= date_trunc('day', now())),
-          0
-        ) AS cost_today,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-          FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= now() - interval '7 days'),
-          0
-        ) AS cost_week,
-        COALESCE(
-          SUM(
-            COALESCE((c.response_payload->'usage'->>'prompt_tokens')::int, 0) +
-            COALESCE((c.response_payload->'usage'->>'completion_tokens')::int, 0)
-          )
-          FILTER (WHERE c.response_payload IS NOT NULL),
-          0
-        )::int AS total_tokens,
-        MAX(c.created_at) AS last_call_at
-      FROM ai_answer_bank ab
-      JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
-      GROUP BY ab.ai_player_id
-    ),
-    model_answer_errors AS (
-      SELECT
-        ab.ai_player_id,
-        COUNT(*) FILTER (WHERE ab.error IS NOT NULL)::int AS final_error_total,
-        COUNT(*) FILTER (
-          WHERE ab.error ILIKE '%429%'
-            OR ab.error ILIKE '%rate limit%'
-            OR ab.error ILIKE '%rate-limit%'
-            OR ab.error ILIKE '%too many requests%'
-        )::int AS rate_limit_count,
-        COUNT(*) FILTER (
-          WHERE ab.error ILIKE '%404%'
-            OR ab.error ILIKE '%no endpoints found%'
-        )::int AS not_found_count,
-        COUNT(*) FILTER (
-          WHERE ab.error ILIKE '%parse%'
-            OR ab.error ILIKE '%json%'
-            OR ab.error ILIKE '%missing finalguess%'
-        )::int AS parse_count
-      FROM ai_answer_bank ab
-      GROUP BY ab.ai_player_id
-    )
-    SELECT
-      p.id,
-      p.name,
-      p.model_id,
-      p.is_active,
-      p.is_active_practice,
-      p.is_active_daily,
-      p.daily_cost_cap_usd,
-      COALESCE(mc.total_calls, 0)::int AS total_calls,
-      COALESCE(mc.error_count, 0)::int AS error_count,
-      COALESCE(mc.total_cost, 0) AS total_cost,
-      COALESCE(mc.cost_today, 0) AS cost_today,
-      COALESCE(mc.cost_week, 0) AS cost_week,
-      COALESCE(mc.total_tokens, 0)::int AS total_tokens,
-      mc.last_call_at,
-      COALESCE(mae.final_error_total, 0) AS final_error_total,
-      COALESCE(mae.rate_limit_count, 0) AS rate_limit_count,
-      COALESCE(mae.not_found_count, 0) AS not_found_count,
-      COALESCE(mae.parse_count, 0) AS parse_count
-    FROM ai_players p
-    LEFT JOIN model_calls mc ON mc.ai_player_id = p.id
-    LEFT JOIN model_answer_errors mae ON mae.ai_player_id = p.id
-    WHERE p.deleted_at IS NULL
-      AND ($1::text IS NULL OR p.model_id = $1::text)
-      AND (
-        $2::text IS NULL
-        OR ($2::text = 'capped' AND p.daily_cost_cap_usd IS NOT NULL)
-        OR ($2::text = 'uncapped' AND p.daily_cost_cap_usd IS NULL)
+  // Fleet truth: per-model play stats from the read-only view
+  // admin_fleet_model_stats (migration 20261101090000). One row per live
+  // ai_player; deleted rows never appear here (they live in Trash).
+  const { rows: fleetStatRows } = needFleet
+    ? await pool.query<FleetStatRow>(
+        `SELECT * FROM admin_fleet_model_stats ORDER BY name`
       )
-    ORDER BY ${modelOrderBy}
-    `,
-    [modelFilter, capFilter]
-  )
-    : { rows: [] as ModelSummaryRow[] };
+    : { rows: [] as FleetStatRow[] };
+
+  const { rows: coverageRows } = needFleet
+    ? await pool.query<FleetCoverageRow>(`SELECT * FROM admin_fleet_coverage`)
+    : { rows: [] as FleetCoverageRow[] };
+  const coverage = coverageRows[0] ?? null;
+  const eligibleTotal = coverage?.eligible_total ?? 0;
+
+  // Distinct eligible events with >=1 OK play, per player — from the view's
+  // ok_event_ids (single eligibility definition lives in the migration).
+  // Powers per-group union counts on the Models tab.
+  const coveredByPlayer = new Map<string, Set<string>>();
+  for (const r of fleetStatRows) {
+    coveredByPlayer.set(r.ai_player_id, new Set(r.ok_event_ids ?? []));
+  }
+
+  // Per-model total cost — the existing cost computation, unchanged
+  // (SUM of response_payload->'usage'->>'cost' over ai_answer_bank_calls).
+  const { rows: modelCostRows } = needFleet
+    ? await pool.query<{ ai_player_id: string; total_cost: string | number }>(
+        `
+        SELECT
+          ab.ai_player_id,
+          COALESCE(
+            SUM((c.response_payload->'usage'->>'cost')::numeric)
+            FILTER (WHERE c.response_payload IS NOT NULL),
+            0
+          ) AS total_cost
+        FROM ai_answer_bank ab
+        JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
+        GROUP BY ab.ai_player_id
+        `
+      )
+    : { rows: [] as { ai_player_id: string; total_cost: string | number }[] };
+  const costByPlayer = new Map<string, number>(
+    modelCostRows.map((r) => [r.ai_player_id, toNumber(r.total_cost)])
+  );
 
   const activityOrderBy = activitySortExpression(aSort, aDir);
   const offset = (page - 1) * PAGE_SIZE;
@@ -477,116 +504,200 @@ export default async function OpenRouterAdminPage({
   const totalCount = activityRows[0]?.total_count ?? 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  const perModel = modelRows.map((row) => ({
-    ...row,
-    totalCost: toNumber(row.total_cost),
-    costToday: toNumber(row.cost_today),
-    costWeek: toNumber(row.cost_week),
-  }));
+  // --- Fleet truth derivation (single definitions, fleetMetrics.ts) ---
+  const fleet: FleetRow[] = fleetStatRows.map((row) => {
+    const state = deriveModelState({
+      is_active: row.is_active,
+      is_active_practice: row.is_active_practice,
+      is_active_daily: row.is_active_daily,
+      availability_status: row.availability_status,
+      has_catalog_row: row.has_catalog_row,
+    });
+    const fail = deriveFailing({
+      plays_7d: row.plays_7d,
+      ok_7d: row.ok_7d,
+      auth_7d: row.auth_7d,
+    });
+    const coveredN = row.distinct_events_ok;
+    const totalCost = costByPlayer.get(row.ai_player_id) ?? 0;
+    return {
+      ...row,
+      state,
+      failing: state.state === "running" && fail.failing,
+      failingRate: fail.okRate,
+      track: deriveTrack(row.is_vision),
+      price: derivePrice(row.is_free, row.model_id),
+      coveredN,
+      coveredPct: coveragePct(coveredN, eligibleTotal),
+      totalCost,
+      costPerOk: row.ok_plays > 0 ? totalCost / row.ok_plays : null,
+    };
+  });
 
-  const { rows: kpiRows } = needKpi
+  // Fleet-status counts (Overview block 1).
+  const runningCount = fleet.filter((r) => r.state.state === "running").length;
+  const pausedCount = fleet.filter((r) => r.state.state === "paused").length;
+  const blockedCount = fleet.filter((r) => r.state.state === "blocked").length;
+  const failingCount = fleet.filter((r) => r.failing).length;
+  const practiceRunningCount = fleet.filter(
+    (r) => r.state.state === "running" && r.is_active_practice
+  ).length;
+  const lastOkAt = fleet.reduce((latest, row) => {
+    if (row.last_ok_at && (!latest || row.last_ok_at > latest)) {
+      return row.last_ok_at;
+    }
+    return latest;
+  }, null as string | null);
+
+  // Needs attention: only Blocked or Failing models (Paused is not an
+  // exception).
+  const needsAttention = fleet.filter(
+    (r) => r.state.state === "blocked" || r.failing
+  );
+
+  // --- Health (24h): plays at ai_answer_bank row level, not API calls ---
+  const { rows: plays24hRows } = needOverview
+    ? await pool.query<{ error: string | null }>(
+        `SELECT error FROM ai_answer_bank
+         WHERE created_at >= now() - interval '24 hours'`
+      )
+    : { rows: [] as { error: string | null }[] };
+  const plays24h = plays24hRows.length;
+  const ok24h = plays24hRows.filter((r) => r.error === null).length;
+  const failed24h = plays24h - ok24h;
+  const okRate24h = plays24h > 0 ? (ok24h / plays24h) * 100 : 0;
+  const cause24h: Record<string, number> = {};
+  for (const r of plays24hRows) {
+    const cause = classifyFailure(r.error);
+    if (cause) cause24h[cause] = (cause24h[cause] ?? 0) + 1;
+  }
+  const auth24h = cause24h["auth"] ?? 0;
+
+  // --- Cost (existing computation unchanged: usage cost over calls) ---
+  const { rows: costTotalRows } = needOverview
     ? await pool.query<{
-        calls_24h: number;
         cost_24h: string | number | null;
-        errors_24h: number;
+        cost_total: string | number | null;
       }>(
         `
         SELECT
-          COUNT(*)::int AS calls_24h,
+          COALESCE(
+            SUM((c.response_payload->'usage'->>'cost')::numeric)
+              FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= now() - interval '24 hours'),
+            0
+          ) AS cost_24h,
           COALESCE(
             SUM((c.response_payload->'usage'->>'cost')::numeric)
               FILTER (WHERE c.response_payload IS NOT NULL),
             0
-          ) AS cost_24h,
-          COUNT(*) FILTER (WHERE c.response_payload IS NULL OR c.error IS NOT NULL)::int AS errors_24h
+          ) AS cost_total
         FROM ai_answer_bank_calls c
-        WHERE c.created_at >= now() - interval '24 hours'
         `
       )
-    : { rows: [] as { calls_24h: number; cost_24h: string | number | null; errors_24h: number }[] };
-  const kpi = kpiRows[0] ?? { calls_24h: 0, cost_24h: 0, errors_24h: 0 };
-  const kpiCalls24h = kpi.calls_24h;
-  const kpiCost24h = toNumber(kpi.cost_24h);
-  const kpiErrors24h = kpi.errors_24h;
-  const kpiErrorRate24h =
-    kpiCalls24h > 0 ? (kpiErrors24h / kpiCalls24h) * 100 : 0;
+    : { rows: [] as { cost_24h: string | number | null; cost_total: string | number | null }[] };
+  const costToday = toNumber(costTotalRows[0]?.cost_24h);
+  const costTotal = toNumber(costTotalRows[0]?.cost_total);
+  const costWeek = needCostWeek ? await fetchCostWeek(pool) : 0;
+  const okPlaysTotal = fleet.reduce((sum, r) => sum + r.ok_plays, 0);
+  const costPerOkPlay = okPlaysTotal > 0 ? costTotal / okPlaysTotal : null;
 
-  // --- Ops Overview data (fleet exceptions, scheduled changes, recent errors) ---
-  const rosterHealthRaw: RosterHealthRow[] = needRosterHealth
-    ? await fetchRosterHealth(pool)
-    : [];
+  // --- Scheduled changes + recent errors (unchanged sources) ---
   const recentErrorsRaw: RecentErrorRow[] = needRecentErrors
     ? await fetchRecentErrors(pool, 5)
     : [];
-  const costWeek = needCostWeek ? await fetchCostWeek(pool) : 0;
   const scheduledRaw: ScheduledChangeRow[] = needScheduled
     ? await fetchScheduledChanges(pool, { limit: 5 })
     : [];
   const pendingScheduled = scheduledRaw.filter((r) => r.status === "pending");
 
-  const activeModelCount = rosterHealthRaw.filter(
-    (row) => row.is_active_practice || row.is_active_daily
-  ).length;
-
-  const lastActivityRaw = rosterHealthRaw.reduce((latest, row) => {
-    if (row.last_call_at && (!latest || row.last_call_at > latest)) {
-      return row.last_call_at;
-    }
-    return latest;
-  }, null as string | null);
-
-  const rosterHealthDisplay: RosterHealthDisplayRow[] = rosterHealthRaw.map(
-    (row) => ({
-      id: row.id,
-      name: row.name,
-      model_id: row.model_id,
-      is_active: row.is_active,
-      is_active_practice: row.is_active_practice,
-      is_active_daily: row.is_active_daily,
-      daily_cost_cap_usd:
-        row.daily_cost_cap_usd !== null
-          ? toNumber(row.daily_cost_cap_usd)
-          : null,
-      calls_24h: row.calls_24h,
-      errors_24h: row.errors_24h,
-      cost_24h: toNumber(row.cost_24h),
-      last_call_at: row.last_call_at,
-      last_seen_relative: formatRelativeTime(row.last_call_at),
-    })
-  );
-
-  // Fleet exceptions only (approved plan §4): erroring, disabled, or ≥80% of
-  // daily cap. A healthy fleet renders as a single line.
-  const fleetExceptions = rosterHealthDisplay
-    .map((row) => {
-      const status = deriveStatus(row);
-      const capPct =
-        row.daily_cost_cap_usd && row.daily_cost_cap_usd > 0
-          ? (row.cost_24h / row.daily_cost_cap_usd) * 100
-          : null;
-      return { ...row, status, capPct };
-    })
-    .filter(
-      (r) =>
-        r.status === "erroring" ||
-        r.status === "disabled" ||
-        (r.capPct ?? 0) >= 80
-    );
-
   const recentErrors = recentErrorsRaw.map((row) => ({
     id: row.id,
     model_name: row.model_name,
     error: row.error,
-    error_type: row.error_type,
+    cause: classifyFailure(row.error),
     created_at_relative: formatRelativeTime(row.created_at),
   }));
 
-  const errorRateTone: KpiTone =
-    kpiErrorRate24h > 5
-      ? "danger"
-      : kpiErrorRate24h >= 1
-      ? "gold"
-      : "success";
+  // --- Models tab: filter, sort (client-side), group ---
+  const fleetFiltered = fleet.filter(
+    (r) =>
+      (modelFilter === null || r.model_id === modelFilter) &&
+      (capFilter === null ||
+        (capFilter === "capped"
+          ? r.daily_cost_cap_usd !== null
+          : r.daily_cost_cap_usd === null))
+  );
+  const fleetSorted = [...fleetFiltered].sort((a, b) => {
+    const av = fleetSortValue(a, mSort);
+    const bv = fleetSortValue(b, mSort);
+    const dir = mDir === "asc" ? 1 : -1;
+    if (typeof av === "string" && typeof bv === "string") {
+      return dir * av.localeCompare(bv);
+    }
+    return dir * ((av as number) - (bv as number));
+  });
+
+  type FleetGroup = {
+    key: string;
+    label: string | null;
+    rows: FleetRow[];
+    running: number;
+    okPlays: number;
+    coveredEvents: number;
+  };
+  const fleetGroups: FleetGroup[] = (() => {
+    const keyOf = (r: FleetRow): string => {
+      if (mGroup === "track") return r.track;
+      if (mGroup === "price") return r.price;
+      if (mGroup === "none") return "all";
+      return modelGroupKey(r.track, r.price);
+    };
+    const order: readonly string[] =
+      mGroup === "track"
+        ? TRACK_GROUP_ORDER
+        : mGroup === "price"
+        ? PRICE_GROUP_ORDER
+        : mGroup === "none"
+        ? ["all"]
+        : TRACK_PRICE_GROUP_ORDER;
+    const labelOf = (key: string): string | null => {
+      if (mGroup === "none") return null;
+      if (mGroup === "track") return TRACK_LABEL[key as FleetRow["track"]];
+      if (mGroup === "price") return PRICE_LABEL[key as FleetRow["price"]];
+      return trackPriceGroupLabel(key);
+    };
+    const buckets = new Map<string, FleetRow[]>();
+    for (const r of fleetSorted) {
+      const k = keyOf(r);
+      const arr = buckets.get(k) ?? [];
+      arr.push(r);
+      buckets.set(k, arr);
+    }
+    const keys = [...buckets.keys()].sort(
+      (a, b) => order.indexOf(a) - order.indexOf(b)
+    );
+    return keys.map((key) => {
+      const rows = buckets.get(key) ?? [];
+      const union = new Set<string>();
+      let running = 0;
+      let okPlays = 0;
+      for (const r of rows) {
+        if (r.state.state === "running") running++;
+        okPlays += r.ok_plays;
+        for (const ev of coveredByPlayer.get(r.ai_player_id) ?? []) {
+          union.add(ev);
+        }
+      }
+      return {
+        key,
+        label: labelOf(key),
+        rows,
+        running,
+        okPlays,
+        coveredEvents: union.size,
+      };
+    });
+  })();
 
   const costTrend: CostTrendRow[] =
     tab === "analytics" ? await fetchCostTrend(pool, { days: 30 }) : [];
@@ -702,14 +813,8 @@ export default async function OpenRouterAdminPage({
   const drawerCloseHref = makeLink({ drawer: undefined });
   const modelDrawerRow =
     tab === "models" && drawerId
-      ? perModel.find((r) => r.id === drawerId) ?? null
+      ? fleet.find((r) => r.ai_player_id === drawerId) ?? null
       : null;
-  const modelDrawerHealth = modelDrawerRow
-    ? rosterHealthDisplay.find((r) => r.id === modelDrawerRow.id) ?? null
-    : null;
-  const healthByPlayer = new Map(
-    rosterHealthDisplay.map((r) => [r.id, r] as const)
-  );
   const compareDrawerRow =
     tab === "compare" && drawerId
       ? leaderboard.find((r) => r.ai_player_id === drawerId) ?? null
@@ -730,28 +835,35 @@ export default async function OpenRouterAdminPage({
     ? [
         { label: "Model ID", value: modelDrawerRow.model_id, mono: true },
         {
-          label: "Status",
-          value: modelDrawerHealth ? (
-            <StatusBadge status={deriveStatus(modelDrawerHealth)} />
-          ) : (
-            "—"
+          label: "State",
+          value: (
+            <span className="flex items-center gap-2">
+              <FleetBadge
+                state={modelDrawerRow.state.state}
+                failing={modelDrawerRow.failing}
+              />
+              {modelDrawerRow.state.reason}
+              {modelDrawerRow.state.unverified && (
+                <span className="ops-chip ops-chip-muted">unverified</span>
+              )}
+            </span>
           ),
+        },
+        {
+          label: "Track / Price",
+          value: `${TRACK_LABEL[modelDrawerRow.track]} · ${PRICE_LABEL[modelDrawerRow.price]}`,
         },
         {
           label: "Modes",
           value: `${modelDrawerRow.is_active_practice ? "Practice on" : "Practice off"} · ${modelDrawerRow.is_active_daily ? "Daily on" : "Daily off"}`,
         },
         {
-          label: "Calls (total)",
-          value: modelDrawerRow.total_calls.toLocaleString(),
+          label: "OK plays / Failed",
+          value: `${modelDrawerRow.ok_plays.toLocaleString()} / ${modelDrawerRow.failed_plays.toLocaleString()}`,
         },
         {
-          label: "Errors (total)",
-          value: modelDrawerRow.error_count.toLocaleString(),
-        },
-        {
-          label: "Cost today / 7d",
-          value: `${formatCost(modelDrawerRow.costToday)} / ${formatCost(modelDrawerRow.costWeek)}`,
+          label: "Events covered",
+          value: `${modelDrawerRow.coveredN.toLocaleString()} (${modelDrawerRow.coveredPct.toFixed(1)}%)`,
         },
         { label: "Cost (total)", value: formatCost(modelDrawerRow.totalCost) },
         {
@@ -759,12 +871,8 @@ export default async function OpenRouterAdminPage({
           value: modelDrawerRow.daily_cost_cap_usd ?? "No cap",
         },
         {
-          label: "Tokens (total)",
-          value: modelDrawerRow.total_tokens.toLocaleString(),
-        },
-        {
-          label: "Last call",
-          value: formatDateTime(modelDrawerRow.last_call_at),
+          label: "Last successful play",
+          value: formatDateTime(modelDrawerRow.last_ok_at),
         },
       ]
     : undefined;
@@ -806,83 +914,239 @@ export default async function OpenRouterAdminPage({
       <header className="ops-pagehead">
         <div>
           <h1 className="ops-h1">{pageTitle}</h1>
-          {tab === "overview" && (
-            <p className="ops-pagesub">
-              Last call {formatRelativeTime(lastActivityRaw)}
-            </p>
-          )}
         </div>
       </header>
 
         {tab === "overview" && (
           <>
-            <div className="ops-kpi-strip">
-              <KpiCard label="Active models" value={activeModelCount.toLocaleString()} />
-              <KpiCard label="Total plays (24h)" value={kpiCalls24h.toLocaleString()} />
-              <KpiCard
-                label="Error rate (24h)"
-                value={`${kpiErrorRate24h.toFixed(1)}%`}
-                tone={errorRateTone}
-              />
-              <KpiCard label="Cost today" value={formatCost(kpiCost24h)} />
-              <KpiCard label="Cost this week" value={formatCost(costWeek)} />
-            </div>
-
-            <div className="ops-grid-2col">
+            <div className="ops-grid-2col" style={{ marginBottom: 16 }}>
               <section className="ops-panel">
                 <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Fleet exceptions</h2>
+                  <h2 className="ops-panel-title">Fleet status</h2>
                   <Link href={makeLink({ tab: "models" })} className="ops-btn">
                     Models
                   </Link>
                 </div>
                 <div className="ops-panel-pad">
-                  {fleetExceptions.length === 0 ? (
+                  <div className="ops-kpi-value">
+                    {runningCount.toLocaleString()} running
+                  </div>
+                  <p className="ops-panel-sub">
+                    {pausedCount.toLocaleString()} paused ·{" "}
+                    {blockedCount.toLocaleString()} blocked
+                    {failingCount > 0 &&
+                      ` · ${failingCount.toLocaleString()} failing`}
+                  </p>
+                  <p className="ops-panel-sub" style={{ marginTop: 8 }}>
+                    Last successful play: {formatRelativeTime(lastOkAt)}
+                  </p>
+                </div>
+              </section>
+
+              <section className="ops-panel">
+                <div className="ops-toolbar">
+                  <h2 className="ops-panel-title">Coverage</h2>
+                  <Link href="/admin/dashboard/events" className="ops-btn">
+                    Events
+                  </Link>
+                </div>
+                <div className="ops-panel-pad">
+                  <div className="ops-kpi-label">Events covered</div>
+                  <div className="ops-kpi-value">
+                    {(coverage?.covered_total ?? 0).toLocaleString()} /{" "}
+                    {eligibleTotal.toLocaleString()} (
+                    {coveragePct(
+                      coverage?.covered_total ?? 0,
+                      eligibleTotal
+                    ).toFixed(1)}
+                    %)
+                  </div>
+                  <div
+                    className="h-2 overflow-hidden rounded"
+                    style={{ background: "var(--ops-canvas)", margin: "8px 0" }}
+                  >
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          coveragePct(
+                            coverage?.covered_total ?? 0,
+                            eligibleTotal
+                          )
+                        )}%`,
+                        background: "var(--ops-accent)",
+                      }}
+                    />
+                  </div>
+                  <p className="ops-panel-sub">
+                    Vision {(coverage?.covered_vision ?? 0).toLocaleString()} ·
+                    Text-only {(coverage?.covered_text ?? 0).toLocaleString()} ·
+                    Unknown{" "}
+                    {(coverage?.covered_unknown ?? 0).toLocaleString()}
+                  </p>
+                  <p className="ops-panel-sub">
+                    Models per event — 0:{" "}
+                    {(coverage?.depth_0 ?? 0).toLocaleString()} · 1:{" "}
+                    {(coverage?.depth_1 ?? 0).toLocaleString()} · 2:{" "}
+                    {(coverage?.depth_2 ?? 0).toLocaleString()} · 3+:{" "}
+                    {(coverage?.depth_3plus ?? 0).toLocaleString()}
+                  </p>
+                  <div className="ops-minirow" style={{ marginTop: 8 }}>
+                    <span className="ops-minirow-main">
+                      Practice: {practiceRunningCount.toLocaleString()} models
+                      running
+                    </span>
+                  </div>
+                  {practiceRunningCount === 0 && (
+                    <p
+                      className="ops-panel-sub"
+                      style={{ color: "var(--ops-bad)", fontWeight: 600 }}
+                    >
+                      No model is running Practice mode.
+                    </p>
+                  )}
+                  <p className="ops-footnote">
+                    Verified in the runner: Daily mode replays only
+                    today&apos;s daily-challenge events
+                    (daily-autoplay.ts → daily_challenges.event_ids, UTC+14
+                    date); Practice is the catalogue-wide mode.
+                  </p>
+                </div>
+              </section>
+            </div>
+
+            <div className="ops-grid-2col" style={{ marginBottom: 16 }}>
+              <section className="ops-panel">
+                <div className="ops-toolbar">
+                  <h2 className="ops-panel-title">Health (24h)</h2>
+                  <Link href={makeLink({ tab: "debug" })} className="ops-btn">
+                    Debug
+                  </Link>
+                </div>
+                <div className="ops-panel-pad">
+                  <div className="ops-kpi-value">
+                    {ok24h.toLocaleString()} OK /{" "}
+                    {failed24h.toLocaleString()} failed
+                  </div>
+                  <p className="ops-panel-sub">
+                    {okRate24h.toFixed(1)}% of {plays24h.toLocaleString()}{" "}
+                    plays OK
+                  </p>
+                  {failed24h > 0 && (
+                    <p className="ops-panel-sub" style={{ marginTop: 4 }}>
+                      Failed by cause —{" "}
+                      {FAILURE_CAUSES.filter((c) => (cause24h[c] ?? 0) > 0)
+                        .map((c) => `${c}: ${cause24h[c]}`)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {auth24h > 0 && (
+                    <p
+                      className="ops-panel-sub"
+                      style={{
+                        color: "var(--ops-bad)",
+                        fontWeight: 600,
+                        marginTop: 8,
+                      }}
+                    >
+                      Provider key rejected (401) — fleet-wide, not a model
+                      fault
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section className="ops-panel">
+                <div className="ops-toolbar">
+                  <h2 className="ops-panel-title">Cost</h2>
+                  <Link
+                    href={makeLink({ tab: "analytics" })}
+                    className="ops-btn"
+                  >
+                    Analytics
+                  </Link>
+                </div>
+                <div className="ops-panel-pad">
+                  <div className="ops-minirow">
+                    <span className="ops-minirow-main">Today</span>
+                    <span className="ops-minirow-side">
+                      {formatCost(costToday)}
+                    </span>
+                  </div>
+                  <div className="ops-minirow">
+                    <span className="ops-minirow-main">Last 7 days</span>
+                    <span className="ops-minirow-side">
+                      {formatCost(costWeek)}
+                    </span>
+                  </div>
+                  <div className="ops-minirow">
+                    <span className="ops-minirow-main">Total</span>
+                    <span className="ops-minirow-side">
+                      {formatCost(costTotal)}
+                    </span>
+                  </div>
+                  <div className="ops-minirow">
+                    <span className="ops-minirow-main">Per OK play</span>
+                    <span className="ops-minirow-side">
+                      {costPerOkPlay !== null
+                        ? formatCost(costPerOkPlay)
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div className="ops-grid-2col">
+              <section className="ops-panel">
+                <div className="ops-toolbar">
+                  <h2 className="ops-panel-title">Needs attention</h2>
+                  <Link href={makeLink({ tab: "models" })} className="ops-btn">
+                    Models
+                  </Link>
+                </div>
+                <div className="ops-panel-pad">
+                  {needsAttention.length === 0 ? (
                     <div className="ops-minirow">
                       <span className="ops-minirow-main">
                         <span className="ops-dot ops-dot-ok" />
-                        All {rosterHealthDisplay.length} models healthy
+                        No models need attention
                       </span>
                     </div>
                   ) : (
                     <>
-                      {fleetExceptions.slice(0, 8).map((row) => (
-                        <div key={row.id} className="ops-minirow">
+                      {needsAttention.slice(0, 8).map((row) => (
+                        <div key={row.ai_player_id} className="ops-minirow">
                           <span className="ops-minirow-main">
                             <span
                               className={`ops-dot ${
-                                row.status === "erroring"
-                                  ? "ops-dot-bad"
-                                  : row.status === "disabled"
-                                  ? "ops-dot-off"
-                                  : "ops-dot-warn"
+                                row.failing ? "ops-dot-bad" : "ops-dot-warn"
                               }`}
                             />
                             <span className="ops-truncate" title={row.model_id}>
                               {row.name}
                             </span>
-                            <StatusBadge status={row.status} />
+                            <FleetBadge
+                              state={row.state.state}
+                              failing={row.failing}
+                            />
                           </span>
                           <span className="ops-minirow-side">
                             <span>
-                              {row.calls_24h > 0
-                                ? `${((row.errors_24h / row.calls_24h) * 100).toFixed(1)}%`
-                                : "—"}
+                              {row.failing
+                                ? `OK-rate ${(100 * (row.failingRate ?? 0)).toFixed(0)}% (7d)`
+                                : row.state.reason}
                             </span>
-                            <span>
-                              {row.capPct != null
-                                ? `${row.capPct.toFixed(0)}% cap`
-                                : "no cap"}
-                            </span>
-                            <span>{row.last_seen_relative}</span>
+                            <span>{formatRelativeTime(row.last_ok_at)}</span>
                           </span>
                         </div>
                       ))}
-                      {fleetExceptions.length > 8 && (
+                      {needsAttention.length > 8 && (
                         <div className="ops-minirow">
                           <span className="ops-minirow-main">
                             <span style={{ color: "var(--ops-mute)" }}>
-                              + {fleetExceptions.length - 8} more
+                              + {needsAttention.length - 8} more
                             </span>
                           </span>
                           <span className="ops-minirow-side">
@@ -950,7 +1214,7 @@ export default async function OpenRouterAdminPage({
                         <div key={row.id} className="ops-minirow">
                           <span className="ops-minirow-main">
                             <span className="ops-chip ops-chip-bad">
-                              {row.error_type}
+                              {row.cause ?? "other"}
                             </span>
                             <span className="ops-truncate" title={row.error}>
                               {row.model_name}
@@ -966,6 +1230,58 @@ export default async function OpenRouterAdminPage({
                 </section>
               </div>
             </div>
+
+            <details className="ops-panel" style={{ marginTop: 16 }}>
+              <summary
+                className="ops-panel-pad"
+                style={{ cursor: "pointer", color: "var(--ops-mute)" }}
+              >
+                Definitions
+              </summary>
+              <div
+                className="ops-panel-pad"
+                style={{ borderTop: "1px solid var(--ops-line)" }}
+              >
+                <ul className="ops-panel-sub" style={{ paddingLeft: 18, margin: 0 }}>
+                  <li>
+                    Eligible event: a validated event with at least one image.
+                  </li>
+                  <li>
+                    Play: one ai_answer_bank row. OK = error IS NULL; failed =
+                    error IS NOT NULL. API calls (ai_answer_bank_calls) are not
+                    plays — they appear only on the Debug page.
+                  </li>
+                  <li>
+                    Failure cause (from error text): auth = contains 401, gone
+                    = contains 404, rate_limit = contains 429, bad_output =
+                    starts with &quot;Failed to parse&quot; or contains
+                    &quot;missing finalGuess&quot;, other = anything else.
+                  </li>
+                  <li>
+                    State: Paused = Enabled switch off. Blocked = Enabled on
+                    but no mode selected, or the catalog says the model is not
+                    available (reason shown). Running = Enabled on plus a mode
+                    flag and not blocked. Failing = running model with ≥5
+                    non-auth plays in 7 days and OK-rate under 50%.
+                  </li>
+                  <li>
+                    Track: Vision / Text-only from the OpenRouter catalog
+                    (is_vision); Unknown when the model has no catalog row
+                    (shown as &quot;unverified&quot;).
+                  </li>
+                  <li>
+                    Price: Free = catalog is_free or a model id ending in
+                    &quot;:free&quot;; Paid = catalog is_free false; Unknown =
+                    no catalog row.
+                  </li>
+                  <li>
+                    Coverage: an eligible event is covered when at least one
+                    model has an OK play on it. Depth = how many distinct
+                    models have an OK play (0 / 1 / 2 / 3+).
+                  </li>
+                </ul>
+              </div>
+            </details>
 
             <div className="ops-links">
               <Link href={makeLink({ tab: "models" })} className="ops-btn">
@@ -1149,7 +1465,7 @@ export default async function OpenRouterAdminPage({
           <section>
             <div className="ops-toolbar" style={{ border: "1px solid var(--ops-line)", borderRadius: 4, marginBottom: 16 }}>
               <span>
-                {perModel.length} models
+                {fleetFiltered.length} models
               </span>
               <div className="flex items-center gap-3">
                 <form
@@ -1158,6 +1474,20 @@ export default async function OpenRouterAdminPage({
                   action="/admin/dashboard"
                 >
                   <input type="hidden" name="tab" value="models" />
+                  <label htmlFor="m_group" className="ops-kpi-label">
+                    Group by
+                  </label>
+                  <select
+                    id="m_group"
+                    name="m_group"
+                    defaultValue={mGroup}
+                    className="ops-input"
+                  >
+                    <option value="track_price">Track + Price</option>
+                    <option value="track">Track</option>
+                    <option value="price">Price</option>
+                    <option value="none">None</option>
+                  </select>
                   <label htmlFor="cap_filter" className="ops-kpi-label">
                     Cost cap
                   </label>
@@ -1172,7 +1502,7 @@ export default async function OpenRouterAdminPage({
                     <option value="uncapped">Uncapped only</option>
                   </select>
                   <button type="submit" className="ops-btn">
-                    Filter
+                    Apply
                   </button>
                 </form>
                 <Link
@@ -1197,169 +1527,318 @@ export default async function OpenRouterAdminPage({
                         dir={mDir}
                       />
                     </th>
-                    <th>Modes</th>
-                    <th className="num">
+                    <th>
                       <SortHeader
-                        href={modelSortLink("total_calls")}
-                        label="Calls"
-                        column="total_calls"
+                        href={modelSortLink("state")}
+                        label="State"
+                        column="state"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th>
+                      <SortHeader
+                        href={modelSortLink("track")}
+                        label="Track"
+                        column="track"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th>
+                      <SortHeader
+                        href={modelSortLink("price")}
+                        label="Price"
+                        column="price"
                         sort={mSort}
                         dir={mDir}
                       />
                     </th>
                     <th className="num">
                       <SortHeader
-                        href={modelSortLink("total_cost")}
-                        label="Total Cost"
-                        column="total_cost"
+                        href={modelSortLink("ok_plays")}
+                        label="OK plays"
+                        column="ok_plays"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th className="num">
+                      <SortHeader
+                        href={modelSortLink("failed")}
+                        label="Failed"
+                        column="failed"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th className="num">
+                      <SortHeader
+                        href={modelSortLink("covered")}
+                        label="Events covered"
+                        column="covered"
                         sort={mSort}
                         dir={mDir}
                       />
                     </th>
                     <th className="num ops-col-xl">
                       <SortHeader
-                        href={modelSortLink("cost_today")}
-                        label="Cost today / 7d"
-                        column="cost_today"
+                        href={modelSortLink("avg_year")}
+                        label="Avg year err"
+                        column="avg_year"
                         sort={mSort}
                         dir={mDir}
                       />
                     </th>
-                    <th className="num">Daily cap</th>
-                    <th className="ops-col-xl">Schedule</th>
-                    <th>Actions</th>
+                    <th className="num ops-col-xl">
+                      <SortHeader
+                        href={modelSortLink("avg_km")}
+                        label="Avg km err"
+                        column="avg_km"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th className="num">
+                      <SortHeader
+                        href={modelSortLink("cost_total")}
+                        label="Cost total"
+                        column="cost_total"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th className="num ops-col-xl">
+                      <SortHeader
+                        href={modelSortLink("cost_per_ok")}
+                        label="Cost/OK play"
+                        column="cost_per_ok"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th className="ops-col-xl">
+                      <SortHeader
+                        href={modelSortLink("last_ok")}
+                        label="Last successful"
+                        column="last_ok"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th>Controls</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {perModel.map((row) => {
-                    const health = healthByPlayer.get(row.id);
-                    const st = health ? deriveStatus(health) : null;
-                    const dotCls =
-                      st === "active" || st === "idle"
-                        ? "ops-dot-ok"
-                        : st === "erroring"
+                  {fleetGroups.flatMap((g) => [
+                    ...(g.label !== null
+                      ? [
+                          <tr key={`group-${g.key}`}>
+                            <td
+                              colSpan={13}
+                              style={{
+                                background: "var(--ops-canvas)",
+                                color: "var(--ops-mute)",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {g.label} — {g.rows.length} models ·{" "}
+                              {g.running} running ·{" "}
+                              {g.okPlays.toLocaleString()} OK plays ·{" "}
+                              {g.coveredEvents.toLocaleString()} events
+                              covered
+                            </td>
+                          </tr>,
+                        ]
+                      : []),
+                    ...g.rows.map((row) => {
+                      const dotCls = row.failing
                         ? "ops-dot-bad"
-                        : st === "disabled"
-                        ? "ops-dot-off"
-                        : "";
-                    return (
-                    <tr
-                      key={row.id}
-                      data-status={st ? statusTier(st) : undefined}
-                    >
-                      <td data-label="Model" title={row.model_id}>
-                        <Link
-                          href={makeLink({ drawer: row.id })}
-                          className="ops-celllink"
-                          title="Open record"
+                        : row.state.state === "running"
+                        ? "ops-dot-ok"
+                        : row.state.state === "blocked"
+                        ? "ops-dot-warn"
+                        : "ops-dot-off";
+                      return (
+                        <tr
+                          key={row.ai_player_id}
+                          data-status={fleetStateTier(
+                            row.state.state,
+                            row.failing
+                          )}
                         >
-                          <span className="ops-cellname">
-                            <span className={`ops-dot ${dotCls}`} />
-                            <span className="ops-truncate">{row.name}</span>
-                          </span>
-                        </Link>
-                      </td>
-                      <td data-label="Modes">
-                        <div className="flex gap-3">
-                          <ModeToggle
-                            playerId={row.id}
-                            mode="practice"
-                            enabled={row.is_active_practice}
-                            modelActive={row.is_active}
-                          />
-                          <ModeToggle
-                            playerId={row.id}
-                            mode="daily"
-                            enabled={row.is_active_daily}
-                            modelActive={row.is_active}
-                          />
-                        </div>
-                      </td>
-                      <td className="num" data-label="Calls">
-                        {row.total_calls.toLocaleString()}
-                      </td>
-                      <td className="num" data-label="Total Cost">
-                        {formatCost(row.totalCost)}
-                      </td>
-                      <td
-                        className="num ops-col-xl"
-                        data-label="Cost today / 7d"
-                        style={{ color: "var(--ops-mute)" }}
-                      >
-                        {formatCost(row.costToday)} / {formatCost(row.costWeek)}
-                      </td>
-                      <td data-label="Daily cap">
-                        <form
-                          action={updateDailyCostCap}
-                          className="flex items-center justify-end gap-2"
-                        >
-                          <input type="hidden" name="playerId" value={row.id} />
-                          <input
-                            type="number"
-                            name="cap"
-                            step="0.000001"
-                            min="0"
-                            defaultValue={row.daily_cost_cap_usd ?? ""}
-                            placeholder="No cap"
-                            className="ops-input"
-                            style={{ width: 112, textAlign: "right" }}
-                          />
-                          <button type="submit" className="ops-btn">
-                            Save
-                          </button>
-                        </form>
-                      </td>
-                      <td className="ops-col-xl" data-label="Schedule">
-                        <details className="text-xs">
-                          <summary
-                            className="cursor-pointer"
+                          <td data-label="Model" title={row.model_id}>
+                            <Link
+                              href={makeLink({ drawer: row.ai_player_id })}
+                              className="ops-celllink"
+                              title="Open record"
+                            >
+                              <span className="ops-cellname">
+                                <span className={`ops-dot ${dotCls}`} />
+                                <span className="ops-truncate">{row.name}</span>
+                              </span>
+                            </Link>
+                          </td>
+                          <td data-label="State">
+                            <span className="flex items-center gap-1" style={{ flexWrap: "wrap" }}>
+                              <FleetBadge
+                                state={row.state.state}
+                                failing={row.failing}
+                              />
+                              <span style={{ color: "var(--ops-mute)" }}>
+                                {row.failing
+                                  ? `OK-rate ${(100 * (row.failingRate ?? 0)).toFixed(0)}% (7d)`
+                                  : row.state.reason}
+                              </span>
+                              {row.state.unverified && (
+                                <span className="ops-chip ops-chip-muted">
+                                  unverified
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                          <td data-label="Track">
+                            {TRACK_LABEL[row.track]}
+                          </td>
+                          <td data-label="Price">
+                            {PRICE_LABEL[row.price]}
+                          </td>
+                          <td className="num" data-label="OK plays">
+                            {row.ok_plays.toLocaleString()}
+                          </td>
+                          <td className="num" data-label="Failed">
+                            {row.failed_plays.toLocaleString()}
+                          </td>
+                          <td className="num" data-label="Events covered">
+                            {row.coveredN.toLocaleString()} (
+                            {row.coveredPct.toFixed(1)}%)
+                          </td>
+                          <td
+                            className="num ops-col-xl"
+                            data-label="Avg year err"
+                          >
+                            {row.avg_year_diff !== null
+                              ? toNumber(row.avg_year_diff).toFixed(1)
+                              : "—"}
+                          </td>
+                          <td
+                            className="num ops-col-xl"
+                            data-label="Avg km err"
+                          >
+                            {row.avg_distance_km !== null
+                              ? toNumber(row.avg_distance_km).toFixed(0)
+                              : "—"}
+                          </td>
+                          <td className="num" data-label="Cost total">
+                            {formatCost(row.totalCost)}
+                          </td>
+                          <td
+                            className="num ops-col-xl"
+                            data-label="Cost/OK play"
+                          >
+                            {row.costPerOk !== null
+                              ? formatCost(row.costPerOk)
+                              : "—"}
+                          </td>
+                          <td
+                            className="ops-col-xl"
+                            data-label="Last successful"
                             style={{ color: "var(--ops-mute)" }}
                           >
-                            Schedule…
-                          </summary>
-                          <form
-                            action={scheduleAiPlayerModeChange}
-                            className="ops-panel ops-panel-pad mt-2 flex w-56 flex-col gap-2"
-                          >
-                            <input type="hidden" name="playerId" value={row.id} />
-                            <select name="mode" className="ops-input">
-                              <option value="practice">Practice</option>
-                              <option value="daily">Daily</option>
-                            </select>
-                            <select name="targetValue" className="ops-input">
-                              <option value="enable">Enable</option>
-                              <option value="disable">Disable</option>
-                            </select>
-                            <input
-                              type="datetime-local"
-                              name="applyAt"
-                              required
-                              className="ops-input"
-                            />
-                            <p className="text-xs" style={{ color: "var(--ops-mute)" }}>
-                              Time is read as UTC. Changes are applied by the daily 00:00 UTC cron, on its first run after this time.
-                            </p>
-                            <button type="submit" className="ops-btn">
-                              Schedule change
-                            </button>
-                          </form>
-                        </details>
-                      </td>
-                      <td data-label="Actions">
-                        <ModelRowActions
-                          playerId={row.id}
-                          modelId={row.model_id}
-                          isActive={row.is_active}
-                        />
-                      </td>
-                    </tr>
-                    );
-                  })}
-                  {perModel.length === 0 && (
+                            {formatRelativeTime(row.last_ok_at)}
+                          </td>
+                          <td data-label="Controls">
+                            <div className="flex flex-col gap-2">
+                              <ModelControls
+                                playerId={row.ai_player_id}
+                                modelId={row.model_id}
+                                isActive={row.is_active}
+                                isPractice={row.is_active_practice}
+                                isDaily={row.is_active_daily}
+                              />
+                              <div className="flex flex-wrap items-center gap-2">
+                                <form
+                                  action={updateDailyCostCap}
+                                  className="flex items-center gap-2"
+                                >
+                                  <input
+                                    type="hidden"
+                                    name="playerId"
+                                    value={row.ai_player_id}
+                                  />
+                                  <input
+                                    type="number"
+                                    name="cap"
+                                    step="0.000001"
+                                    min="0"
+                                    defaultValue={
+                                      row.daily_cost_cap_usd ?? ""
+                                    }
+                                    placeholder="No cap"
+                                    className="ops-input"
+                                    style={{ width: 96, textAlign: "right" }}
+                                    title="Daily cost cap (USD)"
+                                  />
+                                  <button type="submit" className="ops-btn">
+                                    Save
+                                  </button>
+                                </form>
+                                <details className="text-xs">
+                                  <summary
+                                    className="cursor-pointer"
+                                    style={{ color: "var(--ops-mute)" }}
+                                  >
+                                    Schedule…
+                                  </summary>
+                                  <form
+                                    action={scheduleAiPlayerModeChange}
+                                    className="ops-panel ops-panel-pad mt-2 flex w-56 flex-col gap-2"
+                                  >
+                                    <input
+                                      type="hidden"
+                                      name="playerId"
+                                      value={row.ai_player_id}
+                                    />
+                                    <select name="mode" className="ops-input">
+                                      <option value="practice">Practice</option>
+                                      <option value="daily">Daily</option>
+                                    </select>
+                                    <select
+                                      name="targetValue"
+                                      className="ops-input"
+                                    >
+                                      <option value="enable">Enable</option>
+                                      <option value="disable">Disable</option>
+                                    </select>
+                                    <input
+                                      type="datetime-local"
+                                      name="applyAt"
+                                      required
+                                      className="ops-input"
+                                    />
+                                    <p
+                                      className="text-xs"
+                                      style={{ color: "var(--ops-mute)" }}
+                                    >
+                                      Time is read as UTC. Changes are applied
+                                      by the daily 00:00 UTC cron, on its first
+                                      run after this time.
+                                    </p>
+                                    <button type="submit" className="ops-btn">
+                                      Schedule change
+                                    </button>
+                                  </form>
+                                </details>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }),
+                  ])}
+                  {fleetFiltered.length === 0 && (
                     <tr>
-                      <td colSpan={8}>
-                        No models found.
-                      </td>
+                      <td colSpan={13}>No models found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -1637,7 +2116,7 @@ export default async function OpenRouterAdminPage({
                     <th>Event</th>
                     <th>Error</th>
                     <th>Created</th>
-                    <th>Calls</th>
+                    <th>API calls</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1660,12 +2139,12 @@ export default async function OpenRouterAdminPage({
                       <td data-label="Created" style={{ color: "var(--ops-mute)" }}>
                         {formatDateTime(row.created_at)}
                       </td>
-                      <td data-label="Calls">
+                      <td data-label="API calls">
                         <Link
                           href={makeLink({ tab: "debug", calls: row.id })}
                           className="ops-btn"
                         >
-                          View calls
+                          View API calls
                         </Link>
                       </td>
                     </tr>
@@ -1696,10 +2175,12 @@ export default async function OpenRouterAdminPage({
           fields={modelDrawerFields}
           actions={
             modelDrawerRow ? (
-              <ModelRowActions
-                playerId={modelDrawerRow.id}
+              <ModelControls
+                playerId={modelDrawerRow.ai_player_id}
                 modelId={modelDrawerRow.model_id}
                 isActive={modelDrawerRow.is_active}
+                isPractice={modelDrawerRow.is_active_practice}
+                isDaily={modelDrawerRow.is_active_daily}
               />
             ) : undefined
           }

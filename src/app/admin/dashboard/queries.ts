@@ -466,74 +466,11 @@ export async function fetchErrorBuckets(
 }
 
 // ---------------------------------------------------------------------------
-// Overview Phase A — roster health, recent activity, recent errors, cost week
+// Overview — recent activity, recent errors, cost week
 // Task: AIP-BUILD-PRODASHBOARD-OVERVIEWKPI-001
+// (call-based roster health removed by ADMIN-BUILD-FLEETTRUTH-1101-031 —
+//  play-level truth comes from admin_fleet_model_stats instead)
 // ---------------------------------------------------------------------------
-
-export type RosterHealthRow = {
-  id: string;
-  name: string;
-  model_id: string;
-  is_active: boolean;
-  is_active_practice: boolean;
-  is_active_daily: boolean;
-  daily_cost_cap_usd: string | number | null;
-  calls_24h: number;
-  errors_24h: number;
-  cost_24h: string | number;
-  last_call_at: string | null;
-};
-
-export async function fetchRosterHealth(
-  pool: Pool
-): Promise<RosterHealthRow[]> {
-  const { rows } = await pool.query<RosterHealthRow>(
-    `
-    WITH calls_24h AS (
-      SELECT
-        ab.ai_player_id,
-        COUNT(*)::int AS calls_24h,
-        COUNT(*) FILTER (
-          WHERE c.response_payload IS NULL OR c.error IS NOT NULL
-        )::int AS errors_24h,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-            FILTER (WHERE c.response_payload IS NOT NULL),
-          0
-        ) AS cost_24h
-      FROM ai_answer_bank ab
-      JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
-      WHERE c.created_at >= now() - interval '24 hours'
-      GROUP BY ab.ai_player_id
-    ),
-    last_calls AS (
-      SELECT
-        ab.ai_player_id,
-        MAX(c.created_at) AS last_call_at
-      FROM ai_answer_bank ab
-      JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
-      GROUP BY ab.ai_player_id
-    )
-    SELECT
-      p.id,
-      p.name,
-      p.model_id,
-      p.is_active,
-      p.is_active_practice,
-      p.is_active_daily,
-      p.daily_cost_cap_usd,
-      COALESCE(c24.calls_24h, 0)::int AS calls_24h,
-      COALESCE(c24.errors_24h, 0)::int AS errors_24h,
-      COALESCE(c24.cost_24h, 0) AS cost_24h,
-      lc.last_call_at::text AS last_call_at
-    FROM ai_players p
-    LEFT JOIN calls_24h c24 ON c24.ai_player_id = p.id
-    LEFT JOIN last_calls lc ON lc.ai_player_id = p.id
-    ORDER BY p.name
-    `
-  );
-  return rows;
-}
 
 export type RecentActivityRow = {
   id: string;
@@ -588,10 +525,11 @@ export type RecentErrorRow = {
   model_name: string;
   model_id: string;
   error: string;
-  error_type: ErrorBucket | "other";
   created_at: string;
 };
 
+// Raw error text only — the failure cause is classified once, in
+// fleetMetrics.classifyFailure (ADMIN-BUILD-FLEETTRUTH-1101-031).
 export async function fetchRecentErrors(
   pool: Pool,
   limit: number = 5
@@ -603,17 +541,6 @@ export async function fetchRecentErrors(
       p.name AS model_name,
       p.model_id,
       ab.error,
-      CASE
-        WHEN ab.error ILIKE '%429%' OR ab.error ILIKE '%rate limit%'
-          OR ab.error ILIKE '%rate-limit%' OR ab.error ILIKE '%too many requests%'
-          THEN 'rate_limit'
-        WHEN ab.error ILIKE '%404%' OR ab.error ILIKE '%no endpoints found%'
-          THEN 'not_found'
-        WHEN ab.error ILIKE '%parse%' OR ab.error ILIKE '%json%'
-          OR ab.error ILIKE '%missing finalguess%'
-          THEN 'parse'
-        ELSE 'other'
-      END AS error_type,
       ab.created_at::text AS created_at
     FROM ai_answer_bank ab
     JOIN ai_players p ON p.id = ab.ai_player_id
