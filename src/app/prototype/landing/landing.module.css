@@ -149,6 +149,16 @@
   color: var(--gh-text-secondary); letter-spacing: .02em; max-width: 560px;
 }
 .heroCta { margin-top: 32px; }
+.heroCtaRow { display: flex; gap: 14px; margin-top: 32px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.ghostBtn {
+  display: inline-flex; align-items: center;
+  padding: 10px 22px; border-radius: var(--gh-radius-pill);
+  border: 1px solid rgba(255,255,255,.35); background: var(--gh-bg-surface);
+  color: var(--gh-text-primary); font-weight: 600; font-size: var(--font-sm);
+  text-decoration: none; cursor: pointer;
+  transition: transform .3s cubic-bezier(.2,.7,.2,1), border-color .25s ease, background .25s ease;
+}
+.ghostBtn:hover { transform: translateY(-2px); border-color: var(--gh-orange); }
 .heroDots { display: flex; gap: 10px; margin-top: 28px; }
 .heroDot {
   width: 10px; height: 10px; border-radius: 50%;

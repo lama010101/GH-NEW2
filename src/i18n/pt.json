@@ -640,7 +640,8 @@
     "confirm_email_sent": "Verifique seu e-mail para confirmar sua conta.",
     "remember_me": "Lembrar de mim",
     "confirm_password": "Confirmar senha",
-    "cookies_blocked_notice": "Os cookies estão bloqueados no seu navegador, então você não permanecerá conectado. Permita cookies para guess-history.com e tente novamente."
+    "cookies_blocked_notice": "Os cookies estão bloqueados no seu navegador, então você não permanecerá conectado. Permita cookies para guess-history.com e tente novamente.",
+    "invite_banner": "Um amigo convidou você para um jogo ao vivo. Entre ou crie uma conta para participar."
   },
   "leaderboard": {
     "title": "RANKING",

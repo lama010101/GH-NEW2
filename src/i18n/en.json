@@ -640,7 +640,8 @@
     "confirm_email_sent": "Check your email to confirm your account.",
     "remember_me": "Remember me",
     "confirm_password": "Confirm Password",
-    "cookies_blocked_notice": "Cookies are blocked in your browser, so you will not stay signed in. Allow cookies for guess-history.com and try again."
+    "cookies_blocked_notice": "Cookies are blocked in your browser, so you will not stay signed in. Allow cookies for guess-history.com and try again.",
+    "invite_banner": "A friend invited you to a live game. Sign in or create an account to join."
   },
   "leaderboard": {
     "title": "LEADERBOARD",

@@ -640,7 +640,8 @@
     "confirm_email_sent": "请查收邮件以确认你的账户。",
     "remember_me": "记住我",
     "confirm_password": "确认密码",
-    "cookies_blocked_notice": "您的浏览器已阻止 Cookie，因此无法保持登录状态。请允许 guess-history.com 使用 Cookie 后重试。"
+    "cookies_blocked_notice": "您的浏览器已阻止 Cookie，因此无法保持登录状态。请允许 guess-history.com 使用 Cookie 后重试。",
+    "invite_banner": "好友邀请你参加一场实时游戏。登录或创建账号即可加入。"
   },
   "leaderboard": {
     "title": "排行榜",

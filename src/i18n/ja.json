@@ -640,7 +640,8 @@
     "confirm_email_sent": "アカウント確認のためメールを確認してください。",
     "remember_me": "ログイン状態を保持",
     "confirm_password": "パスワード確認",
-    "cookies_blocked_notice": "ブラウザーでCookieがブロックされているため、サインイン状態が保持されません。guess-history.comのCookieを許可してから、もう一度お試しください。"
+    "cookies_blocked_notice": "ブラウザーでCookieがブロックされているため、サインイン状態が保持されません。guess-history.comのCookieを許可してから、もう一度お試しください。",
+    "invite_banner": "友だちからライブゲームに招待されました。サインインするか、アカウントを作成して参加しましょう。"
   },
   "leaderboard": {
     "title": "ランキング",

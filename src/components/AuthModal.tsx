@@ -47,6 +47,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const [signUpSent, setSignUpSent] = useState(false);
   const [cookiesBlocked, setCookiesBlocked] = useState(false);
   const signInSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
+  const isCompeteInvite = /^\/compete\/[0-9a-f-]{36}$/.test(searchParams.get("next") ?? "");
 
   useEffect(() => {
     if (!isOpen) {
@@ -249,6 +250,10 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         <p className={styles.tagline}>
           {tLanding('tagline')}
         </p>
+
+        {isCompeteInvite && (
+          <p className={styles.inviteBanner} role="note">{t('invite_banner')}</p>
+        )}
 
         {error && (
           <p
