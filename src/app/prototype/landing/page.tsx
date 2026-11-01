@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import WhenCard from "@/components/compete/WhenCard";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import { getAccuracyColor } from "@/core/accuracyColor";
@@ -33,6 +34,7 @@ import { ensureGuestSession } from "@/core/guestSession";
 import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import BrandMark from "@/components/brand/BrandMark";
+import { detectCookiesBlocked, mapAuthError } from "@/components/AuthModal";
 import styles from "./landing.module.css";
 import lbStyles from "@/app/leaderboard/leaderboard.module.css";
 
@@ -63,7 +65,7 @@ const MOCK_PLAYERS: SessionPlayer[] = [
     leftAt: null,
     ready: true,
     isHost: true,
-    avatarUrl: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp",
+    get avatarUrl() { return AVATAR_PREVIEWS[0].url; },
     hasSubmitted: true,
   },
   {
@@ -73,7 +75,7 @@ const MOCK_PLAYERS: SessionPlayer[] = [
     leftAt: null,
     ready: true,
     isHost: false,
-    avatarUrl: "https://im.runware.ai/image/ws/2/ii/917583d3-87cd-4d55-a09d-7713a934180f.webp",
+    get avatarUrl() { return AVATAR_PREVIEWS[1].url; },
     hasSubmitted: true,
   },
   {
@@ -83,7 +85,7 @@ const MOCK_PLAYERS: SessionPlayer[] = [
     leftAt: null,
     ready: true,
     isHost: false,
-    avatarUrl: "https://im.runware.ai/image/ws/2/ii/dc36c8d7-b0f9-4ea7-9f55-047909ed4bd5.webp",
+    get avatarUrl() { return AVATAR_PREVIEWS[2].url; },
     hasSubmitted: true,
   },
 ];
@@ -569,6 +571,7 @@ export default function LandingV2Prototype() {
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const router = useRouter();
+  const t = useTranslations("auth");
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestError, setGuestError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -705,14 +708,21 @@ export default function LandingV2Prototype() {
     guestBusyRef.current = true;
     setGuestBusy(true);
     setGuestError(null);
+    let navigated = false;
     try {
       const result = await ensureGuestSession();
       if (result === "existing") {
+        navigated = true;
         router.push("/home");
         return;
       }
       if (result === "error") {
-        setGuestError("Unable to start a guest session — please try again.");
+        const errorText = "Unable to start a guest session — please try again.";
+        setGuestError(
+          detectCookiesBlocked()
+            ? t("cookies_blocked_notice")
+            : mapAuthError(errorText, t("err_network"))
+        );
         return;
       }
       const res = await fetch("/api/journey/start", {
@@ -740,12 +750,20 @@ export default function LandingV2Prototype() {
       try {
         sessionStorage.setItem("gh_guest_launch", JSON.stringify({ gameId: started.gameId, ts: Date.now() }));
       } catch {}
+      navigated = true;
       router.replace(`/practice/${started.gameId}`);
     } catch (err) {
-      setGuestError(err instanceof Error ? err.message : "Unable to start the game — please try again.");
+      setGuestError(
+        mapAuthError(
+          err instanceof Error ? err.message : "Unable to start the game — please try again.",
+          t("err_network")
+        )
+      );
     } finally {
-      guestBusyRef.current = false;
-      setGuestBusy(false);
+      if (!navigated) {
+        guestBusyRef.current = false;
+        setGuestBusy(false);
+      }
     }
   };
 
