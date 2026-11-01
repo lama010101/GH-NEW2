@@ -5,7 +5,7 @@ import { Menu } from 'lucide-react'
 import { rankForXp } from '@/core/rank'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import { useIdentity } from '@/hooks/useIdentity'
-import BrandMark from '@/components/brand/BrandMark'
+import TopBarSymbol from '@/components/brand/TopBarSymbol'
 import NotificationBell from '@/components/NotificationBell'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import RankModal from '@/components/RankModal'
@@ -36,7 +36,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   return (
     <div className={styles.topbar}>
       <button className={styles.topbarLeft} onClick={() => router.push('/home')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-        <BrandMark size={36} title={t('logo_alt')} />
+        <TopBarSymbol title={t('logo_alt')} />
       </button>
       <div className={styles.xpPillCol}>
         <button
