@@ -8,10 +8,21 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { defaultLocale } from "@/i18n/config";
 import styles from "./AuthModal.module.css";
 
-const NETWORK_ERROR_RE = /NetworkError|Failed to fetch|Load failed|network/i;
+export const NETWORK_ERROR_RE = /NetworkError|Failed to fetch|Load failed|network/i;
 
-function mapAuthError(rawMessage: string, networkMessage: string): string {
+export function mapAuthError(rawMessage: string, networkMessage: string): string {
   return NETWORK_ERROR_RE.test(rawMessage) ? networkMessage : rawMessage;
+}
+
+export function detectCookiesBlocked(): boolean {
+  try {
+    document.cookie = "gh_cookie_probe=1; path=/; SameSite=Lax";
+    const probeOk = document.cookie.indexOf("gh_cookie_probe=1") !== -1;
+    document.cookie = "gh_cookie_probe=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    return !probeOk;
+  } catch {
+    return true;
+  }
 }
 
 interface AuthModalProps {
@@ -47,14 +58,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
 
   useEffect(() => {
     if (!isOpen) return;
-    try {
-      document.cookie = "gh_cookie_probe=1; path=/; SameSite=Lax";
-      const probeOk = document.cookie.indexOf("gh_cookie_probe=1") !== -1;
-      document.cookie = "gh_cookie_probe=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      setCookiesBlocked(!probeOk);
-    } catch {
-      setCookiesBlocked(true);
-    }
+    setCookiesBlocked(detectCookiesBlocked());
   }, [isOpen]);
 
   useEffect(() => {
