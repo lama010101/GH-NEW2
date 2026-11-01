@@ -421,3 +421,54 @@ export function classifyVerification(input: {
   }
   return { ...base, status: "verified", reason: null };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EDQ-FIX-WIKIDATA-RECALL-1101-032 — same-label homonym year preference.
+// Applied by the runner AFTER selectCandidate, restricted to candidates whose
+// normalized en-label is IDENTICAL to the winner's (true same-label
+// homonyms). The unique candidate whose Wikidata year range is closest to
+// the stored event_year is preferred; a distance tie or an all-dateless
+// group yields null (no preference). Selection itself stays year-free —
+// this runs afterwards, and classifyVerification still decides the verdict:
+// a wrong-year pick is reported "mismatch" with both years (Chlumec 1124 vs
+// 1775), never auto-passed. A candidate with no dates is never "closest"
+// while a dated one exists (Quang Tri: the dateless 1972 stub Q4872137
+// cannot displace the dated 1968 item Q4872138).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Signed distance of storedYear outside [d.yearStart, d.yearEnd]; ∞ when no dates. */
+export function yearDistanceOutsideRange(
+  storedYear: number,
+  d: WdDateRange | null
+): number {
+  if (d == null) return Number.POSITIVE_INFINITY;
+  if (storedYear < d.yearStart) return d.yearStart - storedYear;
+  if (storedYear > d.yearEnd) return storedYear - d.yearEnd;
+  return 0;
+}
+
+/**
+ * Returns the qid whose year range is uniquely closest to storedYear, or
+ * null when empty/tied/all-dateless. Pure: inputs are already-extracted
+ * WdDateRange values keyed by qid.
+ */
+export function closestYearQid(
+  qids: readonly string[],
+  storedYear: number,
+  datesByQid: Record<string, WdDateRange | null>
+): string | null {
+  let best: string | null = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  let unique = false;
+  for (const qid of qids) {
+    const dd = yearDistanceOutsideRange(storedYear, datesByQid[qid] ?? null);
+    if (dd < bestDist) {
+      best = qid;
+      bestDist = dd;
+      unique = true;
+    } else if (dd === bestDist) {
+      unique = false;
+    }
+  }
+  return unique ? best : null;
+}

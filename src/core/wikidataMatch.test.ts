@@ -8,6 +8,7 @@ import {
   MIN_MATCH_SCORE,
   YEAR_TOLERANCE,
   classifyVerification,
+  closestYearQid,
   extractCoords,
   extractEventDates,
   isEventLike,
@@ -15,6 +16,7 @@ import {
   parseWikidataTime,
   scoreCandidate,
   selectCandidate,
+  yearDistanceOutsideRange,
   type MatchCandidate,
   type Selection,
   type WdEntity,
@@ -440,6 +442,76 @@ describe("classifyVerification", () => {
       dates: dates(1800, 1810), coords: at(0, 0),
     });
     expect(v.yearDelta).toBe(10);
+  });
+});
+
+// EDQ-FIX-WIKIDATA-RECALL-1101-032 — same-label homonym year preference.
+describe("yearDistanceOutsideRange / closestYearQid", () => {
+  const dr = (s: number, e?: number) => ({ yearStart: s, yearEnd: e ?? s, precision: 11, props: ["P580", "P582"] });
+
+  it("distance is 0 inside the range, signed-magnitude outside", () => {
+    expect(yearDistanceOutsideRange(1970, dr(1969, 1971))).toBe(0);
+    expect(yearDistanceOutsideRange(1972, dr(1968))).toBe(4);
+    expect(yearDistanceOutsideRange(1124, dr(1775))).toBe(651);
+    expect(yearDistanceOutsideRange(1970, null)).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it("Quang Tri shape: picks the same-label candidate whose year is closest (1972 over 1968)", () => {
+    // Two same-labelled items, both dated — the stored-year-closest wins.
+    expect(
+      closestYearQid(["Q1968", "Q1972"], 1972, { Q1968: dr(1968), Q1972: dr(1972) })
+    ).toBe("Q1972");
+    expect(
+      closestYearQid(["Q1968", "Q1972"], 1968, { Q1968: dr(1968), Q1972: dr(1972) })
+    ).toBe("Q1968");
+  });
+
+  it("Quang Tri real data: the dateless same-label stub cannot displace the dated item", () => {
+    // Q4872138 (1968, dated) vs Q4872137 (no date claims) — stored 1972.
+    // "Closest year" still means a present year: the dated item is kept and
+    // the event is then reported as mismatch with both years.
+    const pick = closestYearQid(["Q4872138", "Q4872137"], 1972, {
+      Q4872138: dr(1968),
+      Q4872137: null,
+    });
+    expect(pick).toBe("Q4872138");
+    const v = classifyVerification({
+      storedYear: 1972, storedLat: 16.74, storedLon: 107.19,
+      selection: selectionOf("winner", "Q4872138"),
+      dates: dr(1968), coords: { lat: 16.74, lon: 107.19, source: "P625" },
+    });
+    expect(v).toMatchObject({ status: "mismatch", reason: "year_out_of_range", yearDelta: 4 });
+  });
+
+  it("Chlumec real data: year-closest keeps the 1775 item; verdict is mismatch with both years", () => {
+    // Q109065543 (1775, dated) vs Q134520567 (no dates) — stored 1124.
+    const pick = closestYearQid(["Q109065543", "Q134520567"], 1124, {
+      Q109065543: dr(1775),
+      Q134520567: null,
+    });
+    expect(pick).toBe("Q109065543");
+    const v = classifyVerification({
+      storedYear: 1124, storedLat: 50.15, storedLon: 15.45,
+      selection: selectionOf("winner", "Q109065543"),
+      dates: dr(1775), coords: { lat: 50.158367, lon: 15.453556, source: "P625" },
+    });
+    // mismatch reports BOTH years: stored_year=1124, wd year 1775, delta -651.
+    expect(v).toMatchObject({ status: "mismatch", reason: "year_out_of_range", yearDelta: -651 });
+  });
+
+  it("inside-range beats any outside distance; a closer wrong year beats a farther one", () => {
+    expect(
+      closestYearQid(["Qa", "Qb"], 1970, { Qa: dr(1960, 1965), Qb: dr(1969, 1971) })
+    ).toBe("Qb");
+    expect(
+      closestYearQid(["Qa", "Qb"], 1970, { Qa: dr(1960), Qb: dr(1950) })
+    ).toBe("Qa"); // dist 10 < 20 — still mismatch later, but reported on the closest homonym
+  });
+
+  it("returns null on a distance tie or when every candidate is dateless", () => {
+    expect(closestYearQid(["Qa", "Qb"], 1970, { Qa: dr(1968), Qb: dr(1972) })).toBeNull();
+    expect(closestYearQid(["Qa", "Qb"], 1970, { Qa: null, Qb: null })).toBeNull();
+    expect(closestYearQid([], 1970, {})).toBeNull();
   });
 });
 
