@@ -640,7 +640,8 @@
     "confirm_email_sent": "Controleer je e-mail om je account te bevestigen.",
     "remember_me": "Onthoud mij",
     "confirm_password": "Bevestig wachtwoord",
-    "cookies_blocked_notice": "Cookies zijn geblokkeerd in je browser, dus je blijft niet aangemeld. Sta cookies toe voor guess-history.com en probeer het opnieuw."
+    "cookies_blocked_notice": "Cookies zijn geblokkeerd in je browser, dus je blijft niet aangemeld. Sta cookies toe voor guess-history.com en probeer het opnieuw.",
+    "invite_banner": "Een vriend heeft je uitgenodigd voor een live spel. Log in of maak een account om mee te spelen."
   },
   "leaderboard": {
     "title": "RANGLIJST",

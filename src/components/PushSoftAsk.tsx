@@ -6,8 +6,6 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface PushSoftAskProps {
   playerId: string;
-  isNewUserForWelcome: boolean;
-  welcomeCompleted: boolean;
   pushSoftAskDismissed: boolean;
   onDismissed: () => void;
 }
@@ -20,8 +18,6 @@ export function PushSoftAsk(props: PushSoftAskProps) {
 
   // The soft-ask is shown once at first login and never again.
   if (
-    !props.isNewUserForWelcome ||
-    !props.welcomeCompleted ||
     props.pushSoftAskDismissed ||
     !isSupported ||
     permission === 'denied' ||

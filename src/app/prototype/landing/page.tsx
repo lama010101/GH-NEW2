@@ -797,7 +797,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
-          <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }}>Sign in</a>
+          <button type="button" onClick={() => router.push("/login")} disabled={!hydrated} className={`${styles.playNowBtn} ${styles.topbarCta}`}>Sign in</button>
           <LanguageDropdown />
         </nav>
 
@@ -870,27 +870,23 @@ export default function LandingV2Prototype() {
           <p className={styles.heroTagline}>
             A free game — look at a picture, guess the place and year, then learn the true story.
           </p>
-          <button
-            ref={heroCtaRef}
-            type="button"
-            onClick={() => void playAsGuest()}
-            disabled={guestBusy || !hydrated}
-            className={`${styles.playNowBtn} ${styles.heroCta}`}
-          >
-            {guestBusy ? "Starting…" : "Play Now"}
-          </button>
+          <div className={styles.heroCtaRow}>
+            <button
+              ref={heroCtaRef}
+              type="button"
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy || !hydrated}
+              className={styles.playNowBtn}
+            >
+              {guestBusy ? "Starting…" : "Play Now"}
+            </button>
+            <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }} className={styles.ghostBtn}>Sign in / Sign up</a>
+          </div>
           {guestError && (
             <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
               {guestError}
             </p>
           )}
-          <a
-            href="/login"
-            onClick={(e) => { e.preventDefault(); router.push("/login"); }}
-            style={{ color: "var(--gh-text-secondary)", fontSize: "var(--font-sm)", marginTop: 16, display: "inline-block" }}
-          >
-            Already have an account? Sign in
-          </a>
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
               <button

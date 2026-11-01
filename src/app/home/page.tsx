@@ -67,8 +67,6 @@ function HomePageInner() {
   const [welcomeCompleted, setWelcomeCompleted] = useState<boolean | null>(null)
   const [pushSoftAskDismissed, setPushSoftAskDismissed] = useState<boolean | null>(null)
   const [isNewUserForWelcome, setIsNewUserForWelcome] = useState(false)
-  const [roundsPlayed, setRoundsPlayed] = useState(0)
-  const [totalXpNum, setTotalXpNum] = useState(0)
 
   const triggerAssignAvatar = useCallback(() => {
     if (welcomeHandledRef.current) return
@@ -194,8 +192,6 @@ function HomePageInner() {
         if (stats) {
           setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
           setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
-          setRoundsPlayed(Number(stats.rounds_played) || 0)
-          setTotalXpNum(Number(stats.total_xp) || 0)
         }
       } catch {}
       try {
@@ -470,11 +466,9 @@ function HomePageInner() {
           anonymous guests; for registered users it is deferred until their
           first completed round — DB-derived via player_global_stats
           (rounds_played/total_xp), no localStorage, no new column. */}
-      {welcomeData === null && welcomeCompleted === true && pushSoftAskDismissed === false && !identity.isAnonymous && (roundsPlayed > 0 || totalXpNum > 100) && (
+      {welcomeData === null && pushSoftAskDismissed === false && !identity.isAnonymous && (
         <PushSoftAsk
           playerId={currentPlayerId ?? ''}
-          isNewUserForWelcome={true}
-          welcomeCompleted={welcomeCompleted === true}
           pushSoftAskDismissed={pushSoftAskDismissed === false ? false : true}
           onDismissed={() => setPushSoftAskDismissed(true)}
         />

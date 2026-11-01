@@ -640,7 +640,8 @@
     "confirm_email_sent": "Prüfe deine E-Mail, um dein Konto zu bestätigen.",
     "remember_me": "Angemeldet bleiben",
     "confirm_password": "Passwort bestätigen",
-    "cookies_blocked_notice": "Cookies sind in deinem Browser blockiert, daher bleibst du nicht angemeldet. Erlaube Cookies für guess-history.com und versuche es erneut."
+    "cookies_blocked_notice": "Cookies sind in deinem Browser blockiert, daher bleibst du nicht angemeldet. Erlaube Cookies für guess-history.com und versuche es erneut.",
+    "invite_banner": "Ein Freund hat dich zu einem Live-Spiel eingeladen. Melde dich an oder erstelle ein Konto, um mitzuspielen."
   },
   "leaderboard": {
     "title": "BESTENLISTE",
