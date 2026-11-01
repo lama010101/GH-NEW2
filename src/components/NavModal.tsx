@@ -10,7 +10,6 @@ import { useIdentity } from '@/hooks/useIdentity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { ThemeToggle } from './layout/ThemeToggle'
 import { LanguageDropdown } from './layout/LanguageDropdown'
-import { OPEN_FULLSCREEN_PWA_MODAL_EVENT } from '@/components/FullscreenPwaModal'
 
 interface NavModalProps {
   isOpen: boolean
@@ -64,7 +63,6 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
     { id: 'account',      label: t('account'), icon: ACCOUNT_ICON,       action: () => navigate('/account') },
     ...(isAdmin ? [{ id: 'admin_dashboard', label: 'Admin Dashboard', icon: ADMIN_ICON, action: () => navigate('/admin/dashboard') }] : []),
     { id: 'help',         label: t('help'),           icon: HELP_ICON,          action: () => navigate('/help') },
-    { id: 'fullscreen_pwa', label: 'Fullscreen / Install App', icon: FULLSCREEN_ICON, action: () => { onClose(); window.dispatchEvent(new Event(OPEN_FULLSCREEN_PWA_MODAL_EVENT)) } },
   ]
 
   return (
@@ -218,8 +216,3 @@ const THEME_ICON = (
   </svg>
 )
 
-const FULLSCREEN_ICON = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
-  </svg>
-)

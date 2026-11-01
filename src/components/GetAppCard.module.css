@@ -1,0 +1,75 @@
+.card {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  padding-inline-end: 40px;
+  background: var(--gh-bg-surface);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 12px;
+  color: var(--gh-text-primary);
+}
+
+.closeButton {
+  position: absolute;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--gh-text-muted);
+  font-size: var(--font-xl);
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.body {
+  margin: 0 0 12px;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--gh-text-secondary);
+}
+
+.button {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  background: var(--gh-primary);
+  color: var(--gh-text-primary);
+}
+
+.steps {
+  margin: 12px 0 0;
+  padding-inline-start: 20px;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--gh-text-secondary);
+}
+
+.stepLine {
+  margin-top: 12px;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--gh-text-secondary);
+}
+
+.note {
+  margin-top: 12px;
+  font-size: var(--font-xs);
+  font-style: italic;
+  color: var(--gh-text-muted);
+}
