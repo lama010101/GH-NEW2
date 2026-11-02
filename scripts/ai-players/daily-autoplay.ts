@@ -59,6 +59,23 @@ export type ItemResult = {
 // fleet-halt path can terminate them with the existing SIGKILL mechanism.
 const activeChildren = new Set<ChildProcess>();
 
+// AIP-FIX-FLEETHALT-MERGE-1102-051: module-level halt latch. recordOutcome is a
+// main() closure, so its local `fleetHalted` flag cannot reach processOne's
+// retry loop — the latch can. Once set, processOne never spawns another worker
+// and never sleeps; cancelled items report lastError 'FLEET_HALTED' and stay
+// out of the results array and every run counter (cancelled, not failed).
+let fleetHaltLatched = false;
+export function latchFleetHalt(): void {
+  fleetHaltLatched = true;
+}
+export function isFleetHaltLatched(): boolean {
+  return fleetHaltLatched;
+}
+// Test seam only — production never resets a halt mid-run.
+export function resetFleetHaltLatch(): void {
+  fleetHaltLatched = false;
+}
+
 // ---------------------------------------------------------------------------
 // AIP-BUILD-FLEETHALT-1102-043 — run/alert bookkeeping helpers.
 // Every helper swallows its own errors: bookkeeping must never crash the
@@ -103,8 +120,11 @@ export type FleetRunCounts = {
 
 /** Final per-cause tallies from the post-sweep results array (pure). */
 export function summarizeResults(results: ItemResult[]): FleetRunCounts {
+  // AIP-FIX-FLEETHALT-MERGE-1102-051: FLEET_HALTED entries are cancelled plays,
+  // not failures — they enter no counter (defensive; callers must not push them).
+  const counted = results.filter((r) => r.lastError !== "FLEET_HALTED");
   const counts: FleetRunCounts = {
-    plays_attempted: results.length,
+    plays_attempted: counted.length,
     plays_ok: 0,
     plays_failed: 0,
     failed_auth: 0,
@@ -113,7 +133,7 @@ export function summarizeResults(results: ItemResult[]): FleetRunCounts {
     failed_bad_output: 0,
     failed_other: 0,
   };
-  for (const r of results) {
+  for (const r of counted) {
     if (r.ok) {
       counts.plays_ok++;
       continue;
@@ -302,9 +322,21 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
   return false;
 }
 
-async function processOne(item: WorkItem): Promise<{ ok: boolean; lastFailureTransient: boolean; lastError: string | null }> {
+// AIP-FIX-FLEETHALT-MERGE-1102-051: exported for tests; `worker` is the test
+// seam (injected runWorker) — production callers omit it.
+export async function processOne(item: WorkItem, worker: typeof runWorker = runWorker): Promise<{ ok: boolean; lastFailureTransient: boolean; lastError: string | null }> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const { code, stdout, stderr } = await runWorker(item);
+    // Latch check (top of iteration): a halted fleet never starts an attempt.
+    if (isFleetHaltLatched()) {
+      return { ok: false, lastFailureTransient: false, lastError: "FLEET_HALTED" };
+    }
+    const { code, stdout, stderr } = await worker(item);
+
+    // Latch check (post-return): a halt declared while this worker ran cancels
+    // the item before classification and before any retry delay.
+    if (isFleetHaltLatched()) {
+      return { ok: false, lastFailureTransient: false, lastError: "FLEET_HALTED" };
+    }
 
     if (code === 0) {
       console.log(`[OK] ${item.player.id} ${item.eventId}`);
@@ -442,6 +474,7 @@ async function main(): Promise<void> {
     const verdict = shouldHaltFleet(fleetFailureEvents, Date.now());
     if (verdict.halt) {
       fleetHalted = true;
+      latchFleetHalt(); // AIP-FIX-FLEETHALT-MERGE-1102-051
       fleetHaltDistinctModels = verdict.distinctModels;
       console.error(
         `[FLEET-HALT] ${verdict.authFailures} auth failures across ${verdict.distinctModels} models — halting fleet`
@@ -461,6 +494,9 @@ async function main(): Promise<void> {
         if (fleetHalted) break;
         const item: WorkItem = { player: pw.player, eventId };
         const res = await processOne(item);
+        // AIP-FIX-FLEETHALT-MERGE-1102-051: cancelled by fleet halt — not
+        // pushed, not recorded, not counted.
+        if (res.lastError === "FLEET_HALTED") continue;
         results.push({ item, ok: res.ok, lastFailureTransient: res.lastFailureTransient, lastError: res.lastError });
         recordOutcome(pw.player.model_id, res.lastError);
         if (res.ok) {
@@ -488,6 +524,9 @@ async function main(): Promise<void> {
       while (!fleetHalted && sweepPointer < sweepItems.length) {
         const r = sweepItems[sweepPointer++];
         const res = await processOne(r.item);
+        // AIP-FIX-FLEETHALT-MERGE-1102-051: cancelled sweep retry — keep the
+        // first-pass outcome; do not record or count the cancelled attempt.
+        if (res.lastError === "FLEET_HALTED") continue;
         if (res.ok) recoveredInSweep++;
         r.ok = res.ok;
         r.lastFailureTransient = res.lastFailureTransient;

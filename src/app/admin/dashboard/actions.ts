@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/core/adminAuth";
+import { isUuid } from "@/core/isUuid";
 import { getDbPool } from "@/server/db";
 
 export async function toggleAiPlayerMode(
@@ -23,6 +24,8 @@ export async function toggleAiPlayerMode(
 // AIP-BUILD-FLEETHALT-1102-043: mark an open fleet alert resolved.
 export async function resolveFleetAlert(alertId: string) {
   await requireAdmin();
+
+  if (!isUuid(alertId)) throw new Error("Invalid alert id");
 
   const pool = getDbPool();
   await pool.query(
