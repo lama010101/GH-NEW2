@@ -7,7 +7,7 @@ import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
 import { classifyFailure } from "@/core/aiFailureCauses";
-import { shouldHaltFleet, type FleetFailureEvent } from "@/core/aiFleetHalt";
+import { shouldHaltFleet, type FleetOutcomeEvent } from "@/core/aiFleetHalt";
 import { preflightRoster } from "./rosterPreflight";
 
 // Load .env.local if present, but do not fail if it is missing.
@@ -428,7 +428,7 @@ async function main(): Promise<void> {
   // AIP-BUILD-FLEETHALT-1102-043: every FINAL play outcome (after its retries)
   // is recorded and evaluated by the pure halt rule. The halt decision uses
   // only in-memory events — it never depends on the DB.
-  const fleetFailureEvents: FleetFailureEvent[] = [];
+  const fleetFailureEvents: FleetOutcomeEvent[] = [];
   let fleetHalted = false;
   let fleetHaltDistinctModels = 0;
 
