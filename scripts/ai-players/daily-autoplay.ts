@@ -1,10 +1,13 @@
 import { config } from "dotenv";
-import { spawn } from "child_process";
+import { spawn, type ChildProcess } from "child_process";
 import { resolve } from "path";
+import type { Pool } from "pg";
 import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
+import { classifyFailure } from "@/core/aiFailureCauses";
+import { shouldHaltFleet, type FleetOutcomeEvent } from "@/core/aiFleetHalt";
 import { preflightRoster } from "./rosterPreflight";
 
 // Load .env.local if present, but do not fail if it is missing.
@@ -48,7 +51,164 @@ export type ItemResult = {
   item: WorkItem;
   ok: boolean;
   lastFailureTransient: boolean;
+  /** stderr (or stdout) of the final attempt; null on success. */
+  lastError?: string | null;
 };
+
+// AIP-BUILD-FLEETHALT-1102-043: registry of live worker children so the
+// fleet-halt path can terminate them with the existing SIGKILL mechanism.
+const activeChildren = new Set<ChildProcess>();
+
+// AIP-FIX-FLEETHALT-MERGE-1102-051: module-level halt latch. recordOutcome is a
+// main() closure, so its local `fleetHalted` flag cannot reach processOne's
+// retry loop — the latch can. Once set, processOne never spawns another worker
+// and never sleeps; cancelled items report lastError 'FLEET_HALTED' and stay
+// out of the results array and every run counter (cancelled, not failed).
+let fleetHaltLatched = false;
+export function latchFleetHalt(): void {
+  fleetHaltLatched = true;
+}
+export function isFleetHaltLatched(): boolean {
+  return fleetHaltLatched;
+}
+// Test seam only — production never resets a halt mid-run.
+export function resetFleetHaltLatch(): void {
+  fleetHaltLatched = false;
+}
+
+// ---------------------------------------------------------------------------
+// AIP-BUILD-FLEETHALT-1102-043 — run/alert bookkeeping helpers.
+// Every helper swallows its own errors: bookkeeping must never crash the
+// autoplay or change its behaviour. The halt DECISION never touches the DB.
+// ---------------------------------------------------------------------------
+
+export function githubRunUrl(): string | null {
+  const server = process.env.GITHUB_SERVER_URL;
+  const repo = process.env.GITHUB_REPOSITORY;
+  const runId = process.env.GITHUB_RUN_ID;
+  if (!server || !repo || !runId) return null;
+  return `${server}/${repo}/actions/runs/${runId}`;
+}
+
+export async function insertFleetRun(
+  pool: Pick<Pool, "query">,
+  kind: "daily" | "practice" | "manual",
+  runUrl: string | null
+): Promise<string | null> {
+  try {
+    const res = await pool.query<{ id: string }>(
+      "INSERT INTO ai_fleet_runs (kind, github_run_url) VALUES ($1, $2) RETURNING id",
+      [kind, runUrl]
+    );
+    return res.rows[0]?.id ?? null;
+  } catch (err) {
+    console.error(`[FLEET-RUN] insert failed: ${err instanceof Error ? err.message : err}`);
+    return null;
+  }
+}
+
+export type FleetRunCounts = {
+  plays_attempted: number;
+  plays_ok: number;
+  plays_failed: number;
+  failed_auth: number;
+  failed_gone: number;
+  failed_rate_limit: number;
+  failed_bad_output: number;
+  failed_other: number;
+};
+
+/** Final per-cause tallies from the post-sweep results array (pure). */
+export function summarizeResults(results: ItemResult[]): FleetRunCounts {
+  // AIP-FIX-FLEETHALT-MERGE-1102-051: FLEET_HALTED entries are cancelled plays,
+  // not failures — they enter no counter (defensive; callers must not push them).
+  const counted = results.filter((r) => r.lastError !== "FLEET_HALTED");
+  const counts: FleetRunCounts = {
+    plays_attempted: counted.length,
+    plays_ok: 0,
+    plays_failed: 0,
+    failed_auth: 0,
+    failed_gone: 0,
+    failed_rate_limit: 0,
+    failed_bad_output: 0,
+    failed_other: 0,
+  };
+  for (const r of counted) {
+    if (r.ok) {
+      counts.plays_ok++;
+      continue;
+    }
+    counts.plays_failed++;
+    const cause = classifyFailure(r.lastError);
+    if (cause === "auth") counts.failed_auth++;
+    else if (cause === "gone") counts.failed_gone++;
+    else if (cause === "rate_limit") counts.failed_rate_limit++;
+    else if (cause === "bad_output") counts.failed_bad_output++;
+    else counts.failed_other++;
+  }
+  return counts;
+}
+
+export async function finalizeFleetRun(
+  pool: Pick<Pool, "query">,
+  runId: string | null,
+  status: "ok" | "partial" | "halted" | "error",
+  haltReason: string | null,
+  counts: FleetRunCounts
+): Promise<void> {
+  if (!runId) return;
+  try {
+    await pool.query(
+      `UPDATE ai_fleet_runs
+       SET finished_at = now(), status = $2, halt_reason = $3,
+           plays_attempted = $4, plays_ok = $5, plays_failed = $6,
+           failed_auth = $7, failed_gone = $8, failed_rate_limit = $9,
+           failed_bad_output = $10, failed_other = $11
+       WHERE id = $1`,
+      [
+        runId, status, haltReason,
+        counts.plays_attempted, counts.plays_ok, counts.plays_failed,
+        counts.failed_auth, counts.failed_gone, counts.failed_rate_limit,
+        counts.failed_bad_output, counts.failed_other,
+      ]
+    );
+  } catch (err) {
+    console.error(`[FLEET-RUN] finalize failed: ${err instanceof Error ? err.message : err}`);
+  }
+}
+
+// Upsert: if an UNRESOLVED 'auth_fleet' alert exists with created_at within
+// 24h, bump occurrences + last_seen_at; otherwise insert a new critical row.
+export async function upsertAuthFleetAlert(
+  pool: Pick<Pool, "query">,
+  runId: string | null,
+  distinctModels: number
+): Promise<void> {
+  try {
+    const message = `OpenRouter key rejected (HTTP 401) by ${distinctModels} models; Daily run halted`;
+    const updated = await pool.query<{ id: string }>(
+      `UPDATE ai_fleet_alerts
+       SET occurrences = occurrences + 1, last_seen_at = now()
+       WHERE id = (
+         SELECT id FROM ai_fleet_alerts
+         WHERE kind = 'auth_fleet' AND resolved_at IS NULL
+           AND created_at >= now() - interval '24 hours'
+         ORDER BY created_at DESC
+         LIMIT 1
+       )
+       RETURNING id`,
+      []
+    );
+    if (updated.rows.length > 0) return;
+    await pool.query(
+      `INSERT INTO ai_fleet_alerts (kind, severity, message, run_id)
+       VALUES ('auth_fleet', 'critical', $1, $2)`,
+      [message, runId]
+    );
+  } catch (err) {
+    console.error(`[FLEET-ALERT] upsert failed: ${err instanceof Error ? err.message : err}`);
+  }
+}
 
 function todayUtcIso(): string {
   return getDailyChallengeDate();
@@ -83,6 +243,8 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
       }
     );
 
+    activeChildren.add(child);
+
     let stdout = "";
     let stderr = "";
 
@@ -100,12 +262,14 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     });
 
     child.on("error", (err) => {
+      activeChildren.delete(child);
       clearTimeout(killTimer);
       stderr += `\nSPAWN_ERROR: ${err.message}`;
       resolve({ code: -1, stdout, stderr });
     });
 
     child.on("close", (code) => {
+      activeChildren.delete(child);
       clearTimeout(killTimer);
       resolve({ code, stdout, stderr });
     });
@@ -158,13 +322,25 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
   return false;
 }
 
-async function processOne(item: WorkItem): Promise<{ ok: boolean; lastFailureTransient: boolean }> {
+// AIP-FIX-FLEETHALT-MERGE-1102-051: exported for tests; `worker` is the test
+// seam (injected runWorker) — production callers omit it.
+export async function processOne(item: WorkItem, worker: typeof runWorker = runWorker): Promise<{ ok: boolean; lastFailureTransient: boolean; lastError: string | null }> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const { code, stdout, stderr } = await runWorker(item);
+    // Latch check (top of iteration): a halted fleet never starts an attempt.
+    if (isFleetHaltLatched()) {
+      return { ok: false, lastFailureTransient: false, lastError: "FLEET_HALTED" };
+    }
+    const { code, stdout, stderr } = await worker(item);
+
+    // Latch check (post-return): a halt declared while this worker ran cancels
+    // the item before classification and before any retry delay.
+    if (isFleetHaltLatched()) {
+      return { ok: false, lastFailureTransient: false, lastError: "FLEET_HALTED" };
+    }
 
     if (code === 0) {
       console.log(`[OK] ${item.player.id} ${item.eventId}`);
-      return { ok: true, lastFailureTransient: false };
+      return { ok: true, lastFailureTransient: false, lastError: null };
     }
 
     const transient = await isTransientFailure(stderr, stdout);
@@ -178,10 +354,10 @@ async function processOne(item: WorkItem): Promise<{ ok: boolean; lastFailureTra
 
     console.error(`[ERROR] ${item.player.id} ${item.eventId} worker exited ${code}:`);
     console.error(stderr || stdout);
-    return { ok: false, lastFailureTransient: transient };
+    return { ok: false, lastFailureTransient: transient, lastError: stderr || stdout || null };
   }
 
-  return { ok: false, lastFailureTransient: false };
+  return { ok: false, lastFailureTransient: false, lastError: null };
 }
 
 // AIP-FIX-DAILY-429SWEEP-1024-001: items eligible for the one cooldown sweep —
@@ -271,20 +447,58 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  // AIP-BUILD-FLEETHALT-1102-043: run log starts at dispatch start (after the
+  // dry-run exit so dry runs never write rows). Bookkeeping failure is logged
+  // and ignored — it must never alter autoplay behaviour.
+  const fleetRunId = await insertFleetRun(pool, "daily", githubRunUrl());
+
   let queuePointer = 0;
   let succeeded = 0;
   let failed = 0;
   const results: ItemResult[] = [];
 
+  // AIP-BUILD-FLEETHALT-1102-043: every FINAL play outcome (after its retries)
+  // is recorded and evaluated by the pure halt rule. The halt decision uses
+  // only in-memory events — it never depends on the DB.
+  const fleetFailureEvents: FleetOutcomeEvent[] = [];
+  let fleetHalted = false;
+  let fleetHaltDistinctModels = 0;
+
+  function recordOutcome(modelId: string, lastError: string | null): void {
+    fleetFailureEvents.push({
+      modelId,
+      at: Date.now(),
+      cause: classifyFailure(lastError),
+    });
+    if (fleetHalted) return;
+    const verdict = shouldHaltFleet(fleetFailureEvents, Date.now());
+    if (verdict.halt) {
+      fleetHalted = true;
+      latchFleetHalt(); // AIP-FIX-FLEETHALT-MERGE-1102-051
+      fleetHaltDistinctModels = verdict.distinctModels;
+      console.error(
+        `[FLEET-HALT] ${verdict.authFailures} auth failures across ${verdict.distinctModels} models — halting fleet`
+      );
+      for (const child of activeChildren) {
+        child.kill("SIGKILL");
+      }
+    }
+  }
+
   async function playerWorker(): Promise<void> {
-    while (queuePointer < playerQueue.length) {
+    while (!fleetHalted && queuePointer < playerQueue.length) {
       const pw = playerQueue[queuePointer++];
       let playerSucceeded = 0;
       let playerFailed = 0;
       for (const eventId of pw.missing) {
+        if (fleetHalted) break;
         const item: WorkItem = { player: pw.player, eventId };
         const res = await processOne(item);
-        results.push({ item, ok: res.ok, lastFailureTransient: res.lastFailureTransient });
+        // AIP-FIX-FLEETHALT-MERGE-1102-051: cancelled by fleet halt — not
+        // pushed, not recorded, not counted.
+        if (res.lastError === "FLEET_HALTED") continue;
+        results.push({ item, ok: res.ok, lastFailureTransient: res.lastFailureTransient, lastError: res.lastError });
+        recordOutcome(pw.player.model_id, res.lastError);
         if (res.ok) {
           playerSucceeded++;
         } else {
@@ -299,7 +513,7 @@ async function main(): Promise<void> {
   const workers = Array.from({ length: Math.min(PLAYER_CONCURRENCY, playerQueue.length) }, playerWorker);
   await Promise.all(workers);
 
-  const sweepItems = selectSweepItems(results);
+  const sweepItems = fleetHalted ? [] : selectSweepItems(results);
   let recoveredInSweep = 0;
   if (sweepItems.length > 0) {
     console.log(`[SWEEP] ${sweepItems.length} transient failures, cooling down ${SWEEP_COOLDOWN_MS}ms`);
@@ -307,12 +521,17 @@ async function main(): Promise<void> {
 
     let sweepPointer = 0;
     async function sweepWorker(): Promise<void> {
-      while (sweepPointer < sweepItems.length) {
+      while (!fleetHalted && sweepPointer < sweepItems.length) {
         const r = sweepItems[sweepPointer++];
         const res = await processOne(r.item);
+        // AIP-FIX-FLEETHALT-MERGE-1102-051: cancelled sweep retry — keep the
+        // first-pass outcome; do not record or count the cancelled attempt.
+        if (res.lastError === "FLEET_HALTED") continue;
         if (res.ok) recoveredInSweep++;
         r.ok = res.ok;
         r.lastFailureTransient = res.lastFailureTransient;
+        r.lastError = res.lastError;
+        recordOutcome(r.item.player.model_id, res.lastError);
       }
     }
     const sweepWorkers = Array.from({ length: Math.min(PLAYER_CONCURRENCY, sweepItems.length) }, sweepWorker);
@@ -321,6 +540,20 @@ async function main(): Promise<void> {
     succeeded += recoveredInSweep;
     failed -= recoveredInSweep;
   }
+
+  // AIP-BUILD-FLEETHALT-1102-043: alert upsert + run finalize. Both are
+  // bookkeeping — failures here are logged and cannot change the exit code.
+  if (fleetHalted) {
+    await upsertAuthFleetAlert(pool, fleetRunId, fleetHaltDistinctModels);
+  }
+  const runCounts = summarizeResults(results);
+  await finalizeFleetRun(
+    pool,
+    fleetRunId,
+    fleetHalted ? "halted" : failed > 0 ? "partial" : "ok",
+    fleetHalted ? "auth_fleet" : null,
+    runCounts
+  );
 
   await pool.end();
 
@@ -333,8 +566,11 @@ async function main(): Promise<void> {
   console.log(`Recovered in sweep: ${recoveredInSweep}`);
   console.log(`Failed after sweep: ${failed}`);
   console.log(`Skipped (preflight): ${preflight.skipped.length}`);
+  if (fleetHalted) {
+    console.log(`Fleet halted: auth_fleet`);
+  }
 
-  if (failed > 0) {
+  if (fleetHalted || failed > 0) {
     process.exit(1);
   }
 }

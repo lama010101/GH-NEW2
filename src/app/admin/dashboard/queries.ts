@@ -703,3 +703,91 @@ export async function fetchTrashedPlayers(pool: Pool): Promise<TrashedPlayerRow[
   );
   return rows;
 }
+
+// ---------------------------------------------------------------------------
+// Overview — open fleet alerts + recent fleet runs
+// (AIP-BUILD-FLEETHALT-1102-043; tables from migration
+//  20261102140000_ai_fleet_runs_alerts.sql)
+// ---------------------------------------------------------------------------
+
+export type FleetAlertRow = {
+  id: string;
+  kind: string;
+  severity: "critical" | "warning" | "info";
+  message: string;
+  model_id: string | null;
+  run_id: string | null;
+  created_at: string;
+  last_seen_at: string;
+  occurrences: number;
+};
+
+export async function fetchOpenFleetAlerts(pool: Pool): Promise<FleetAlertRow[]> {
+  const { rows } = await pool.query<FleetAlertRow>(
+    `
+    SELECT
+      id,
+      kind,
+      severity,
+      message,
+      model_id,
+      run_id,
+      created_at::text AS created_at,
+      last_seen_at::text AS last_seen_at,
+      occurrences
+    FROM ai_fleet_alerts
+    WHERE resolved_at IS NULL
+    ORDER BY created_at DESC
+    `
+  );
+  return rows;
+}
+
+export type FleetRunRow = {
+  id: string;
+  kind: string;
+  status: "running" | "ok" | "partial" | "halted" | "error";
+  halt_reason: string | null;
+  started_at: string;
+  finished_at: string | null;
+  plays_attempted: number;
+  plays_ok: number;
+  plays_failed: number;
+  failed_auth: number;
+  failed_gone: number;
+  failed_rate_limit: number;
+  failed_bad_output: number;
+  failed_other: number;
+  github_run_url: string | null;
+};
+
+export async function fetchRecentFleetRuns(
+  pool: Pool,
+  limit: number = 7
+): Promise<FleetRunRow[]> {
+  const { rows } = await pool.query<FleetRunRow>(
+    `
+    SELECT
+      id,
+      kind,
+      status,
+      halt_reason,
+      started_at::text AS started_at,
+      finished_at::text AS finished_at,
+      plays_attempted,
+      plays_ok,
+      plays_failed,
+      failed_auth,
+      failed_gone,
+      failed_rate_limit,
+      failed_bad_output,
+      failed_other,
+      github_run_url
+    FROM ai_fleet_runs
+    ORDER BY started_at DESC
+    LIMIT $1
+    `,
+    [limit]
+  );
+  return rows;
+}

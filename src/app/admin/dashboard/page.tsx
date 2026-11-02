@@ -7,7 +7,8 @@ import { AddModelModal } from "./models/AddModelModal";
 import { ModelControls } from "./models/ModelControls";
 import { updateDailyCostCap } from "./models/actions";
 import { scheduleAiPlayerModeChange } from "./scheduling/actions";
-import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RecentErrorRow, type ScheduledChangeRow } from "./queries";
+import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, fetchOpenFleetAlerts, fetchRecentFleetRuns, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RecentErrorRow, type ScheduledChangeRow, type FleetAlertRow, type FleetRunRow } from "./queries";
+import { resolveFleetAlert } from "./actions";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
 import { classifyFailure, coveragePct, deriveFailing, deriveModelState, derivePrice, deriveTrack, modelGroupKey, trackPriceGroupLabel, FAILURE_CAUSES, TRACK_LABEL, PRICE_LABEL, TRACK_PRICE_GROUP_ORDER, TRACK_GROUP_ORDER, PRICE_GROUP_ORDER, type FleetModelState, type GroupMode } from "./fleetMetrics";
@@ -610,6 +611,15 @@ export default async function OpenRouterAdminPage({
     : [];
   const pendingScheduled = scheduledRaw.filter((r) => r.status === "pending");
 
+  // Fleet alerts + recent runs (AIP-BUILD-FLEETHALT-1102-043; tables from
+  // migration 20261102140000_ai_fleet_runs_alerts.sql).
+  const openAlerts: FleetAlertRow[] = needOverview
+    ? await fetchOpenFleetAlerts(pool)
+    : [];
+  const recentRuns: FleetRunRow[] = needOverview
+    ? await fetchRecentFleetRuns(pool, 7)
+    : [];
+
   const recentErrors = recentErrorsRaw.map((row) => ({
     id: row.id,
     model_name: row.model_name,
@@ -919,6 +929,157 @@ export default async function OpenRouterAdminPage({
 
         {tab === "overview" && (
           <>
+            <section className="ops-panel" style={{ marginBottom: 16 }}>
+              <div className="ops-toolbar">
+                <h2 className="ops-panel-title">Alerts</h2>
+              </div>
+              <div className="ops-panel-pad">
+                {openAlerts.length === 0 ? (
+                  <p className="ops-empty" style={{ padding: "8px 0" }}>
+                    No open alerts
+                  </p>
+                ) : (
+                  openAlerts.map((a) => (
+                    <div
+                      key={a.id}
+                      style={{
+                        border: `1px solid ${
+                          a.severity === "critical"
+                            ? "var(--ops-bad)"
+                            : a.severity === "warning"
+                            ? "var(--ops-warn)"
+                            : "var(--ops-line)"
+                        }`,
+                        borderRadius: 2,
+                        padding: "8px 10px",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div
+                        className="ops-minirow"
+                        style={{ borderBottom: "none", padding: 0 }}
+                      >
+                        <span className="ops-minirow-main">
+                          <span
+                            className={`ops-chip ${
+                              a.severity === "critical"
+                                ? "ops-chip-bad"
+                                : a.severity === "warning"
+                                ? "ops-chip-warn"
+                                : "ops-chip-muted"
+                            }`}
+                          >
+                            {a.severity}
+                          </span>
+                          <span className="ops-chip">{a.kind}</span>
+                          <span
+                            className="ops-truncate"
+                            title={a.message}
+                            style={
+                              a.severity === "critical"
+                                ? { color: "var(--ops-bad)", fontWeight: 600 }
+                                : undefined
+                            }
+                          >
+                            {a.message}
+                          </span>
+                        </span>
+                        <span className="ops-minirow-side">
+                          <form action={resolveFleetAlert.bind(null, a.id)}>
+                            <button type="submit" className="ops-btn">
+                              Mark resolved
+                            </button>
+                          </form>
+                        </span>
+                      </div>
+                      <p className="ops-panel-sub" style={{ marginTop: 4 }}>
+                        first seen {formatDateTime(a.created_at)} · last seen{" "}
+                        {formatRelativeTime(a.last_seen_at)} · occurrences{" "}
+                        {a.occurrences}
+                      </p>
+                    </div>
+                  ))
+                )}
+
+                <h3
+                  className="ops-panel-title"
+                  style={{ marginTop: 12, marginBottom: 4 }}
+                >
+                  Recent runs
+                </h3>
+                {recentRuns.length === 0 ? (
+                  <p className="ops-empty" style={{ padding: "8px 0" }}>
+                    No runs recorded yet.
+                  </p>
+                ) : (
+                  <table className="ops-table">
+                    <thead>
+                      <tr>
+                        <th>Started</th>
+                        <th>Kind</th>
+                        <th>Status</th>
+                        <th className="num">OK</th>
+                        <th className="num">Failed</th>
+                        <th>Failures by cause</th>
+                        <th>Halt reason</th>
+                        <th>Run</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentRuns.map((r) => (
+                        <tr key={r.id}>
+                          <td>{formatDateTime(r.started_at)}</td>
+                          <td>{r.kind}</td>
+                          <td>
+                            <span
+                              className={`ops-chip ${
+                                r.status === "ok"
+                                  ? "ops-chip-ok"
+                                  : r.status === "partial"
+                                  ? "ops-chip-warn"
+                                  : r.status === "halted" ||
+                                    r.status === "error"
+                                  ? "ops-chip-bad"
+                                  : "ops-chip-muted"
+                              }`}
+                            >
+                              {r.status}
+                            </span>
+                          </td>
+                          <td className="num">{r.plays_ok}</td>
+                          <td className="num">{r.plays_failed}</td>
+                          <td>
+                            {r.plays_failed === 0
+                              ? "—"
+                              : FAILURE_CAUSES.map(
+                                  (c) => [c, r[`failed_${c}`]] as const
+                                )
+                                  .filter(([, n]) => n > 0)
+                                  .map(([c, n]) => `${c}:${n}`)
+                                  .join(" · ")}
+                          </td>
+                          <td>{r.halt_reason ?? "—"}</td>
+                          <td>
+                            {r.github_run_url ? (
+                              <a
+                                href={r.github_run_url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                run
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+
             <div className="ops-grid-2col" style={{ marginBottom: 16 }}>
               <section className="ops-panel">
                 <div className="ops-toolbar">
