@@ -8,7 +8,7 @@
 --
 -- Definitions (single source — mirrored in TS at
 -- src/app/admin/dashboard/fleetMetrics.ts):
---   Eligible event : events.status='validated' AND EXISTS (images row).
+--   Eligible event : events.status='validated' AND retired_at IS NULL AND EXISTS (images row).
 --   Play           : ai_answer_bank row; OK = error IS NULL.
 --   Failure cause  : auth (contains '401'), gone ('404'), rate_limit ('429'),
 --                    bad_output (starts 'Failed to parse' or contains
@@ -69,6 +69,7 @@ SELECT
         SELECT 1 FROM public.events e
         WHERE e.id = ab.event_id
           AND e.status = 'validated'
+          AND e.retired_at IS NULL
           AND EXISTS (
             SELECT 1 FROM public.images i WHERE i.event_id = e.id
           )
@@ -81,6 +82,7 @@ SELECT
           SELECT 1 FROM public.events e
           WHERE e.id = ab.event_id
             AND e.status = 'validated'
+            AND e.retired_at IS NULL
             AND EXISTS (
               SELECT 1 FROM public.images i WHERE i.event_id = e.id
             )
@@ -120,6 +122,7 @@ WITH eligible AS (
   SELECT e.id
   FROM public.events e
   WHERE e.status = 'validated'
+    AND e.retired_at IS NULL
     AND EXISTS (SELECT 1 FROM public.images i WHERE i.event_id = e.id)
 ),
 ok_pairs AS (

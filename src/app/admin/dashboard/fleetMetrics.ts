@@ -4,10 +4,11 @@
 // Pure functions only: no DB access, no hidden state. Every label and count on
 // the Overview and Models tabs derives from these functions; the same
 // definitions are mirrored in SQL inside
-// supabase/migrations/20261101090000_admin_fleet_truth_views.sql.
+// supabase/migrations/20261102130000_admin_fleet_truth_views.sql.
 //
 // Definitions (CTO-approved):
-//   Eligible event : events.status = 'validated' AND EXISTS (images row).
+//   Eligible event : events.status = 'validated' AND retired_at IS NULL AND
+//                    EXISTS (images row).
 //   Play           : one ai_answer_bank row. OK = error IS NULL,
 //                    failed = error IS NOT NULL. ai_answer_bank_calls rows are
 //                    API calls, NOT plays (Debug page only).

@@ -1248,7 +1248,8 @@ export default async function OpenRouterAdminPage({
               >
                 <ul className="ops-panel-sub" style={{ paddingLeft: 18, margin: 0 }}>
                   <li>
-                    Eligible event: a validated event with at least one image.
+                    Eligible event: a validated event with at least one image, and
+                    not retired.
                   </li>
                   <li>
                     Play: one ai_answer_bank row. OK = error IS NULL; failed =
