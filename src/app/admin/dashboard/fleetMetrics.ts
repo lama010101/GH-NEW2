@@ -12,7 +12,10 @@
 //                    failed = error IS NOT NULL. ai_answer_bank_calls rows are
 //                    API calls, NOT plays (Debug page only).
 //   Model state    : Paused → Blocked → Running, evaluated in this order;
-//                    Failing is an overlay on Running.
+//                    Failing is an overlay on Running. Practice-only is
+//                    Blocked: no scheduler reads is_active_practice — the
+//                    batch runner is manual (run-batch.ts --model flag);
+//                    verified 2026-11-02.
 //   Track          : openrouter_models.is_vision true/false/no row.
 //   Price          : openrouter_models.is_free, ':free' id fallback, else Unknown.
 //   Coverage       : eligible event with >= 1 OK play; depth = distinct models
@@ -98,6 +101,15 @@ export function deriveModelState(m: ModelStateInput): DerivedModelState {
     return {
       state: "blocked",
       reason: m.availability_status ?? "unavailable",
+      unverified,
+    };
+  }
+  if (!m.is_active_daily) {
+    // Practice flag set but Daily off: nothing schedules Practice plays
+    // (run-batch is a manual --model invocation), so the model cannot run.
+    return {
+      state: "blocked",
+      reason: "Practice has no scheduler (manual run-batch only)",
       unverified,
     };
   }

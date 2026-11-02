@@ -71,9 +71,31 @@ describe("deriveModelState", () => {
     expect(s.unverified).toBe(true);
   });
 
-  it("master on + Practice on + available => Running", () => {
+  it("master on + Practice+Daily => Running (Daily is the scheduled mode)", () => {
     const s = deriveModelState({ ...base, is_active_practice: true });
     expect(s.state).toBe("running");
+  });
+
+  it("master on + Practice-only => Blocked 'Practice has no scheduler...'", () => {
+    const s = deriveModelState({
+      ...base,
+      is_active_practice: true,
+      is_active_daily: false,
+    });
+    expect(s.state).toBe("blocked");
+    expect(s.reason).toBe(
+      "Practice has no scheduler (manual run-batch only)"
+    );
+  });
+
+  it("master off + Practice-only => Paused (not counted as running)", () => {
+    const s = deriveModelState({
+      ...base,
+      is_active: false,
+      is_active_practice: true,
+      is_active_daily: false,
+    });
+    expect(s.state).toBe("paused");
   });
 });
 

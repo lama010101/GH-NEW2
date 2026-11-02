@@ -539,9 +539,9 @@ export default async function OpenRouterAdminPage({
   const pausedCount = fleet.filter((r) => r.state.state === "paused").length;
   const blockedCount = fleet.filter((r) => r.state.state === "blocked").length;
   const failingCount = fleet.filter((r) => r.failing).length;
-  const practiceRunningCount = fleet.filter(
-    (r) => r.state.state === "running" && r.is_active_practice
-  ).length;
+  // Practice flag count — flags only, NOT running models: no scheduler reads
+  // is_active_practice (run-batch is manual --model only).
+  const practiceFlaggedCount = fleet.filter((r) => r.is_active_practice).length;
   const lastOkAt = fleet.reduce((latest, row) => {
     if (row.last_ok_at && (!latest || row.last_ok_at > latest)) {
       return row.last_ok_at;
@@ -983,7 +983,8 @@ export default async function OpenRouterAdminPage({
                     Vision {(coverage?.covered_vision ?? 0).toLocaleString()} ·
                     Text-only {(coverage?.covered_text ?? 0).toLocaleString()} ·
                     Unknown{" "}
-                    {(coverage?.covered_unknown ?? 0).toLocaleString()}
+                    {(coverage?.covered_unknown ?? 0).toLocaleString()}{" "}
+                    (overlapping, not additive)
                   </p>
                   <p className="ops-panel-sub">
                     Models per event — 0:{" "}
@@ -994,23 +995,26 @@ export default async function OpenRouterAdminPage({
                   </p>
                   <div className="ops-minirow" style={{ marginTop: 8 }}>
                     <span className="ops-minirow-main">
-                      Practice: {practiceRunningCount.toLocaleString()} models
-                      running
+                      Practice flag: {practiceFlaggedCount.toLocaleString()}{" "}
+                      models flagged — no scheduler reads this flag; Practice
+                      runs only by manual batch
                     </span>
                   </div>
-                  {practiceRunningCount === 0 && (
+                  {practiceFlaggedCount === 0 && (
                     <p
                       className="ops-panel-sub"
                       style={{ color: "var(--ops-bad)", fontWeight: 600 }}
                     >
-                      No model is running Practice mode.
+                      No model has the Practice flag set — manual batches would
+                      have nothing flagged.
                     </p>
                   )}
                   <p className="ops-footnote">
                     Verified in the runner: Daily mode replays only
                     today&apos;s daily-challenge events
                     (daily-autoplay.ts → daily_challenges.event_ids, UTC+14
-                    date); Practice is the catalogue-wide mode.
+                    date); Practice is the catalogue-wide mode (manual batch
+                    only).
                   </p>
                 </div>
               </section>
@@ -1260,9 +1264,11 @@ export default async function OpenRouterAdminPage({
                   <li>
                     State: Paused = Enabled switch off. Blocked = Enabled on
                     but no mode selected, or the catalog says the model is not
-                    available (reason shown). Running = Enabled on plus a mode
-                    flag and not blocked. Failing = running model with ≥5
-                    non-auth plays in 7 days and OK-rate under 50%.
+                    available (reason shown), or only the Practice flag is on
+                    (Practice has no scheduler — manual run-batch only).
+                    Running = Enabled on with Daily on and not blocked.
+                    Failing = running model with ≥5 non-auth plays in 7 days
+                    and OK-rate under 50%.
                   </li>
                   <li>
                     Track: Vision / Text-only from the OpenRouter catalog
