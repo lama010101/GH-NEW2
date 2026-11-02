@@ -28,7 +28,7 @@
 --   DROP VIEW IF EXISTS public.admin_fleet_model_stats;
 --   DROP VIEW IF EXISTS public.admin_fleet_coverage;
 
-CREATE OR REPLACE VIEW public.admin_fleet_model_stats AS
+CREATE OR REPLACE VIEW public.admin_fleet_model_stats WITH (security_invoker = true) AS
 SELECT
   p.id AS ai_player_id,
   p.name,
@@ -115,7 +115,7 @@ GROUP BY
 REVOKE ALL ON public.admin_fleet_model_stats FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.admin_fleet_model_stats TO service_role;
 
-CREATE OR REPLACE VIEW public.admin_fleet_coverage AS
+CREATE OR REPLACE VIEW public.admin_fleet_coverage WITH (security_invoker = true) AS
 WITH eligible AS (
   SELECT e.id
   FROM public.events e
