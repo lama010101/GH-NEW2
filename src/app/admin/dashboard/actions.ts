@@ -19,3 +19,15 @@ export async function toggleAiPlayerMode(
   ]);
   revalidatePath("/admin/dashboard");
 }
+
+// AIP-BUILD-FLEETHALT-1102-043: mark an open fleet alert resolved.
+export async function resolveFleetAlert(alertId: string) {
+  await requireAdmin();
+
+  const pool = getDbPool();
+  await pool.query(
+    `UPDATE ai_fleet_alerts SET resolved_at = now() WHERE id = $1 AND resolved_at IS NULL`,
+    [alertId]
+  );
+  revalidatePath("/admin/dashboard");
+}

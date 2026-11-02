@@ -26,12 +26,12 @@
 // Failure cause
 // ---------------------------------------------------------------------------
 
-export type FailureCause =
-  | "auth"
-  | "gone"
-  | "rate_limit"
-  | "bad_output"
-  | "other";
+// Single TS source is @/core/aiFailureCauses (AIP-BUILD-FLEETHALT-1102-043);
+// re-exported so existing admin imports keep working. Precedence mirrors the
+// admin_fleet_model_stats SQL view exactly.
+export type { FailureCause } from "@/core/aiFailureCauses";
+export { classifyFailure } from "@/core/aiFailureCauses";
+import type { FailureCause } from "@/core/aiFailureCauses";
 
 export const FAILURE_CAUSES: readonly FailureCause[] = [
   "auth",
@@ -48,23 +48,6 @@ export const FAILURE_CAUSE_LABEL: Record<FailureCause, string> = {
   bad_output: "bad_output",
   other: "other",
 };
-
-/** Classifies ai_answer_bank.error text. NULL/empty error → null (OK play). */
-export function classifyFailure(
-  error: string | null | undefined
-): FailureCause | null {
-  if (error === null || error === undefined || error === "") return null;
-  if (error.includes("401")) return "auth";
-  if (error.includes("404")) return "gone";
-  if (error.includes("429")) return "rate_limit";
-  if (
-    error.startsWith("Failed to parse") ||
-    error.toLowerCase().includes("missing finalguess")
-  ) {
-    return "bad_output";
-  }
-  return "other";
-}
 
 // ---------------------------------------------------------------------------
 // Model state — Paused / Blocked / Running (+ Failing overlay)
