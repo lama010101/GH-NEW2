@@ -5,6 +5,7 @@
 // existing page.tsx queries. No Supabase client is used.
 
 import type { Pool } from "pg";
+import { fetchSpendTodayByPlayer } from "@/server/aiSpend";
 
 // ---------------------------------------------------------------------------
 // Analytics — time-bucketed cost/token trend per model
@@ -553,21 +554,21 @@ export async function fetchRecentErrors(
   return rows;
 }
 
+// AIP-BUILD-BUDGET-1103-004: "Cost this week" = last 7 UTC calendar days
+// (incl. today) computed through the same shared spend function the Daily
+// runner enforces against — dashboard and enforcement can never disagree.
+// (Replaces the previous rolling '7 days' window.)
 export async function fetchCostWeek(pool: Pool): Promise<number> {
-  const { rows } = await pool.query<{ cost_week: string | number }>(
-    `
-    SELECT COALESCE(
-      SUM((c.response_payload->'usage'->>'cost')::numeric)
-        FILTER (WHERE c.response_payload IS NOT NULL),
-      0
-    ) AS cost_week
-    FROM ai_answer_bank_calls c
-    WHERE c.created_at >= now() - interval '7 days'
-    `
+  const today = new Date();
+  const dayStarts = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    return d.toISOString().slice(0, 10);
+  });
+  const parts = await Promise.all(
+    dayStarts.map((utcDate) => fetchSpendTodayByPlayer(pool, utcDate))
   );
-  const raw = rows[0]?.cost_week ?? 0;
-  const parsed = typeof raw === "string" ? parseFloat(raw) : Number(raw);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return parts.reduce((sum, p) => sum + p.total, 0);
 }
 
 // ---------------------------------------------------------------------------
