@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useId, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { RANKS, rankForXp } from '@/core/rank';
+import { RANKS, rankForXp, resolveRank } from '@/core/rank';
+import { usePlayerRank } from '@/hooks/usePlayerRank';
 import styles from './RankLadderCard.module.css';
 
 // 10-tier horizontal swipe rail of animated SVG tier shields, ported from
@@ -337,7 +338,18 @@ export default function RankLadderCard({ totalXp, hint, variant = "glass" }: Ran
   const centered = useRef(false);
   const centeredTier = useRef<number | null>(null);
   const drag = useRef({ on: false, x: 0, left: 0 });
-  const info = rankForXp(totalXp);
+  // Flag on + ready: re-anchor the ladder at the gated high-water-mark tier.
+  // Any other status keeps the XP-derived render (flag off → identical).
+  const playerRank = usePlayerRank();
+  const resolved = playerRank.status === "ready"
+    ? resolveRank(totalXp, {
+        maxRankTier: playerRank.maxRankTier ?? 1,
+        rollingAccPct: playerRank.gate?.rollingAccPct ?? null,
+        roundsSampled: playerRank.gate?.roundsSampled ?? 0,
+      })
+    : null;
+  const info = resolved ?? rankForXp(totalXp);
+  const gate = resolved?.gate ?? null;
 
   // Instant-scrolls the rail so the [data-cur='1'] cell sits at its centre.
   const centerCurrentCell = useCallback((el: HTMLDivElement) => {
@@ -411,13 +423,21 @@ export default function RankLadderCard({ totalXp, hint, variant = "glass" }: Ran
         {RANKS.map((r) => {
           const isCurrent = r.tier === info.tier;
           const isPast = r.tier < info.tier;
+          // Gate-locked next tier: XP requirement met but accuracy and/or
+          // counted-rounds sample short (flag on + ready only).
+          const isLockedNext =
+            gate !== null &&
+            r.tier === gate.nextTier &&
+            gate.xpMet &&
+            !(gate.accuracyMet && gate.sampleMet);
           const p = paletteFor(r.tier);
-          const pct = isPast ? 100 : isCurrent ? clampPct(info.progressPct) : 0;
+          const pct = isPast ? 100 : isCurrent ? clampPct(info.progressPct) : isLockedNext ? 100 : 0;
           const title = t(r.titleKey);
           return (
             <div
               key={r.tier}
               data-cur={isCurrent ? "1" : undefined}
+              data-lock={isLockedNext ? "1" : undefined}
               className={`${styles.lcCell} ${isCurrent ? styles.lcCellCur : ""} ${isPast ? styles.lcCellPast : ""}`}
               style={isCurrent ? { borderColor: p.accent, boxShadow: `0 0 16px ${p.accent}55` } : undefined}
             >
@@ -440,7 +460,24 @@ export default function RankLadderCard({ totalXp, hint, variant = "glass" }: Ran
                   }}
                 />
               </span>
-              <span className={styles.lcXpNeed}>{tLb('xp_amount', { n: r.threshold })}</span>
+              {isLockedNext && gate ? (
+                <>
+                  <span className={styles.lcXpNeed}>
+                    {gate.accuracyMet
+                      ? t('gate_rounds_needed', { count: Math.max(0, gate.minRounds - gate.roundsSampled) })
+                      : t('gate_xp_ready')}
+                  </span>
+                  {!gate.accuracyMet && (
+                    <span className={styles.lcXpNeed}>
+                      {t('gate_your_accuracy', { pct: Math.floor((gate.rollingAccPct ?? 0) * 10) / 10 })}
+                      {' · '}
+                      {t('gate_accuracy_needed', { pct: gate.accuracyFloor })}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className={styles.lcXpNeed}>{tLb('xp_amount', { n: r.threshold })}</span>
+              )}
             </div>
           );
         })}

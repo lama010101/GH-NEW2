@@ -847,7 +847,11 @@
     "max_rank": "Rango massimo raggiunto",
     "badge_aria": "Medaglia rango {tier}",
     "rail_hint_swipe": "scorri",
-    "tier_of_10": "Liv. {tier}/10"
+    "tier_of_10": "Liv. {tier}/10",
+    "gate_xp_ready": "XP pronto",
+    "gate_accuracy_needed": "Precisione richiesta: {pct}%",
+    "gate_your_accuracy": "Tu: {pct}%",
+    "gate_rounds_needed": "Ancora {count} round per qualificarti"
   },
   "grow": {
     "meta_title": "Cresci con noi — Back to the Past",

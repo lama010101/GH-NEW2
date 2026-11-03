@@ -847,7 +847,11 @@
     "max_rank": "Maximaler Rang erreicht",
     "badge_aria": "Rang {tier} Abzeichen",
     "rail_hint_swipe": "wischen",
-    "tier_of_10": "Stufe {tier}/10"
+    "tier_of_10": "Stufe {tier}/10",
+    "gate_xp_ready": "XP bereit",
+    "gate_accuracy_needed": "Benötigte Genauigkeit: {pct}%",
+    "gate_your_accuracy": "Du: {pct}%",
+    "gate_rounds_needed": "Noch {count} Runden bis zur Qualifikation"
   },
   "grow": {
     "meta_title": "Wachse mit uns — Back to the Past",

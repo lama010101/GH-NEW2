@@ -847,7 +847,11 @@
     "max_rank": "Rank máximo alcançado",
     "badge_aria": "Insígnia de rank {tier}",
     "rail_hint_swipe": "deslize",
-    "tier_of_10": "Nível {tier}/10"
+    "tier_of_10": "Nível {tier}/10",
+    "gate_xp_ready": "XP pronto",
+    "gate_accuracy_needed": "Precisão necessária: {pct}%",
+    "gate_your_accuracy": "Você: {pct}%",
+    "gate_rounds_needed": "Mais {count} rodadas para se qualificar"
   },
   "grow": {
     "meta_title": "Cresça conosco — Back to the Past",

@@ -847,7 +847,11 @@
     "max_rank": "Max rank achieved",
     "badge_aria": "Rank {tier} badge",
     "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "tier_of_10": "Tier {tier} / 10",
+    "gate_xp_ready": "XP ready",
+    "gate_accuracy_needed": "Accuracy needed: {pct}%",
+    "gate_your_accuracy": "You: {pct}%",
+    "gate_rounds_needed": "{count} more rounds to qualify"
   },
   "grow": {
     "meta_title": "Grow With Us — Back to the Past",
