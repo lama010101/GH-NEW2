@@ -847,7 +847,11 @@
     "max_rank": "最大ランクに到達",
     "badge_aria": "ランク {tier} バッジ",
     "rail_hint_swipe": "スワイプ",
-    "tier_of_10": "レベル {tier}/10"
+    "tier_of_10": "レベル {tier}/10",
+    "gate_xp_ready": "XP 達成",
+    "gate_accuracy_needed": "必要な正確度: {pct}%",
+    "gate_your_accuracy": "あなた: {pct}%",
+    "gate_rounds_needed": "あと{count}ラウンドで昇格"
   },
   "grow": {
     "meta_title": "共に成長 — Back to the Past",

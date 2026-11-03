@@ -1,12 +1,48 @@
-import { describe, it, expect, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, waitFor } from "@testing-library/react";
 import React from "react";
 import RankLadderCard from "./RankLadderCard";
+
+const mocks = vi.hoisted(() => ({
+  readSession: vi.fn(),
+}));
+
+// The hook under test reads auth via readSession() only.
+vi.mock("@/core/supabaseBrowser", () => ({
+  readSession: mocks.readSession,
+  supabaseBrowser: {},
+}));
 
 // Mock next-intl — same pattern as AuthModal.test.tsx.
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
+
+const FLAG = "NEXT_PUBLIC_RANK_ACCURACY_GATE";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+// Flag ON: reset modules so usePlayerRank's module-level cache starts empty,
+// then drive the real hook with a mocked session + fetch.
+async function renderFlagOn(body: unknown, totalXp = 6_000) {
+  vi.resetModules();
+  vi.stubEnv(FLAG, "true");
+  const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+  vi.stubGlobal("fetch", fetchSpy);
+  mocks.readSession.mockResolvedValue({ user: { id: "p-1" } });
+  const { default: Card } = await import("./RankLadderCard");
+  const utils = render(<Card totalXp={totalXp} />);
+  const cells = () =>
+    Array.from(utils.container.querySelector("[data-cur='1']")!.parentElement!.children) as HTMLElement[];
+  return { ...utils, fetchSpy, cells };
+}
 
 const rect = (left: number, width: number) =>
   ({
@@ -63,5 +99,166 @@ describe("RankLadderCard", () => {
     expect(sec.className).toContain("rankLCard");
     expect(sec.querySelector("h3")!.className).toContain("lcTitleCard");
     expect(sec.querySelector("[class*='accentBar']")).not.toBeNull();
+  });
+});
+
+describe("RankLadderCard — accuracy gate flag (RANK-BUILD-ACCGATE-1103-003)", () => {
+  it("flag OFF: identical render — no gate markup, no fetch, no session read", async () => {
+    vi.stubEnv(FLAG, "");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    // SVG gradient ids embed React useId() counters (':ru:', ':rv:', …) which
+    // legitimately differ per mount — normalize before comparing.
+    const norm = (html: string) => html.replace(/:r[0-9a-z]+:/gi, "::");
+
+    const a = render(<RankLadderCard totalXp={6_000} />);
+    const htmlA = norm(a.container.querySelector("section")!.innerHTML);
+    a.unmount();
+    const b = render(<RankLadderCard totalXp={6_000} />);
+    const htmlB = norm(b.container.querySelector("section")!.innerHTML);
+
+    // Deterministic identical DOM across mounts, XP-derived tier 3 current.
+    expect(htmlB).toBe(htmlA);
+    const cells = Array.from(b.container.querySelectorAll("[class*='lcCell']"));
+    expect(cells).toHaveLength(10);
+    expect(b.container.querySelector("[data-cur='1']")).toBe(cells[2]);
+    expect(b.container.querySelector("[data-lock]")).toBeNull();
+    expect(b.container.innerHTML).not.toContain("gate_");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(mocks.readSession).not.toHaveBeenCalled();
+  });
+
+  it("flag ON + ready: current tier is the gated tier; next-tier cell shows the lock", async () => {
+    // XP 6_000 is tier 3 ungated; the gate holds tier 2 (acc 20 < 25).
+    const { container, cells, fetchSpy } = await renderFlagOn({
+      gateEnabled: true,
+      tier: 2,
+      maxRankTier: 2,
+      gate: {
+        nextTier: 3,
+        xpMet: true,
+        accuracyFloor: 25,
+        rollingAccPct: 20,
+        accuracyMet: false,
+        roundsSampled: 120,
+        minRounds: 50,
+        sampleMet: true,
+      },
+    });
+
+    await waitFor(() => expect(container.querySelector("[data-lock='1']")).not.toBeNull());
+    expect(cells().indexOf(container.querySelector("[data-cur='1']") as HTMLElement)).toBe(1);
+    const locked = container.querySelector("[data-lock='1']") as HTMLElement;
+    expect(cells().indexOf(locked)).toBe(2);
+    expect(locked.textContent).toContain("gate_xp_ready");
+    expect(locked.textContent).toContain("gate_your_accuracy");
+    expect(locked.textContent).toContain("gate_accuracy_needed");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledWith("/api/player/rank-status", { method: "POST" });
+  });
+
+  it("flag ON + XP met but sample short: shows rounds-needed", async () => {
+    const { container } = await renderFlagOn({
+      gateEnabled: true,
+      tier: 2,
+      maxRankTier: 2,
+      gate: {
+        nextTier: 3,
+        xpMet: true,
+        accuracyFloor: 25,
+        rollingAccPct: 40,
+        accuracyMet: true,
+        roundsSampled: 30,
+        minRounds: 50,
+        sampleMet: false,
+      },
+    });
+
+    await waitFor(() => expect(container.querySelector("[data-lock='1']")).not.toBeNull());
+    const locked = container.querySelector("[data-lock='1']") as HTMLElement;
+    expect(locked.textContent).toContain("gate_rounds_needed");
+    expect(locked.textContent).not.toContain("gate_your_accuracy");
+    expect(locked.textContent).not.toContain("gate_xp_ready");
+  });
+
+  it("flag ON + XP not met for next tier: no lock, normal XP progress line", async () => {
+    const { container, cells } = await renderFlagOn(
+      {
+        gateEnabled: true,
+        tier: 3,
+        maxRankTier: 3,
+        gate: {
+          nextTier: 4,
+          xpMet: false,
+          accuracyFloor: 28,
+          rollingAccPct: 40,
+          accuracyMet: true,
+          roundsSampled: 90,
+          minRounds: 50,
+          sampleMet: true,
+        },
+      },
+      6_000
+    );
+
+    await waitFor(() =>
+      expect(cells().indexOf(container.querySelector("[data-cur='1']") as HTMLElement)).toBe(2)
+    );
+    expect(container.querySelector("[data-lock]")).toBeNull();
+    expect(container.innerHTML).not.toContain("gate_");
+  });
+
+  it("flag ON: two mounted cards share one single-flight POST", async () => {
+    vi.resetModules();
+    vi.stubEnv(FLAG, "true");
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        gateEnabled: true,
+        tier: 2,
+        maxRankTier: 2,
+        gate: {
+          nextTier: 3,
+          xpMet: true,
+          accuracyFloor: 25,
+          rollingAccPct: 20,
+          accuracyMet: false,
+          roundsSampled: 60,
+          minRounds: 50,
+          sampleMet: true,
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    mocks.readSession.mockResolvedValue({ user: { id: "p-1" } });
+    const { default: Card } = await import("./RankLadderCard");
+
+    const { container } = render(
+      <>
+        <Card totalXp={6_000} />
+        <Card totalXp={6_000} />
+      </>
+    );
+
+    await waitFor(() => expect(container.querySelectorAll("[data-lock='1']")).toHaveLength(2));
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("flag ON + no session: falls back to XP-derived render, no POST", async () => {
+    vi.resetModules();
+    vi.stubEnv(FLAG, "true");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    mocks.readSession.mockResolvedValue(null);
+    const { default: Card } = await import("./RankLadderCard");
+
+    const { container } = render(<Card totalXp={6_000} />);
+
+    await waitFor(() => expect(mocks.readSession).toHaveBeenCalled());
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const cells = Array.from(container.querySelectorAll("[class*='lcCell']"));
+    expect(container.querySelector("[data-cur='1']")).toBe(cells[2]);
+    expect(container.querySelector("[data-lock]")).toBeNull();
   });
 });

@@ -847,7 +847,11 @@
     "max_rank": "Maximale rang bereikt",
     "badge_aria": "Rang {tier} badge",
     "rail_hint_swipe": "veeg",
-    "tier_of_10": "Niveau {tier}/10"
+    "tier_of_10": "Niveau {tier}/10",
+    "gate_xp_ready": "XP gereed",
+    "gate_accuracy_needed": "Vereiste nauwkeurigheid: {pct}%",
+    "gate_your_accuracy": "Jij: {pct}%",
+    "gate_rounds_needed": "Nog {count} rondes om te kwalificeren"
   },
   "grow": {
     "meta_title": "Groei met ons — Back to the Past",

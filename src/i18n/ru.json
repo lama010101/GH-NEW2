@@ -847,7 +847,11 @@
     "max_rank": "Максимальный ранг достигнут",
     "badge_aria": "Значок ранга {tier}",
     "rail_hint_swipe": "свайп",
-    "tier_of_10": "Уровень {tier}/10"
+    "tier_of_10": "Уровень {tier}/10",
+    "gate_xp_ready": "XP накоплено",
+    "gate_accuracy_needed": "Требуемая точность: {pct}%",
+    "gate_your_accuracy": "Вы: {pct}%",
+    "gate_rounds_needed": "Ещё {count} раундов для повышения"
   },
   "grow": {
     "meta_title": "Расти с нами — Back to the Past",

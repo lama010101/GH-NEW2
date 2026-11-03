@@ -847,7 +847,11 @@
     "max_rank": "已达到最高段位",
     "badge_aria": "段位 {tier} 徽章",
     "rail_hint_swipe": "滑动",
-    "tier_of_10": "等级 {tier}/10"
+    "tier_of_10": "等级 {tier}/10",
+    "gate_xp_ready": "XP 已达标",
+    "gate_accuracy_needed": "所需准确率：{pct}%",
+    "gate_your_accuracy": "你：{pct}%",
+    "gate_rounds_needed": "还需 {count} 回合才能晋级"
   },
   "grow": {
     "meta_title": "一起成长 — Back to the Past",

@@ -847,7 +847,11 @@
     "max_rank": "تم الوصول إلى أعلى رتبة",
     "badge_aria": "وسام رتبة {tier}",
     "rail_hint_swipe": "اسحب",
-    "tier_of_10": "المستوى {tier}/10"
+    "tier_of_10": "المستوى {tier}/10",
+    "gate_xp_ready": "نقاط XP جاهزة",
+    "gate_accuracy_needed": "الدقة المطلوبة: {pct}%",
+    "gate_your_accuracy": "دقتك: {pct}%",
+    "gate_rounds_needed": "يتبقى {count} جولة للتأهل"
   },
   "grow": {
     "meta_title": "انمُ معنا — Back to the Past",

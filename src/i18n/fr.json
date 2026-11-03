@@ -847,7 +847,11 @@
     "max_rank": "Rang maximum atteint",
     "badge_aria": "Badge rang {tier}",
     "rail_hint_swipe": "glisser",
-    "tier_of_10": "Niveau {tier}/10"
+    "tier_of_10": "Niveau {tier}/10",
+    "gate_xp_ready": "XP atteint",
+    "gate_accuracy_needed": "Précision requise : {pct} %",
+    "gate_your_accuracy": "Toi : {pct} %",
+    "gate_rounds_needed": "Encore {count} manches pour te qualifier"
   },
   "grow": {
     "meta_title": "Grandir avec nous — Back to the Past",
