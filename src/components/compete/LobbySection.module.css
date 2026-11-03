@@ -1359,3 +1359,11 @@
 .lobbyHelpModalClose:hover {
   color: var(--gh-modal-text-primary);
 }
+/* UIX-BUILD-LOBBYLIVEPINK2-1103-032: Live (sync) sub-mode remaps the lobby accent from cyan to pink. Async keeps cyan. */
+.lobby-shell[data-submode="sync"] {
+  --gh-orange: var(--gh-violet);
+  --gh-orange-rgb: var(--gh-violet-rgb);
+}
+.lobby-shell[data-submode="sync"] .lobbyReadyBtnNotReady {
+  background: linear-gradient(135deg, var(--gh-primary) 0%, var(--gh-when-solid) 60%, var(--gh-violet) 100%);
+}
