@@ -8,7 +8,7 @@ import { getDailyChallengeDate } from "@/core/dailyDate";
 import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
 import { classifyFailure } from "@/core/aiFailureCauses";
 import { shouldHaltFleet, type FleetOutcomeEvent } from "@/core/aiFleetHalt";
-import { evaluateBudget } from "@/core/aiBudget";
+import { evaluateBudget, DEFAULT_FLEET_DAILY_CAP_USD } from "@/core/aiBudget";
 import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
 import { preflightRoster } from "./rosterPreflight";
 
@@ -502,7 +502,8 @@ async function main(): Promise<void> {
   try {
     fleetCapUsd = await getFleetDailyCap(pool);
   } catch (err) {
-    console.error(`[BUDGET] cap query failed (fail-open): ${err instanceof Error ? err.message : err}`);
+    fleetCapUsd = DEFAULT_FLEET_DAILY_CAP_USD;
+    console.error(`[BUDGET] cap query failed (default $${DEFAULT_FLEET_DAILY_CAP_USD} cap applied): ${err instanceof Error ? err.message : err}`);
   }
   let budgetHalted = false;
   let budgetSkipped = 0;

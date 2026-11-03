@@ -292,7 +292,7 @@ describe("daily-autoplay budget caps (AIP-BUILD-BUDGET-1103-004)", () => {
     expect(exitSpy).not.toHaveBeenCalled();
   }, 20000);
 
-  it("cap-query failure => fail-open, item still dispatched", async () => {
+  it("cap-query failure => default $2 cap applied, item under default still dispatched", async () => {
     startRun();
     mocks.players = [P1];
     mocks.preflight = { keep: [P1], skipped: [], warnings: [] };
@@ -307,9 +307,30 @@ describe("daily-autoplay budget caps (AIP-BUILD-BUDGET-1103-004)", () => {
     expect(mocks.finalizeCalls[0].params[1]).toBe("ok");
     expect(
       consoleErr.mock.calls.some((c) =>
-        String(c[0]).includes("[BUDGET] cap query failed (fail-open)")
+        String(c[0]).includes("[BUDGET] cap query failed (default")
       )
     ).toBe(true);
+    expect(exitSpy).not.toHaveBeenCalled();
+  }, 20000);
+
+  it("cap-query failure + spend over default $2 => no dispatch, halted/budget", async () => {
+    startRun();
+    mocks.players = [P1];
+    mocks.preflight = { keep: [P1], skipped: [], warnings: [] };
+    mocks.eventIds = ["evt-1"];
+    mocks.capError = new Error("settings table gone");
+    mocks.spendQueue = [[{ ai_player_id: "p-1", cost: "2.5" }]];
+    mocks.spawnResults = [{ code: 0 }];
+    await import("./daily-autoplay");
+    await runDone();
+
+    expect(mocks.spawnCalls).toHaveLength(0);
+    const fin = mocks.finalizeCalls[0];
+    expect(fin.params[1]).toBe("halted");
+    expect(fin.params[2]).toBe("budget");
+    expect(String(mocks.alertInserts[0]?.params[0])).toContain(
+      "Fleet daily cap $2.00 reached"
+    );
     expect(exitSpy).not.toHaveBeenCalled();
   }, 20000);
 
