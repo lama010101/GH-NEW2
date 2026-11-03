@@ -70,7 +70,7 @@ export default function BrandSplash() {
         viewBox="0 0 512 512"
         className={styles.splashSymbol}
         role="img"
-        aria-label="Back to the Past"
+        aria-label="SUPOZI"
       >
         {/* Ring — draws from the top. The transform attribute must NOT get a
             transform-origin class (it would displace the rotation). */}

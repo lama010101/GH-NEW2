@@ -27,7 +27,7 @@ interface WelcomeModalProps {
 const slides = [
   {
     icon: MapPin,
-    title: "Welcome to Back to the Past",
+    title: "Welcome to SUPOZI",
     description:
       "Test your knowledge of history and geography! Place pins on the map and guess the year of historical events.",
     color: "text-orange-500",

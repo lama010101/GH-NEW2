@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: 'website',
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Back to the Past — Find clues. Become a historian.' }],
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SUPOZI — Find clues. Become a historian.' }],
     },
   }
 }
@@ -30,7 +30,7 @@ export default async function WaitlistPage() {
 
       {/* Logo (same asset as TopBar) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/brand/gh-wordmark.svg" alt={t('logo_alt')} width={200} height={138} style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
+      <img src="/brand/gh-wordmark.svg" alt={t('logo_alt')} width={200} height={52} style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
 
       {/* Hero */}
       <section className="flex flex-col items-center text-center max-w-2xl gap-6" style={{ position: 'relative', zIndex: 2 }}>

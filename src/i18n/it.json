@@ -24,7 +24,7 @@
   "help": {
     "title": "Centro assistenza",
     "hero_title": "Come possiamo aiutarti?",
-    "hero_subtitle": "Trova risposte, impara le regole e sfrutta al meglio Back to the Past.",
+    "hero_subtitle": "Trova risposte, impara le regole e sfrutta al meglio SUPOZI.",
     "search_placeholder": "Cerca nel centro assistenza…",
     "search_label": "Cerca nel centro assistenza",
     "clear_search": "Cancella ricerca",
@@ -301,7 +301,7 @@
     "pwa_install_desc": "I giochi Relax sono a turni. Su iPhone, le notifiche dei turni funzionano solo se questo sito viene aggiunto alla schermata Home.",
     "pwa_step_share": "Tocca l'icona <strong>Condividi</strong> nella barra degli strumenti di Safari.",
     "pwa_step_home": "Scegli <strong>Aggiungi alla schermata Home</strong>.",
-    "pwa_step_open": "Tocca <strong>Aggiungi</strong>, poi apri Back to the Past dalla schermata Home.",
+    "pwa_step_open": "Tocca <strong>Aggiungi</strong>, poi apri SUPOZI dalla schermata Home.",
     "pwa_got_it": "Ok",
     "players_ready": "({ready}/{total} giocatori pronti)",
     "select_all": "Seleziona tutti",
@@ -757,7 +757,7 @@
     "notif_push_hint": "Le notifiche push sono disattivate in questo browser — attivale per riceverle.",
     "notif_save_error": "Salvataggio non riuscito. Riprova.",
     "android_apk_title": "App Android (beta)",
-    "android_apk_body": "Installa l'app Back to the Past sul tuo telefono Android.",
+    "android_apk_body": "Installa l'app SUPOZI sul tuo telefono Android.",
     "android_apk_button": "Scarica l'APK",
     "android_apk_step1": "1. Tocca «Scarica l'APK» e apri il file.",
     "android_apk_step2": "2. Se Android lo chiede, consenti le installazioni da questo browser.",
@@ -801,7 +801,7 @@
     "push_unexpected": "Si è verificato un errore imprevisto."
   },
   "welcome": {
-    "title": "Benvenuto su Back to the Past!",
+    "title": "Benvenuto su SUPOZI!",
     "your_historical_avatar": "Il tuo avatar storico",
     "choose_different_avatar": "Scegli un avatar diverso",
     "your_username": "Il tuo nome utente",
@@ -812,9 +812,9 @@
     "username_label_3": "VISIBILE AGLI ALTRI"
   },
   "landing": {
-    "meta_title": "Back to the Past — Metti alla prova le tue conoscenze su quando e dove",
+    "meta_title": "SUPOZI — Metti alla prova le tue conoscenze su quando e dove",
     "meta_description": "Un gioco storico a ipotesi. Osserva eventi reali della storia e indovina l'anno e il luogo esatti. Sfida gli amici, scala la classifica e dimostra le tue competenze storiche.",
-    "logo_alt": "Back to the Past",
+    "logo_alt": "SUPOZI",
     "rank_label": "Rango",
     "tagline": "Dove e quando è successo?",
     "hero_description": "Metti alla prova le tue conoscenze di storia. Osserva eventi reali e indovina l'anno e il luogo esatti. Sfida i tuoi amici, scala la classifica e dimostra di conoscere la storia.",
@@ -854,11 +854,11 @@
     "gate_rounds_needed": "Ancora {count} round per qualificarti"
   },
   "grow": {
-    "meta_title": "Cresci con noi — Back to the Past",
-    "meta_description": "Scopri missione, visione e futuro di Back to the Past e come partecipare.",
+    "meta_title": "Cresci con noi — SUPOZI",
+    "meta_description": "Scopri missione, visione e futuro di SUPOZI e come partecipare.",
     "hero": {
       "tagline": "Da definire",
-      "primary_cta": "Gioca a Back to the Past",
+      "primary_cta": "Gioca a SUPOZI",
       "secondary_cta": "Scopri il Progetto"
     },
     "mission": {
@@ -1037,7 +1037,7 @@
         "name": "Apprendimento aziendale",
         "description": "Da definire"
       },
-      "center_label": "Back to the Past"
+      "center_label": "SUPOZI"
     },
     "business_model": {
       "title": "Modello di business",
@@ -1084,7 +1084,7 @@
       "title": "Costruito per il lungo termine",
       "subtitle": "Da definire",
       "left_header": "Le startup tradizionali ottimizzano per",
-      "right_header": "Back to the Past ottimizza per",
+      "right_header": "SUPOZI ottimizza per",
       "left_1": "Valutazione",
       "right_1": "Sostenibilità",
       "left_2": "Finanziamento",
@@ -1127,7 +1127,7 @@
         "detail": "Da definire"
       },
       "future_projects_title": "Progetti futuri",
-      "future_project_1": "Back to the Past",
+      "future_project_1": "SUPOZI",
       "future_project_2": "VR History",
       "future_project_3": "Indovina la scienza",
       "future_project_4": "Indovina l'arte",
@@ -1433,11 +1433,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "Politica de Privacidad — Back to the Past",
-      "meta_description": "Política de Privacidad para Back to the Past",
+      "meta_title": "Politica de Privacidad — SUPOZI",
+      "meta_description": "Política de Privacidad para SUPOZI",
       "title": "Política de Privacidad",
       "last_updated": "Última actualización: 4 de agosto de 2026",
-      "intro": "Back to the Past (\"nosotros,\" \"nos,\" \"nuestro\") opera el sitio web www.guess-history.com (el \"Servicio\"), un juego multijugador de historia geográfica y adivinanza de años. Esta Política de Privacidad explica qué información recopilamos, cómo la utilizamos y sus derechos respecto a esa información.",
+      "intro": "SUPOZI (\"nosotros,\" \"nos,\" \"nuestro\") opera el sitio web www.guess-history.com (el \"Servicio\"), un juego multijugador de historia geográfica y adivinanza de años. Esta Política de Privacidad explica qué información recopilamos, cómo la utilizamos y sus derechos respecto a esa información.",
       "section1_title": "1. Información que Recopilamos",
       "account_info_label": "Información de cuenta:",
       "account_info_text": "Cuando ingresa a través de Google o email/contraseña, recibimos su dirección de correo electrónico, nombre de usuario y foto de perfil (si es proporcionada por Google). La autenticación es gestionada por Supabase.",
@@ -1456,7 +1456,7 @@
       "use_communicate": "Comunicarnos con usted sobre su cuenta o el Servicio, si es necesario",
       "no_sell": "No vendemos su información personal. No utilizamos sus datos para publicidad de terceros.",
       "section3_title": "3. Servicios de Terceros",
-      "providers_intro": "Utilizamos los siguientes proveedores de servicios de terceros para operar Back to the Past:",
+      "providers_intro": "Utilizamos los siguientes proveedores de servicios de terceros para operar SUPOZI:",
       "supabase_name": "Supabase",
       "supabase_desc": "— autenticación y alojamiento de bases de datos",
       "google_name": "Google OAuth",
@@ -1482,13 +1482,13 @@
       "changes_text": "Podemos actualizar esta Política de Privacidad de vez en cuando. Los cambios materiales se reflejarán mediante una fecha de \"Última actualización\" actualizada en esta página."
     },
     "terms": {
-      "meta_title": "Términos de Servicio — Back to the Past",
-      "meta_description": "Términos de Servicio para Back to the Past",
+      "meta_title": "Términos de Servicio — SUPOZI",
+      "meta_description": "Términos de Servicio para SUPOZI",
       "title": "Términos de Servicio",
       "last_updated": "Última actualización: 4 de agosto de 2026",
-      "intro": "Bienvenido a Back to the Past (\"Servicio\"), operado en www.guess-history.com. Al acceder o usar el Servicio, usted acepta estar sujeto a estos Términos de Servicio (\"Términos\"). Si no está de acuerdo, no use el Servicio.",
+      "intro": "Bienvenido a SUPOZI (\"Servicio\"), operado en www.guess-history.com. Al acceder o usar el Servicio, usted acepta estar sujeto a estos Términos de Servicio (\"Términos\"). Si no está de acuerdo, no use el Servicio.",
       "section1_title": "1. Descripción del Servicio",
-      "section1_text": "Back to the Past es un juego multijugador y de un solo jugador donde los jugadores adivinan el año y la ubicación de eventos históricos representados en imágenes, compiten en tablas de líderes y juegan contra amigos o la comunidad.",
+      "section1_text": "SUPOZI es un juego multijugador y de un solo jugador donde los jugadores adivinan el año y la ubicación de eventos históricos representados en imágenes, compiten en tablas de líderes y juegan contra amigos o la comunidad.",
       "section2_title": "2. Cuentas",
       "section2_text": "Debe crear una cuenta (a través de Google o email/contraseña) para acceder a la mayoría de las funciones. Usted es responsable de mantener la confidencialidad de su cuenta y de toda la actividad bajo ella. Debe proporcionar información precisa y es responsable de mantenerla actualizada.",
       "section3_title": "3. Uso Aceptable",
@@ -1502,11 +1502,11 @@
       "section4_title": "4. Contenido de Usuario",
       "section4_text": "Cualquier nombre de usuario, avatar u otro contenido que envíe no debe ser ofensivo, infringir derechos o ser ilegal. Nos reservamos el derecho de eliminar o moderar dicho contenido a nuestra discreción.",
       "section5_title": "5. Propiedad Intelectual",
-      "section5_text": "El Servicio, incluida su diseño de juego, software y marcas, es propiedad de Back to the Past y sus creadores. Las imágenes de eventos históricos utilizadas en el juego se utilizan con fines educativos/informativos; los derechos sobre las imágenes de origen subyacentes permanecen con sus respectivos propietarios donde sea aplicable.",
+      "section5_text": "El Servicio, incluida su diseño de juego, software y marcas, es propiedad de SUPOZI y sus creadores. Las imágenes de eventos históricos utilizadas en el juego se utilizan con fines educativos/informativos; los derechos sobre las imágenes de origen subyacentes permanecen con sus respectivos propietarios donde sea aplicable.",
       "section6_title": "6. Renuncia de Garantías",
       "section6_text": "El Servicio se proporciona \"tal cual\" y \"según disponibilidad\" sin garantías de ningún tipo, expresas o implícitas. No garantizamos que el Servicio esté libre de interrupciones, errores o seguro en todo momento.",
       "section7_title": "7. Limitación de Responsabilidad",
-      "section7_text": "En la máxima medida permitida por la ley, Back to the Past y sus operadores no serán responsables de ningún daño indirecto, incidental, especial o consecuente que surja de su uso del Servicio.",
+      "section7_text": "En la máxima medida permitida por la ley, SUPOZI y sus operadores no serán responsables de ningún daño indirecto, incidental, especial o consecuente que surja de su uso del Servicio.",
       "section8_title": "8. Cambios en el Servicio",
       "section8_text": "Podemos modificar, suspender o descontinuar cualquier parte del Servicio en cualquier momento, incluidos modos de juego, características o sistemas de puntuación, sin previo aviso.",
       "section9_title": "9. Cambios en Estos Términos",
@@ -1517,20 +1517,20 @@
   },
   "pwa": {
     "title": "Schermo intero e installa",
-    "tagline": "Scegli come si apre Back to the Past qui.",
+    "tagline": "Scegli come si apre SUPOZI qui.",
     "install_app": "Installa app",
     "ios_intro": "<strong>Aggiungi a Home</strong> per installare:",
     "install_unavailable": "Installazione non disponibile in questo browser.",
     "remember_choice": "Ricorda la scelta"
   },
   "grow_deck": {
-    "meta_title": "Back to the Past — Deck investitori",
+    "meta_title": "SUPOZI — Deck investitori",
     "meta_description": "Presentazione per investitori: da gioco di storia a benchmark visuale di IA ancorato all'umano.",
-    "meta_image_alt": "Deck investitori di Back to the Past",
-    "title": "Back to the Past",
-    "progress_label": "BACK TO THE PAST",
+    "meta_image_alt": "Deck investitori di SUPOZI",
+    "title": "SUPOZI",
+    "progress_label": "SUPOZI",
     "cta_register": "Manifesta interesse",
-    "cta_play": "Gioca a Back to the Past",
+    "cta_play": "Gioca a SUPOZI",
     "cta_test": "Manifesta interesse",
     "status_verified": "VERIFICATO",
     "status_illustrative": "ILLUSTRATIVO",
@@ -1540,7 +1540,7 @@
     "s01": {
       "headline": "E se un gioco diventasse un benchmark IA?",
       "body": [
-        "Back to the Past: i giocatori ricostruiscono dove e quando accaddero gli eventi.",
+        "SUPOZI: i giocatori ricostruiscono dove e quando accaddero gli eventi.",
         "Ma il gioco può creare molto più: un benchmark visuale di IA ancorato all'umano."
       ],
       "statements": [
@@ -1785,8 +1785,8 @@
     "s12": {
       "headline": "Costruiamo due attività che si rafforzano.",
       "body": [
-        "BACK TO THE PAST: Un gioco che attira giocatori e genera intelligenza umana proprietaria.",
-        "BACK TO THE PAST EVALUATION: Una piattaforma che misura l'IA su quell'intelligenza."
+        "SUPOZI: Un gioco che attira giocatori e genera intelligenza umana proprietaria.",
+        "SUPOZI EVALUATION: Una piattaforma che misura l'IA su quell'intelligenza."
       ],
       "statements": [
         "Gioco → Dati → Benchmark",
@@ -1795,7 +1795,7 @@
       ],
       "final": "L'IA può capire la storia come gli umani?"
     },
-    "footer_link_home": "Back to the Past",
+    "footer_link_home": "SUPOZI",
     "footer_link_contact": "Contatti",
     "footer_link_privacy": "Privacy",
     "footer_link_terms": "Termini",

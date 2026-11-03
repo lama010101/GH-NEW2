@@ -241,8 +241,8 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
           <img
             src="/brand/gh-wordmark.svg"
             alt={tLanding('logo_alt')}
-            width={688}
-            height={474}
+            width={694}
+            height={181}
             className={styles.logoImg}
           />
         </div>
