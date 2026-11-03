@@ -80,6 +80,22 @@ export function journeyStageIconFile(stageNumber: number): string {
   return `/icons/ranks/rank-${String(journeyStageTierIndex(stageNumber) + 1).padStart(2, "0")}.png`;
 }
 
+// JOURNEY-BUILD-TIERNAMES-1103-002 — derived stage-name parts for the card
+// subtitle fallback: 20 tiers x 5 sub-titles. tierIndex (0-19) maps to the
+// journey_tier_{1..20} i18n keys in rank-01..rank-20 order; subIndex (0-4)
+// maps to journey_sub_{1..5}. stageNumber is clamped to [1,100] so out-of-
+// range rows still resolve to a defined name.
+export function journeyStageNameParts(stageNumber: number): {
+  tierIndex: number;
+  subIndex: number;
+} {
+  const n = Math.min(100, Math.max(1, Math.floor(stageNumber)));
+  return {
+    tierIndex: journeyStageTierIndex(n),
+    subIndex: (n - 1) % JOURNEY_STAGES_PER_TIER,
+  };
+}
+
 // Signed year label — same absolute-year semantics as the repo's existing
 // formatter yearLabel() in src/components/YearPicker.tsx:72-75 (private to
 // that file, so not importable), but without the localized BC suffix:

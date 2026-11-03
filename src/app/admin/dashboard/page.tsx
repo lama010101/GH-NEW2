@@ -8,7 +8,8 @@ import { ModelControls } from "./models/ModelControls";
 import { updateDailyCostCap } from "./models/actions";
 import { scheduleAiPlayerModeChange } from "./scheduling/actions";
 import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, fetchOpenFleetAlerts, fetchRecentFleetRuns, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RecentErrorRow, type ScheduledChangeRow, type FleetAlertRow, type FleetRunRow } from "./queries";
-import { resolveFleetAlert } from "./actions";
+import { resolveFleetAlert, setFleetDailyCap } from "./actions";
+import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
 import { classifyFailure, coveragePct, deriveFailing, deriveModelState, derivePrice, deriveTrack, modelGroupKey, trackPriceGroupLabel, FAILURE_CAUSES, TRACK_LABEL, PRICE_LABEL, TRACK_PRICE_GROUP_ORDER, TRACK_GROUP_ORDER, PRICE_GROUP_ORDER, type FleetModelState, type GroupMode } from "./fleetMetrics";
@@ -574,19 +575,24 @@ export default async function OpenRouterAdminPage({
   }
   const auth24h = cause24h["auth"] ?? 0;
 
-  // --- Cost (existing computation unchanged: usage cost over calls) ---
+  // AIP-BUILD-BUDGET-1103-004: "Cost today" and the fleet cap card use the
+  // shared spend function (UTC calendar date) — the same numbers the Daily
+  // runner enforces against. The previous rolling '24 hours' window is
+  // retired; "Total" is unchanged.
+  const utcToday = new Date().toISOString().slice(0, 10);
+  const spendToday =
+    needOverview || needFleet
+      ? await fetchSpendTodayByPlayer(pool, utcToday)
+      : { byPlayer: new Map<string, number>(), total: 0 };
+  const fleetDailyCap = needOverview
+    ? await getFleetDailyCap(pool).catch(() => null)
+    : null;
   const { rows: costTotalRows } = needOverview
     ? await pool.query<{
-        cost_24h: string | number | null;
         cost_total: string | number | null;
       }>(
         `
         SELECT
-          COALESCE(
-            SUM((c.response_payload->'usage'->>'cost')::numeric)
-              FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= now() - interval '24 hours'),
-            0
-          ) AS cost_24h,
           COALESCE(
             SUM((c.response_payload->'usage'->>'cost')::numeric)
               FILTER (WHERE c.response_payload IS NOT NULL),
@@ -595,8 +601,8 @@ export default async function OpenRouterAdminPage({
         FROM ai_answer_bank_calls c
         `
       )
-    : { rows: [] as { cost_24h: string | number | null; cost_total: string | number | null }[] };
-  const costToday = toNumber(costTotalRows[0]?.cost_24h);
+    : { rows: [] as { cost_total: string | number | null }[] };
+  const costToday = spendToday.total;
   const costTotal = toNumber(costTotalRows[0]?.cost_total);
   const costWeek = needCostWeek ? await fetchCostWeek(pool) : 0;
   const okPlaysTotal = fleet.reduce((sum, r) => sum + r.ok_plays, 0);
@@ -1257,6 +1263,47 @@ export default async function OpenRouterAdminPage({
                       {costPerOkPlay !== null
                         ? formatCost(costPerOkPlay)
                         : "—"}
+                    </span>
+                  </div>
+                  {fleetDailyCap !== null && (
+                    <div className="ops-minirow">
+                      <span className="ops-minirow-main">Fleet cap today</span>
+                      <span
+                        className="ops-minirow-side"
+                        style={
+                          costToday >= fleetDailyCap
+                            ? { color: "var(--ops-bad)", fontWeight: 600 }
+                            : undefined
+                        }
+                      >
+                        ${costToday.toFixed(2)} / ${fleetDailyCap.toFixed(2)} (
+                        {Math.round((costToday / fleetDailyCap) * 100)}%)
+                      </span>
+                    </div>
+                  )}
+                  <div className="ops-minirow">
+                    <span className="ops-minirow-main">Set fleet cap</span>
+                    <span className="ops-minirow-side">
+                      <form
+                        action={setFleetDailyCap}
+                        className="flex items-center gap-2"
+                      >
+                        <input
+                          type="number"
+                          name="cap"
+                          step="0.01"
+                          min="0.01"
+                          max="1000"
+                          defaultValue={fleetDailyCap ?? ""}
+                          placeholder="USD"
+                          className="ops-input"
+                          style={{ width: 96, textAlign: "right" }}
+                          title="Fleet daily cap (USD) — enforced by the Daily run"
+                        />
+                        <button type="submit" className="ops-btn">
+                          Save
+                        </button>
+                      </form>
                     </span>
                   </div>
                 </div>
@@ -1945,12 +1992,24 @@ export default async function OpenRouterAdminPage({
                                     placeholder="No cap"
                                     className="ops-input"
                                     style={{ width: 96, textAlign: "right" }}
-                                    title="Daily cost cap (USD)"
+                                    title="Daily cost cap (USD) — enforced by the Daily run"
                                   />
                                   <button type="submit" className="ops-btn">
                                     Save
                                   </button>
                                 </form>
+                                <span
+                                  className="text-xs"
+                                  style={{ color: "var(--ops-mute)" }}
+                                  title="Spend today (UTC); cap enforced by the Daily run"
+                                >
+                                  today{" "}
+                                  {formatCost(
+                                    spendToday.byPlayer.get(row.ai_player_id) ??
+                                      0
+                                  )}{" "}
+                                  · enforced by Daily
+                                </span>
                                 <details className="text-xs">
                                   <summary
                                     className="cursor-pointer"

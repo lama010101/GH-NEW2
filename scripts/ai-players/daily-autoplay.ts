@@ -8,6 +8,8 @@ import { getDailyChallengeDate } from "@/core/dailyDate";
 import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
 import { classifyFailure } from "@/core/aiFailureCauses";
 import { shouldHaltFleet, type FleetOutcomeEvent } from "@/core/aiFleetHalt";
+import { evaluateBudget, DEFAULT_FLEET_DAILY_CAP_USD } from "@/core/aiBudget";
+import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
 import { preflightRoster } from "./rosterPreflight";
 
 // Load .env.local if present, but do not fail if it is missing.
@@ -35,6 +37,7 @@ type AiPlayer = {
   name: string;
   provider: string;
   model_id: string;
+  daily_cost_cap_usd: string | number | null;
 };
 
 type WorkItem = {
@@ -116,6 +119,7 @@ export type FleetRunCounts = {
   failed_rate_limit: number;
   failed_bad_output: number;
   failed_other: number;
+  plays_skipped_budget: number;
 };
 
 /** Final per-cause tallies from the post-sweep results array (pure). */
@@ -132,6 +136,7 @@ export function summarizeResults(results: ItemResult[]): FleetRunCounts {
     failed_rate_limit: 0,
     failed_bad_output: 0,
     failed_other: 0,
+    plays_skipped_budget: 0,
   };
   for (const r of counted) {
     if (r.ok) {
@@ -163,13 +168,15 @@ export async function finalizeFleetRun(
        SET finished_at = now(), status = $2, halt_reason = $3,
            plays_attempted = $4, plays_ok = $5, plays_failed = $6,
            failed_auth = $7, failed_gone = $8, failed_rate_limit = $9,
-           failed_bad_output = $10, failed_other = $11
+           failed_bad_output = $10, failed_other = $11,
+           plays_skipped_budget = $12
        WHERE id = $1`,
       [
         runId, status, haltReason,
         counts.plays_attempted, counts.plays_ok, counts.plays_failed,
         counts.failed_auth, counts.failed_gone, counts.failed_rate_limit,
         counts.failed_bad_output, counts.failed_other,
+        counts.plays_skipped_budget,
       ]
     );
   } catch (err) {
@@ -203,6 +210,40 @@ export async function upsertAuthFleetAlert(
     await pool.query(
       `INSERT INTO ai_fleet_alerts (kind, severity, message, run_id)
        VALUES ('auth_fleet', 'critical', $1, $2)`,
+      [message, runId]
+    );
+  } catch (err) {
+    console.error(`[FLEET-ALERT] upsert failed: ${err instanceof Error ? err.message : err}`);
+  }
+}
+
+// AIP-BUILD-BUDGET-1103-004: same 24h-unresolved dedupe as the auth alert —
+// bump occurrences + last_seen_at, else insert a 'budget' warning row.
+export async function upsertBudgetFleetAlert(
+  pool: Pick<Pool, "query">,
+  runId: string | null,
+  fleetCapUsd: number,
+  fleetSpendUsd: number
+): Promise<void> {
+  try {
+    const message = `Fleet daily cap $${fleetCapUsd.toFixed(2)} reached ($${fleetSpendUsd.toFixed(2)} spent); Daily run stopped`;
+    const updated = await pool.query<{ id: string }>(
+      `UPDATE ai_fleet_alerts
+       SET occurrences = occurrences + 1, last_seen_at = now()
+       WHERE id = (
+         SELECT id FROM ai_fleet_alerts
+         WHERE kind = 'budget' AND resolved_at IS NULL
+           AND created_at >= now() - interval '24 hours'
+         ORDER BY created_at DESC
+         LIMIT 1
+       )
+       RETURNING id`,
+      []
+    );
+    if (updated.rows.length > 0) return;
+    await pool.query(
+      `INSERT INTO ai_fleet_alerts (kind, severity, message, run_id)
+       VALUES ('budget', 'warning', $1, $2)`,
       [message, runId]
     );
   } catch (err) {
@@ -386,7 +427,7 @@ async function main(): Promise<void> {
   console.log(`[DAILY] Challenge events: ${eventIds.length}`);
 
   const playersResult = await pool.query<AiPlayer>(
-    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active_daily = true AND is_active = true AND deleted_at IS NULL"
+    "SELECT id, name, provider, model_id, daily_cost_cap_usd FROM ai_players WHERE is_active_daily = true AND is_active = true AND deleted_at IS NULL"
   );
   const players = playersResult.rows;
   console.log(`[DAILY] Active AI players: ${players.length}`);
@@ -452,6 +493,23 @@ async function main(): Promise<void> {
   // and ignored — it must never alter autoplay behaviour.
   const fleetRunId = await insertFleetRun(pool, "daily", githubRunUrl());
 
+  // AIP-BUILD-BUDGET-1103-004: real cost caps. The fleet daily cap comes from
+  // ai_fleet_settings (missing/invalid -> DEFAULT inside getFleetDailyCap);
+  // spend comes from the shared aiSpend function — the same numbers the admin
+  // Overview shows. Fail-OPEN: a cap/spend query error logs one line and never
+  // gates dispatch.
+  let fleetCapUsd: number | null = null;
+  try {
+    fleetCapUsd = await getFleetDailyCap(pool);
+  } catch (err) {
+    fleetCapUsd = DEFAULT_FLEET_DAILY_CAP_USD;
+    console.error(`[BUDGET] cap query failed (default $${DEFAULT_FLEET_DAILY_CAP_USD} cap applied): ${err instanceof Error ? err.message : err}`);
+  }
+  let budgetHalted = false;
+  let budgetSkipped = 0;
+  let lastFleetSpendUsd = 0;
+  const budgetSkippedPlayers = new Set<string>();
+
   let queuePointer = 0;
   let succeeded = 0;
   let failed = 0;
@@ -486,12 +544,44 @@ async function main(): Promise<void> {
   }
 
   async function playerWorker(): Promise<void> {
-    while (!fleetHalted && queuePointer < playerQueue.length) {
+    while (!fleetHalted && !budgetHalted && queuePointer < playerQueue.length) {
       const pw = playerQueue[queuePointer++];
       let playerSucceeded = 0;
       let playerFailed = 0;
       for (const eventId of pw.missing) {
-        if (fleetHalted) break;
+        if (fleetHalted || budgetHalted) break;
+        if (budgetSkippedPlayers.has(pw.player.id)) {
+          budgetSkipped++; // capped model's remaining items — cancelled, not failed
+          continue;
+        }
+        // AIP-BUILD-BUDGET-1103-004: spend caps evaluated before EVERY dispatch.
+        // A spend-query failure logs one line and the item proceeds (fail-open).
+        try {
+          const spend = await fetchSpendTodayByPlayer(pool, dateIso);
+          lastFleetSpendUsd = spend.total;
+          const verdict = evaluateBudget({
+            fleetSpendUsd: spend.total,
+            fleetCapUsd,
+            modelSpendUsd: spend.byPlayer.get(pw.player.id) ?? 0,
+            modelCapUsd:
+              pw.player.daily_cost_cap_usd === null
+                ? null
+                : Number(pw.player.daily_cost_cap_usd),
+          });
+          if (verdict.action === "halt_fleet") {
+            budgetHalted = true;
+            console.error(`[BUDGET-HALT] ${verdict.reason} — stopping new dispatches`);
+            break;
+          }
+          if (verdict.action === "skip_model") {
+            budgetSkippedPlayers.add(pw.player.id);
+            budgetSkipped++;
+            console.log(`[BUDGET] skip ${pw.player.id} (${pw.player.model_id}): ${verdict.reason}`);
+            continue;
+          }
+        } catch (err) {
+          console.error(`[BUDGET] spend query failed (fail-open): ${err instanceof Error ? err.message : err}`);
+        }
         const item: WorkItem = { player: pw.player, eventId };
         const res = await processOne(item);
         // AIP-FIX-FLEETHALT-MERGE-1102-051: cancelled by fleet halt — not
@@ -513,7 +603,7 @@ async function main(): Promise<void> {
   const workers = Array.from({ length: Math.min(PLAYER_CONCURRENCY, playerQueue.length) }, playerWorker);
   await Promise.all(workers);
 
-  const sweepItems = fleetHalted ? [] : selectSweepItems(results);
+  const sweepItems = fleetHalted || budgetHalted ? [] : selectSweepItems(results);
   let recoveredInSweep = 0;
   if (sweepItems.length > 0) {
     console.log(`[SWEEP] ${sweepItems.length} transient failures, cooling down ${SWEEP_COOLDOWN_MS}ms`);
@@ -521,8 +611,32 @@ async function main(): Promise<void> {
 
     let sweepPointer = 0;
     async function sweepWorker(): Promise<void> {
-      while (!fleetHalted && sweepPointer < sweepItems.length) {
+      while (!fleetHalted && !budgetHalted && sweepPointer < sweepItems.length) {
         const r = sweepItems[sweepPointer++];
+        // AIP-BUILD-BUDGET-1103-004: caps still gate sweep dispatches. A
+        // capped model's retry is simply not re-run (its first-pass failure
+        // stands — it already counted as attempted, so no budget-skip count).
+        try {
+          const spend = await fetchSpendTodayByPlayer(pool, dateIso);
+          lastFleetSpendUsd = spend.total;
+          const verdict = evaluateBudget({
+            fleetSpendUsd: spend.total,
+            fleetCapUsd,
+            modelSpendUsd: spend.byPlayer.get(r.item.player.id) ?? 0,
+            modelCapUsd:
+              r.item.player.daily_cost_cap_usd === null
+                ? null
+                : Number(r.item.player.daily_cost_cap_usd),
+          });
+          if (verdict.action === "halt_fleet") {
+            budgetHalted = true;
+            console.error(`[BUDGET-HALT] ${verdict.reason} — stopping sweep`);
+            break;
+          }
+          if (verdict.action === "skip_model") continue;
+        } catch (err) {
+          console.error(`[BUDGET] spend query failed (fail-open): ${err instanceof Error ? err.message : err}`);
+        }
         const res = await processOne(r.item);
         // AIP-FIX-FLEETHALT-MERGE-1102-051: cancelled sweep retry — keep the
         // first-pass outcome; do not record or count the cancelled attempt.
@@ -546,12 +660,16 @@ async function main(): Promise<void> {
   if (fleetHalted) {
     await upsertAuthFleetAlert(pool, fleetRunId, fleetHaltDistinctModels);
   }
+  if (budgetHalted) {
+    await upsertBudgetFleetAlert(pool, fleetRunId, fleetCapUsd ?? 0, lastFleetSpendUsd);
+  }
   const runCounts = summarizeResults(results);
+  runCounts.plays_skipped_budget = budgetSkipped; // AIP-BUILD-BUDGET-1103-004
   await finalizeFleetRun(
     pool,
     fleetRunId,
-    fleetHalted ? "halted" : failed > 0 ? "partial" : "ok",
-    fleetHalted ? "auth_fleet" : null,
+    fleetHalted || budgetHalted ? "halted" : failed > 0 ? "partial" : "ok",
+    fleetHalted ? "auth_fleet" : budgetHalted ? "budget" : null,
     runCounts
   );
 
@@ -566,11 +684,17 @@ async function main(): Promise<void> {
   console.log(`Recovered in sweep: ${recoveredInSweep}`);
   console.log(`Failed after sweep: ${failed}`);
   console.log(`Skipped (preflight): ${preflight.skipped.length}`);
+  console.log(`Skipped (budget): ${budgetSkipped}`);
   if (fleetHalted) {
     console.log(`Fleet halted: auth_fleet`);
   }
+  if (budgetHalted) {
+    console.log(`Fleet halted: budget`);
+  }
 
-  if (fleetHalted || failed > 0) {
+  // AIP-BUILD-BUDGET-1103-004: a budget stop is expected — exit 0. The 401
+  // auth halt keeps exit 1.
+  if (fleetHalted || (!budgetHalted && failed > 0)) {
     process.exit(1);
   }
 }
