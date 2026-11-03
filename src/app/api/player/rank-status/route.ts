@@ -12,12 +12,14 @@ const NO_STORE = { "Cache-Control": "no-store" };
 // only — no player id is accepted from the request. Idempotent.
 export async function POST() {
   const supabase = createAuthenticatedServerClient();
+  // Server per-request client: getUser() verifies the JWT with the auth server;
+  // getSession() does not and must not be used for authz here.
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  const user = session?.user ?? null;
-  if (!user) {
+  if (error || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
   }
 
