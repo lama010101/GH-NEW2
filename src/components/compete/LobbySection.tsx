@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import { usePlayerFilter } from '@/hooks/usePlayerFilter';
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
-import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
+import { SYNC_ROUND_TIMER_DEFAULT_SEC, TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
@@ -850,7 +850,7 @@ export default function LobbySection({
                   <button
                     type="button"
                     onClick={() => {
-                      const val = sliderValue > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC;
+                      const val = sliderValue > 0 ? 0 : SYNC_ROUND_TIMER_DEFAULT_SEC;
                       setSliderValue(val);
                       if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
                       timerDebounceRef.current = setTimeout(() => {
