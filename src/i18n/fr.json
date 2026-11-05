@@ -632,13 +632,16 @@
     "err_passwords_mismatch": "Les mots de passe ne correspondent pas",
     "err_password_min_length": "Le mot de passe doit contenir au moins 6 caractères",
     "err_enter_email_first": "Entre ton adresse e-mail d'abord, puis clique sur Mot de passe oublié.",
+    "err_network": "Impossible de joindre le service de connexion. Une extension de confidentialité, un bloqueur de contenu ou un problème réseau le bloque peut-être. Essayez de désactiver les bloqueurs pour ce site ou utilisez un autre réseau.",
     "redirecting": "Redirection…",
     "email_placeholder": "vous@exemple.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-mail de réinitialisation envoyé. Vérifie ta boîte de réception.",
     "confirm_email_sent": "Vérifie ton e-mail pour confirmer ton compte.",
     "remember_me": "Se souvenir de moi",
-    "confirm_password": "Confirmer le mot de passe"
+    "confirm_password": "Confirmer le mot de passe",
+    "cookies_blocked_notice": "Les cookies sont bloqués dans votre navigateur, vous ne resterez donc pas connecté. Autorisez les cookies pour guess-history.com et réessayez.",
+    "invite_banner": "Un ami vous a invité à une partie en direct. Connectez-vous ou créez un compte pour rejoindre."
   },
   "leaderboard": {
     "title": "CLASSEMENT",
@@ -752,7 +755,14 @@
     "notif_channel_in_app": "Dans l'app uniquement",
     "notif_channel_both": "Les deux",
     "notif_push_hint": "Les notifications push sont désactivées dans ce navigateur — activez-les pour les recevoir.",
-    "notif_save_error": "Échec de l'enregistrement. Réessayez."
+    "notif_save_error": "Échec de l'enregistrement. Réessayez.",
+    "android_apk_title": "Application Android (bêta)",
+    "android_apk_body": "Installez l'application Back to the Past sur votre téléphone Android.",
+    "android_apk_button": "Télécharger l'APK",
+    "android_apk_step1": "1. Touchez « Télécharger l'APK » puis ouvrez le fichier.",
+    "android_apk_step2": "2. Si Android le demande, autorisez les installations depuis ce navigateur.",
+    "android_apk_step3": "3. Si Play Protect affiche un avertissement concernant l'application, touchez « Installer quand même ».",
+    "android_apk_note": "Version bêta : pour la mettre à jour, désinstallez d'abord l'ancienne version. Vous devrez vous reconnecter."
   },
   "avatar_picker": {
     "title": "Choisir un avatar",
@@ -837,7 +847,11 @@
     "max_rank": "Rang maximum atteint",
     "badge_aria": "Badge rang {tier}",
     "rail_hint_swipe": "glisser",
-    "tier_of_10": "Niveau {tier}/10"
+    "tier_of_10": "Niveau {tier}/10",
+    "gate_xp_ready": "XP atteint",
+    "gate_accuracy_needed": "Précision requise : {pct} %",
+    "gate_your_accuracy": "Toi : {pct} %",
+    "gate_rounds_needed": "Encore {count} manches pour te qualifier"
   },
   "grow": {
     "meta_title": "Grandir avec nous — Back to the Past",
@@ -1389,7 +1403,33 @@
     "list_best_aria": "Meilleur score : {pct}%",
     "list_stage_title": "Étape {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Terminée"
+    "list_completed": "Terminée",
+    "journey_tier_1": "Intelligence artificielle",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "Web mondial",
+    "journey_tier_4": "Ordinateur personnel",
+    "journey_tier_5": "Circuit intégré",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Téléphone",
+    "journey_tier_8": "Télégraphe",
+    "journey_tier_9": "Machine à vapeur",
+    "journey_tier_10": "Imprimerie",
+    "journey_tier_11": "Horloge mécanique",
+    "journey_tier_12": "Boussole magnétique",
+    "journey_tier_13": "Poudre à canon",
+    "journey_tier_14": "Papier",
+    "journey_tier_15": "Roue hydraulique",
+    "journey_tier_16": "Charrue",
+    "journey_tier_17": "Bateau à voile",
+    "journey_tier_18": "Roue",
+    "journey_tier_19": "Bronze",
+    "journey_tier_20": "Écriture",
+    "journey_sub_1": "Initié",
+    "journey_sub_2": "Apprenti",
+    "journey_sub_3": "Adepte",
+    "journey_sub_4": "Expert",
+    "journey_sub_5": "Pionnier",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

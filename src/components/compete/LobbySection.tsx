@@ -749,7 +749,7 @@ export default function LobbySection({
   const isAsync         = snapshot.config.mode === "async";
 
   return (
-    <div className={styles['lobby-shell']} data-testid="lobby-shell">
+    <div className={styles['lobby-shell']} data-testid="lobby-shell" data-submode={isAsync ? "async" : "sync"}>
       <header className={styles['lobby-header']}>
         <div className={styles['lobby-header-top']}>
           <button className={styles['lobby-back-btn']} onClick={() => router.push("/home")} aria-label={t('lobby.back')} data-testid="lobby-back-btn">

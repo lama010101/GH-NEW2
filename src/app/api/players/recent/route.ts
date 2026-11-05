@@ -24,6 +24,7 @@ export async function GET() {
        tier_shared AS (
          SELECT sp_other.player_id AS pid, 2 AS priority, MAX(sp_other.joined_at) AS sort_key
          FROM public.session_players sp_other
+         JOIN auth.users au ON au.id = sp_other.player_id AND au.is_anonymous = false
          WHERE sp_other.game_id IN (SELECT game_id FROM public.session_players WHERE player_id = $1)
            AND sp_other.player_id != $1
          GROUP BY sp_other.player_id
@@ -31,6 +32,7 @@ export async function GET() {
        tier_newest AS (
          SELECT p.id AS pid, 3 AS priority, p.created_at AS sort_key
          FROM public.profiles p
+         JOIN auth.users au ON au.id = p.id AND au.is_anonymous = false
          WHERE p.id != $1
        ),
        combined AS (

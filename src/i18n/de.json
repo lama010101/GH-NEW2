@@ -632,13 +632,16 @@
     "err_passwords_mismatch": "Passwörter stimmen nicht überein",
     "err_password_min_length": "Passwort muss mindestens 6 Zeichen lang sein",
     "err_enter_email_first": "Gib zuerst deine E-Mail ein, dann klicke auf Passwort vergessen.",
+    "err_network": "Der Anmeldedienst konnte nicht erreicht werden. Möglicherweise wird er durch eine Datenschutz-Erweiterung, einen Content-Blocker oder ein Netzwerkproblem blockiert. Deaktiviere Blocker für diese Website oder wechsle zu einem anderen Netzwerk.",
     "redirecting": "Weiterleitung…",
     "email_placeholder": "du@beispiel.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-Mail zum Zurücksetzen gesendet. Prüfe deinen Posteingang.",
     "confirm_email_sent": "Prüfe deine E-Mail, um dein Konto zu bestätigen.",
     "remember_me": "Angemeldet bleiben",
-    "confirm_password": "Passwort bestätigen"
+    "confirm_password": "Passwort bestätigen",
+    "cookies_blocked_notice": "Cookies sind in deinem Browser blockiert, daher bleibst du nicht angemeldet. Erlaube Cookies für guess-history.com und versuche es erneut.",
+    "invite_banner": "Ein Freund hat dich zu einem Live-Spiel eingeladen. Melde dich an oder erstelle ein Konto, um mitzuspielen."
   },
   "leaderboard": {
     "title": "BESTENLISTE",
@@ -752,7 +755,14 @@
     "notif_channel_in_app": "Nur in der App",
     "notif_channel_both": "Beide",
     "notif_push_hint": "Push ist in diesem Browser deaktiviert — aktiviere Benachrichtigungen, um Pushes zu erhalten.",
-    "notif_save_error": "Speichern fehlgeschlagen. Bitte erneut versuchen."
+    "notif_save_error": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+    "android_apk_title": "Android-App (Beta)",
+    "android_apk_body": "Installiere die App Back to the Past auf deinem Android-Smartphone.",
+    "android_apk_button": "APK herunterladen",
+    "android_apk_step1": "1. Tippe auf „APK herunterladen“ und öffne die Datei.",
+    "android_apk_step2": "2. Wenn Android fragt, erlaube Installationen aus diesem Browser.",
+    "android_apk_step3": "3. Wenn Play Protect vor der App warnt, tippe auf „Trotzdem installieren“.",
+    "android_apk_note": "Beta-Version: Deinstalliere zum Aktualisieren zuerst die alte Version. Du musst dich danach erneut anmelden."
   },
   "avatar_picker": {
     "title": "Avatar wählen",
@@ -837,7 +847,11 @@
     "max_rank": "Maximaler Rang erreicht",
     "badge_aria": "Rang {tier} Abzeichen",
     "rail_hint_swipe": "wischen",
-    "tier_of_10": "Stufe {tier}/10"
+    "tier_of_10": "Stufe {tier}/10",
+    "gate_xp_ready": "XP bereit",
+    "gate_accuracy_needed": "Benötigte Genauigkeit: {pct}%",
+    "gate_your_accuracy": "Du: {pct}%",
+    "gate_rounds_needed": "Noch {count} Runden bis zur Qualifikation"
   },
   "grow": {
     "meta_title": "Wachse mit uns — Back to the Past",
@@ -1389,7 +1403,33 @@
     "list_best_aria": "Bester Score: {pct}%",
     "list_stage_title": "Etappe {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Abgeschlossen"
+    "list_completed": "Abgeschlossen",
+    "journey_tier_1": "Künstliche Intelligenz",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "World Wide Web",
+    "journey_tier_4": "Personal Computer",
+    "journey_tier_5": "Integrierter Schaltkreis",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Telefon",
+    "journey_tier_8": "Telegraf",
+    "journey_tier_9": "Dampfmaschine",
+    "journey_tier_10": "Buchdruck",
+    "journey_tier_11": "Mechanische Uhr",
+    "journey_tier_12": "Magnetkompass",
+    "journey_tier_13": "Schießpulver",
+    "journey_tier_14": "Papier",
+    "journey_tier_15": "Wasserrad",
+    "journey_tier_16": "Pflug",
+    "journey_tier_17": "Segelboot",
+    "journey_tier_18": "Rad",
+    "journey_tier_19": "Bronze",
+    "journey_tier_20": "Schrift",
+    "journey_sub_1": "Neuling",
+    "journey_sub_2": "Lehrling",
+    "journey_sub_3": "Adept",
+    "journey_sub_4": "Experte",
+    "journey_sub_5": "Pionier",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

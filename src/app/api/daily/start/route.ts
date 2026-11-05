@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { startDailyAttempt } from "@/server/dailyChallenge";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,9 @@ export async function POST() {
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const guest = rejectIfGuest(user);
+    if (guest) return guest;
 
     const result = await startDailyAttempt(user.id);
 

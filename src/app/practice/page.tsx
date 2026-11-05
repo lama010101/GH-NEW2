@@ -7,6 +7,7 @@ import { useIdentity } from '@/hooks/useIdentity'
 import { readSession } from '@/core/supabaseBrowser'
 import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { loadPracticeSettings } from '@/components/practice/practiceSettings'
+import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal'
 import pageStyles from './page.module.css'
 
 export default function PracticeEntryPage() {
@@ -18,6 +19,10 @@ export default function PracticeEntryPage() {
   const [creating, setCreating] = useState(false)
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false)
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
+  // GUEST-BUILD-ANONSIGNIN-1029-003: anonymous guests get the conversion
+  // modal instead of the auto-start flow (defense in depth under the
+  // server-side gate).
+  const isAnonymous = identity.status === 'ready' && identity.isAnonymous
 
   const handleForceClear = () => {
     forceClearAuthStorage()
@@ -55,7 +60,7 @@ export default function PracticeEntryPage() {
   }, [identity.status])
 
   useEffect(() => {
-    if (identityLoading || identityError || !playerId || creating) return
+    if (identityLoading || identityError || !playerId || creating || isAnonymous) return
 
     let cancelled = false
     setCreating(true)
@@ -136,7 +141,7 @@ export default function PracticeEntryPage() {
     })()
 
     return () => { cancelled = true }
-  }, [playerId, displayName, identityLoading, identityError, router, t])
+  }, [playerId, displayName, identityLoading, identityError, isAnonymous, router, t])
 
   return (
     <div className={pageStyles.loadingScreen}>
@@ -194,6 +199,12 @@ export default function PracticeEntryPage() {
           </>
         )}
       </div>
+      <GuestConversionModal
+        isOpen={isAnonymous}
+        stageNumber={2}
+        onClose={() => router.push('/home')}
+        onConverted={() => {}}
+      />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/c
 import { sendPushToUser } from "@/server/pushSender";
 import { resolveNotificationChannel } from "@/server/notificationPrefs";
 import { DEFAULT_NOTIFICATION_CHANNEL, type NotificationChannel } from "@/core/notificationTypes";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(user);
+  if (guest) return guest;
 
   const body = await request.json().catch(() => ({}));
   const { game_id, invitee_id } = body as { game_id?: string; invitee_id?: string };

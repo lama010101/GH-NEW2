@@ -193,7 +193,8 @@ async function fetchAllEligibleEventIds(): Promise<string[]> {
      WHERE e.status = 'validated'
        AND l.latitude IS NOT NULL
        AND l.longitude IS NOT NULL
-       AND l.continent = ANY($1::text[])`,
+       AND l.continent = ANY($1::text[])
+       AND EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id AND i.url LIKE 'https://firebasestorage.googleapis.com/%')`,
     [[...VALID_CONTINENTS]]
   );
   return result.rows.map(r => r.id);

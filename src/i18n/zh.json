@@ -632,13 +632,16 @@
     "err_passwords_mismatch": "两次密码不一致",
     "err_password_min_length": "密码至少需要6个字符",
     "err_enter_email_first": "请先输入邮箱地址，然后点击忘记密码。",
+    "err_network": "无法连接到登录服务。可能是隐私扩展、内容拦截器或网络问题导致的。请尝试为此网站停用拦截器，或更换其他网络。",
     "redirecting": "正在跳转…",
     "email_placeholder": "你@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "密码重置邮件已发送。请查收邮箱。",
     "confirm_email_sent": "请查收邮件以确认你的账户。",
     "remember_me": "记住我",
-    "confirm_password": "确认密码"
+    "confirm_password": "确认密码",
+    "cookies_blocked_notice": "您的浏览器已阻止 Cookie，因此无法保持登录状态。请允许 guess-history.com 使用 Cookie 后重试。",
+    "invite_banner": "好友邀请你参加一场实时游戏。登录或创建账号即可加入。"
   },
   "leaderboard": {
     "title": "排行榜",
@@ -752,7 +755,14 @@
     "notif_channel_in_app": "仅应用内",
     "notif_channel_both": "两者",
     "notif_push_hint": "此浏览器已关闭推送通知——请开启通知以接收推送。",
-    "notif_save_error": "保存失败，请重试。"
+    "notif_save_error": "保存失败，请重试。",
+    "android_apk_title": "Android 应用（测试版）",
+    "android_apk_body": "在您的 Android 手机上安装 Back to the Past 应用。",
+    "android_apk_button": "下载 APK",
+    "android_apk_step1": "1. 点击「下载 APK」并打开文件。",
+    "android_apk_step2": "2. 如果 Android 询问，请允许来自此浏览器的安装。",
+    "android_apk_step3": "3. 如果 Play Protect 提示应用警告，请点击「仍然安装」。",
+    "android_apk_note": "测试版：如需更新，请先卸载旧版本。您需要重新登录。"
   },
   "avatar_picker": {
     "title": "选择头像",
@@ -837,7 +847,11 @@
     "max_rank": "已达到最高段位",
     "badge_aria": "段位 {tier} 徽章",
     "rail_hint_swipe": "滑动",
-    "tier_of_10": "等级 {tier}/10"
+    "tier_of_10": "等级 {tier}/10",
+    "gate_xp_ready": "XP 已达标",
+    "gate_accuracy_needed": "所需准确率：{pct}%",
+    "gate_your_accuracy": "你：{pct}%",
+    "gate_rounds_needed": "还需 {count} 回合才能晋级"
   },
   "grow": {
     "meta_title": "一起成长 — Back to the Past",
@@ -1389,7 +1403,33 @@
     "list_best_aria": "最佳成绩：{pct}%",
     "list_stage_title": "第 {number} 关 · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "已完成"
+    "list_completed": "已完成",
+    "journey_tier_1": "人工智能",
+    "journey_tier_2": "智能手机",
+    "journey_tier_3": "万维网",
+    "journey_tier_4": "个人电脑",
+    "journey_tier_5": "集成电路",
+    "journey_tier_6": "晶体管",
+    "journey_tier_7": "电话",
+    "journey_tier_8": "电报",
+    "journey_tier_9": "蒸汽机",
+    "journey_tier_10": "印刷机",
+    "journey_tier_11": "机械钟",
+    "journey_tier_12": "磁罗盘",
+    "journey_tier_13": "火药",
+    "journey_tier_14": "纸",
+    "journey_tier_15": "水车",
+    "journey_tier_16": "犁",
+    "journey_tier_17": "帆船",
+    "journey_tier_18": "轮子",
+    "journey_tier_19": "青铜",
+    "journey_tier_20": "文字",
+    "journey_sub_1": "入门者",
+    "journey_sub_2": "学徒",
+    "journey_sub_3": "达人",
+    "journey_sub_4": "专家",
+    "journey_sub_5": "先驱",
+    "stage_name": "{tier}·{sub}"
   },
   "legal": {
     "privacy": {

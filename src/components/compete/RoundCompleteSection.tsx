@@ -150,15 +150,23 @@ export default function RoundCompleteSection({
   const [homeNavigating, setHomeNavigating] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('gh_sound');
-      return saved !== null ? saved === 'true' : true;
+      try {
+        const saved = localStorage.getItem('gh_sound');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
     }
     return true;
   });
   const [vibrateEnabled, setVibrateEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('gh_vibrate');
-      return saved !== null ? saved === 'true' : true;
+      try {
+        const saved = localStorage.getItem('gh_vibrate');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
     }
     return true;
   });
@@ -233,11 +241,15 @@ export default function RoundCompleteSection({
 
   // Persist sound/vibrate settings to localStorage
   useEffect(() => {
-    localStorage.setItem('gh_sound', String(soundEnabled));
+    try {
+      localStorage.setItem('gh_sound', String(soundEnabled));
+    } catch { /* storage unavailable */ }
   }, [soundEnabled]);
 
   useEffect(() => {
-    localStorage.setItem('gh_vibrate', String(vibrateEnabled));
+    try {
+      localStorage.setItem('gh_vibrate', String(vibrateEnabled));
+    } catch { /* storage unavailable */ }
   }, [vibrateEnabled]);
 
   useEffect(() => {

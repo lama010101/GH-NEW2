@@ -21,6 +21,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import WhenCard from "@/components/compete/WhenCard";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import { getAccuracyColor } from "@/core/accuracyColor";
@@ -28,10 +30,11 @@ import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { YearPicker } from "@/components/YearPicker";
-import { AuthModal } from "@/components/AuthModal";
-import { useAuthGate } from "@/hooks/useAuthGate";
+import { ensureGuestSession } from "@/core/guestSession";
+import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import BrandMark from "@/components/brand/BrandMark";
+import { detectCookiesBlocked, mapAuthError } from "@/components/AuthModal";
 import styles from "./landing.module.css";
 import lbStyles from "@/app/leaderboard/leaderboard.module.css";
 
@@ -62,7 +65,7 @@ const MOCK_PLAYERS: SessionPlayer[] = [
     leftAt: null,
     ready: true,
     isHost: true,
-    avatarUrl: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp",
+    get avatarUrl() { return AVATAR_PREVIEWS[0].url; },
     hasSubmitted: true,
   },
   {
@@ -72,7 +75,7 @@ const MOCK_PLAYERS: SessionPlayer[] = [
     leftAt: null,
     ready: true,
     isHost: false,
-    avatarUrl: "https://im.runware.ai/image/ws/2/ii/917583d3-87cd-4d55-a09d-7713a934180f.webp",
+    get avatarUrl() { return AVATAR_PREVIEWS[1].url; },
     hasSubmitted: true,
   },
   {
@@ -82,7 +85,7 @@ const MOCK_PLAYERS: SessionPlayer[] = [
     leftAt: null,
     ready: true,
     isHost: false,
-    avatarUrl: "https://im.runware.ai/image/ws/2/ii/dc36c8d7-b0f9-4ea7-9f55-047909ed4bd5.webp",
+    get avatarUrl() { return AVATAR_PREVIEWS[2].url; },
     hasSubmitted: true,
   },
 ];
@@ -567,11 +570,20 @@ export default function LandingV2Prototype() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
+  const router = useRouter();
+  const t = useTranslations("auth");
+  const [guestBusy, setGuestBusy] = useState(false);
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const demoCounterRef = useRef<number | null>(null);
+  const guestBusyRef = useRef(false);
   const topbarRef = useRef<HTMLElement>(null);
   const heroLogoRef = useRef<HTMLHeadingElement>(null);
   const heroCtaRef = useRef<HTMLButtonElement>(null);
+
+  // Hydration gate (GUEST-FIX-FIRSTVISIT-1031-005): Play Now is inert until
+  // mounted so a pre-hydration tap can't be silently dropped.
+  useEffect(() => setHydrated(true), []);
 
   // Scroll reveal
   useEffect(() => {
@@ -682,6 +694,79 @@ export default function LandingV2Prototype() {
     };
   }, []);
 
+  // Guest-first entry (GUEST-BUILD-ANONSIGNIN-1029-003): Play Now resolves or
+  // creates an anonymous session and drops the visitor into Journey stage 1
+  // with no sign-in. An already-signed-in session (registered or existing
+  // guest) goes straight to /home; failures render inline on the CTA — no
+  // modal. The CTA is disabled while in flight so a double-tap cannot create
+  // two guest accounts. The Sign in entry routes returning users to /login.
+  const playAsGuest = async () => {
+    // Ref-based guard: useState updates are async, so two rapid clicks can
+    // both observe guestBusy=false — the ref closes that double-tap window
+    // (GUEST-FIX-FIRSTVISIT-1031-005).
+    if (guestBusyRef.current) return;
+    guestBusyRef.current = true;
+    setGuestBusy(true);
+    setGuestError(null);
+    let navigated = false;
+    try {
+      const result = await ensureGuestSession();
+      if (result === "existing") {
+        navigated = true;
+        router.push("/home");
+        return;
+      }
+      if (result === "error") {
+        const errorText = "Unable to start a guest session — please try again.";
+        setGuestError(
+          detectCookiesBlocked()
+            ? t("cookies_blocked_notice")
+            : mapAuthError(errorText, t("err_network"))
+        );
+        return;
+      }
+      const res = await fetch("/api/journey/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageNumber: 1 }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? "Unable to start the game — please try again.");
+      }
+      const started = (await res.json()) as {
+        stageId: string;
+        playthroughId: string;
+        gameId: string;
+      };
+      writeActivePlaythrough({
+        stageId: started.stageId,
+        playthroughId: started.playthroughId,
+        gameId: started.gameId,
+      });
+      // Marker for the /home fallback: if a residual redirect race still
+      // lands a brand-new guest on /home, it resumes this game once
+      // (GUEST-FIX-FIRSTVISIT-1031-005). Storage may be blocked — optional.
+      try {
+        sessionStorage.setItem("gh_guest_launch", JSON.stringify({ gameId: started.gameId, ts: Date.now() }));
+      } catch {}
+      navigated = true;
+      router.replace(`/practice/${started.gameId}`);
+    } catch (err) {
+      setGuestError(
+        mapAuthError(
+          err instanceof Error ? err.message : "Unable to start the game — please try again.",
+          t("err_network")
+        )
+      );
+    } finally {
+      if (!navigated) {
+        guestBusyRef.current = false;
+        setGuestBusy(false);
+      }
+    }
+  };
+
   const phaseTitle = ["A mysterious scene", "Drop a pin", "Pick a year", "Learn the story"][demoPhase];
   const phaseBody = [
     "No names. No dates. Just a picture from the past.",
@@ -712,6 +797,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <button type="button" onClick={() => router.push("/login")} disabled={!hydrated} className={`${styles.playNowBtn} ${styles.topbarCta}`}>Sign in</button>
           <LanguageDropdown />
         </nav>
 
@@ -737,17 +823,26 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <a href="/login" onClick={(e) => { e.preventDefault(); setMenuOpen(false); router.push("/login"); }}>Sign in</a>
           <LanguageDropdown />
         </nav>
 
         {showTopbarExtras && (
-          <button
-            type="button"
-            onClick={() => requireAuth('/home')}
-            className={`${styles.playNowBtn} ${styles.topbarCta}`}
-          >
-            Play Now
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy || !hydrated}
+              className={`${styles.playNowBtn} ${styles.topbarCta}`}
+            >
+              Play Now
+            </button>
+            {guestError && (
+              <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
+                {guestError}
+              </span>
+            )}
+          </>
         )}
       </header>
 
@@ -775,14 +870,23 @@ export default function LandingV2Prototype() {
           <p className={styles.heroTagline}>
             A free game — look at a picture, guess the place and year, then learn the true story.
           </p>
-          <button
-            ref={heroCtaRef}
-            type="button"
-            onClick={() => requireAuth('/home')}
-            className={`${styles.playNowBtn} ${styles.heroCta}`}
-          >
-            Play Now
-          </button>
+          <div className={styles.heroCtaRow}>
+            <button
+              ref={heroCtaRef}
+              type="button"
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy || !hydrated}
+              className={styles.playNowBtn}
+            >
+              {guestBusy ? "Starting…" : "Play Now"}
+            </button>
+            <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }} className={styles.ghostBtn}>Sign in / Sign up</a>
+          </div>
+          {guestError && (
+            <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
+              {guestError}
+            </p>
+          )}
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
               <button
@@ -1273,12 +1377,18 @@ export default function LandingV2Prototype() {
           <div className={styles.finalCtaRow}>
             <button
               type="button"
-              onClick={() => requireAuth('/home')}
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy || !hydrated}
               className={`${styles.playNowBtn} ${styles.ctaBig}`}
             >
               <span className={styles.ctaPulse} />
-              Play Now
+              {guestBusy ? "Starting…" : "Play Now"}
             </button>
+            {guestError && (
+              <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
+                {guestError}
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -1293,11 +1403,15 @@ export default function LandingV2Prototype() {
           <a href="#ai">AI Images</a>
           <a href="#explore">Explore</a>
           <a href="#fun">Why Play</a>
-          <a href="/" onClick={(e) => { e.preventDefault(); requireAuth('/home'); }}>Play Now</a>
+          <a href="/" onClick={(e) => { e.preventDefault(); if (!hydrated) return; void playAsGuest(); }}>Play Now</a>
+          {guestError && (
+            <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
+              {guestError}
+            </span>
+          )}
         </div>
         <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
       </footer>
-      <AuthModal isOpen={isModalOpen} onClose={closeModal} required={false} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDbPool } from "@/server/db";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export async function GET(_request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(user);
+  if (guest) return guest;
 
   try {
     const { data: invitations, error: dbError } = await supabase
