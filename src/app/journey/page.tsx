@@ -31,6 +31,7 @@ import {
   journeyRoundTimerSec,
   journeyStageEraKey,
   journeyStageIconFile,
+  journeyStageNameParts,
   journeyYearLabel,
 } from "@/core/journeyRules";
 import TopBar from "@/components/layout/TopBar";
@@ -485,7 +486,14 @@ export default function JourneyPage() {
               const stageEra = tGame(
                 journeyStageEraKey(stage.stage_number, currentYear)
               );
-              const stageSubtitle = stage.title ?? stage.theme ?? null;
+              const stageNameParts = journeyStageNameParts(stage.stage_number);
+              const stageSubtitle =
+                stage.title ??
+                stage.theme ??
+                t("stage_name", {
+                  tier: t(`journey_tier_${stageNameParts.tierIndex + 1}`),
+                  sub: t(`journey_sub_${stageNameParts.subIndex + 1}`),
+                });
               const bestPct =
                 progress?.best_accuracy_pct != null
                   ? Number(progress.best_accuracy_pct)

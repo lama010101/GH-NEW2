@@ -847,7 +847,11 @@
     "max_rank": "تم الوصول إلى أعلى رتبة",
     "badge_aria": "وسام رتبة {tier}",
     "rail_hint_swipe": "اسحب",
-    "tier_of_10": "المستوى {tier}/10"
+    "tier_of_10": "المستوى {tier}/10",
+    "gate_xp_ready": "نقاط XP جاهزة",
+    "gate_accuracy_needed": "الدقة المطلوبة: {pct}%",
+    "gate_your_accuracy": "دقتك: {pct}%",
+    "gate_rounds_needed": "يتبقى {count} جولة للتأهل"
   },
   "grow": {
     "meta_title": "انمُ معنا — Back to the Past",
@@ -1399,7 +1403,33 @@
     "list_best_aria": "أفضل نتيجة: {pct}%",
     "list_stage_title": "المرحلة {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "مكتملة"
+    "list_completed": "مكتملة",
+    "journey_tier_1": "الذكاء الاصطناعي",
+    "journey_tier_2": "الهاتف الذكي",
+    "journey_tier_3": "الشبكة العنكبوتية العالمية",
+    "journey_tier_4": "الحاسوب الشخصي",
+    "journey_tier_5": "الدائرة المتكاملة",
+    "journey_tier_6": "الترانزستور",
+    "journey_tier_7": "الهاتف",
+    "journey_tier_8": "التلغراف",
+    "journey_tier_9": "المحرك البخاري",
+    "journey_tier_10": "المطبعة",
+    "journey_tier_11": "الساعة الميكانيكية",
+    "journey_tier_12": "البوصلة المغناطيسية",
+    "journey_tier_13": "البارود",
+    "journey_tier_14": "الورق",
+    "journey_tier_15": "العجلة المائية",
+    "journey_tier_16": "المحراث",
+    "journey_tier_17": "القارب الشراعي",
+    "journey_tier_18": "العجلة",
+    "journey_tier_19": "البرونز",
+    "journey_tier_20": "الكتابة",
+    "journey_sub_1": "مبتدئ",
+    "journey_sub_2": "متدرب",
+    "journey_sub_3": "ماهر",
+    "journey_sub_4": "خبير",
+    "journey_sub_5": "رائد",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

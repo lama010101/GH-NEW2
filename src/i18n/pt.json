@@ -847,7 +847,11 @@
     "max_rank": "Rank máximo alcançado",
     "badge_aria": "Insígnia de rank {tier}",
     "rail_hint_swipe": "deslize",
-    "tier_of_10": "Nível {tier}/10"
+    "tier_of_10": "Nível {tier}/10",
+    "gate_xp_ready": "XP pronto",
+    "gate_accuracy_needed": "Precisão necessária: {pct}%",
+    "gate_your_accuracy": "Você: {pct}%",
+    "gate_rounds_needed": "Mais {count} rodadas para se qualificar"
   },
   "grow": {
     "meta_title": "Cresça conosco — Back to the Past",
@@ -1399,7 +1403,33 @@
     "list_best_aria": "Melhor pontuação: {pct}%",
     "list_stage_title": "Etapa {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Concluída"
+    "list_completed": "Concluída",
+    "journey_tier_1": "Inteligência artificial",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "World Wide Web",
+    "journey_tier_4": "Computador pessoal",
+    "journey_tier_5": "Circuito integrado",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Telefone",
+    "journey_tier_8": "Telégrafo",
+    "journey_tier_9": "Máquina a vapor",
+    "journey_tier_10": "Imprensa",
+    "journey_tier_11": "Relógio mecânico",
+    "journey_tier_12": "Bússola magnética",
+    "journey_tier_13": "Pólvora",
+    "journey_tier_14": "Papel",
+    "journey_tier_15": "Roda d'água",
+    "journey_tier_16": "Arado",
+    "journey_tier_17": "Barco a vela",
+    "journey_tier_18": "Roda",
+    "journey_tier_19": "Bronze",
+    "journey_tier_20": "Escrita",
+    "journey_sub_1": "Iniciado",
+    "journey_sub_2": "Aprendiz",
+    "journey_sub_3": "Adepto",
+    "journey_sub_4": "Perito",
+    "journey_sub_5": "Pioneiro",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

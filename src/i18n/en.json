@@ -847,7 +847,11 @@
     "max_rank": "Max rank achieved",
     "badge_aria": "Rank {tier} badge",
     "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "tier_of_10": "Tier {tier} / 10",
+    "gate_xp_ready": "XP ready",
+    "gate_accuracy_needed": "Accuracy needed: {pct}%",
+    "gate_your_accuracy": "You: {pct}%",
+    "gate_rounds_needed": "{count} more rounds to qualify"
   },
   "grow": {
     "meta_title": "Grow With Us — Back to the Past",
@@ -1399,7 +1403,33 @@
     "list_best_aria": "Best score: {pct}%",
     "list_stage_title": "Stage {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Completed"
+    "list_completed": "Completed",
+    "journey_tier_1": "Artificial Intelligence",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "World Wide Web",
+    "journey_tier_4": "Personal Computer",
+    "journey_tier_5": "Integrated Circuit",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Telephone",
+    "journey_tier_8": "Telegraph",
+    "journey_tier_9": "Steam Engine",
+    "journey_tier_10": "Printing Press",
+    "journey_tier_11": "Mechanical Clock",
+    "journey_tier_12": "Magnetic Compass",
+    "journey_tier_13": "Gunpowder",
+    "journey_tier_14": "Paper",
+    "journey_tier_15": "Waterwheel",
+    "journey_tier_16": "Plow",
+    "journey_tier_17": "Sailboat",
+    "journey_tier_18": "Wheel",
+    "journey_tier_19": "Bronze",
+    "journey_tier_20": "Writing",
+    "journey_sub_1": "Initiate",
+    "journey_sub_2": "Apprentice",
+    "journey_sub_3": "Adept",
+    "journey_sub_4": "Expert",
+    "journey_sub_5": "Pioneer",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

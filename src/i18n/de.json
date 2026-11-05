@@ -847,7 +847,11 @@
     "max_rank": "Maximaler Rang erreicht",
     "badge_aria": "Rang {tier} Abzeichen",
     "rail_hint_swipe": "wischen",
-    "tier_of_10": "Stufe {tier}/10"
+    "tier_of_10": "Stufe {tier}/10",
+    "gate_xp_ready": "XP bereit",
+    "gate_accuracy_needed": "Benötigte Genauigkeit: {pct}%",
+    "gate_your_accuracy": "Du: {pct}%",
+    "gate_rounds_needed": "Noch {count} Runden bis zur Qualifikation"
   },
   "grow": {
     "meta_title": "Wachse mit uns — Back to the Past",
@@ -1399,7 +1403,33 @@
     "list_best_aria": "Bester Score: {pct}%",
     "list_stage_title": "Etappe {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Abgeschlossen"
+    "list_completed": "Abgeschlossen",
+    "journey_tier_1": "Künstliche Intelligenz",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "World Wide Web",
+    "journey_tier_4": "Personal Computer",
+    "journey_tier_5": "Integrierter Schaltkreis",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Telefon",
+    "journey_tier_8": "Telegraf",
+    "journey_tier_9": "Dampfmaschine",
+    "journey_tier_10": "Buchdruck",
+    "journey_tier_11": "Mechanische Uhr",
+    "journey_tier_12": "Magnetkompass",
+    "journey_tier_13": "Schießpulver",
+    "journey_tier_14": "Papier",
+    "journey_tier_15": "Wasserrad",
+    "journey_tier_16": "Pflug",
+    "journey_tier_17": "Segelboot",
+    "journey_tier_18": "Rad",
+    "journey_tier_19": "Bronze",
+    "journey_tier_20": "Schrift",
+    "journey_sub_1": "Neuling",
+    "journey_sub_2": "Lehrling",
+    "journey_sub_3": "Adept",
+    "journey_sub_4": "Experte",
+    "journey_sub_5": "Pionier",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {
