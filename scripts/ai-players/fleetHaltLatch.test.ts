@@ -177,6 +177,24 @@ describe("fleet-halt latch (AIP-FIX-FLEETHALT-MERGE-1102-051)", () => {
     expect(counts.failed_other).toBe(0); // cancelled must not land in 'other'
   });
 
+  it("(ii-b) a RATE_LIMIT_DEFERRED item is attempted but never a failure (AIP-BUILD-FLEETFINAL-1103-060)", async () => {
+    // D3: deferred items are counted separately via ai_play_deferrals — they
+    // must not land in plays_failed or any failed_* bucket (nor 'other').
+    const mod = await importForHelper();
+    const results: import("./daily-autoplay").ItemResult[] = [
+      { item: { player: PLAYER, eventId: "e-ok" }, ok: true, lastFailureTransient: false, lastError: null },
+      { item: { player: PLAYER, eventId: "e-def" }, ok: false, lastFailureTransient: false, lastError: "RATE_LIMIT_DEFERRED retry_after_ms=45000 Parasail/upstream_provider_shared_pool" },
+      { item: { player: PLAYER, eventId: "e-rl" }, ok: false, lastFailureTransient: false, lastError: "OpenRouter request failed: 429" },
+    ];
+    const counts = mod.summarizeResults(results);
+    expect(counts.plays_attempted).toBe(3); // deferred item was attempted
+    expect(counts.plays_ok).toBe(1);
+    expect(counts.plays_failed).toBe(1); // only the plain 429 failed
+    expect(counts.failed_rate_limit).toBe(1);
+    expect(counts.failed_other).toBe(0);
+    expect(counts.failed_auth).toBe(0);
+  });
+
   it("(iii) resetFleetHaltLatch() restores normal behaviour", async () => {
     const mod = await importForHelper();
     mod.latchFleetHalt();
