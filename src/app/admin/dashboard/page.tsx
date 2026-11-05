@@ -8,7 +8,8 @@ import { ModelControls } from "./models/ModelControls";
 import { updateDailyCostCap } from "./models/actions";
 import { scheduleAiPlayerModeChange } from "./scheduling/actions";
 import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, fetchOpenFleetAlerts, fetchRecentFleetRuns, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RecentErrorRow, type ScheduledChangeRow, type FleetAlertRow, type FleetRunRow } from "./queries";
-import { resolveFleetAlert, setFleetDailyCap } from "./actions";
+import { resolveFleetAlert, setFleetDailyCap, updateRateSettings } from "./actions";
+import { fetchFleetReliability, fetchEventDifficulty, fetchEventsNeedingReview, fetchRateSettings, fetchDeferredPlays, AI_RATE_SETTING_KEYS, type FleetReliabilityRow, type EventDifficultyRow, type EventNeedingReviewRow, type RateSettingRow, type DeferredPlayRow } from "./fleetData";
 import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
@@ -625,6 +626,32 @@ export default async function OpenRouterAdminPage({
   const recentRuns: FleetRunRow[] = needOverview
     ? await fetchRecentFleetRuns(pool, 7)
     : [];
+
+  // AIP-BUILD-FLEETFINAL-1103-060 (E5): view-backed fleet-final panels.
+  // The views ship in migration 20261103120000 — degrade to empty lists when
+  // they are absent on an environment (same pattern as getFleetDailyCap).
+  const fleetReliability: FleetReliabilityRow[] = needOverview
+    ? await fetchFleetReliability(pool).catch(() => [] as FleetReliabilityRow[])
+    : [];
+  const eventDifficulty: EventDifficultyRow[] = needOverview
+    ? await fetchEventDifficulty(pool, 50).catch(
+        () => [] as EventDifficultyRow[]
+      )
+    : [];
+  const eventsNeedingReview: EventNeedingReviewRow[] = needOverview
+    ? await fetchEventsNeedingReview(pool, 100).catch(
+        () => [] as EventNeedingReviewRow[]
+      )
+    : [];
+  const rateSettingRows: RateSettingRow[] = needOverview
+    ? await fetchRateSettings(pool).catch(() => [] as RateSettingRow[])
+    : [];
+  const deferredPlays: DeferredPlayRow[] = needOverview
+    ? await fetchDeferredPlays(pool).catch(() => [] as DeferredPlayRow[])
+    : [];
+  const rateSettingsByKey = new Map<string, unknown>(
+    rateSettingRows.map((r) => [r.key, r.value])
+  );
 
   const recentErrors = recentErrorsRaw.map((row) => ({
     id: row.id,
@@ -1310,6 +1337,71 @@ export default async function OpenRouterAdminPage({
               </section>
             </div>
 
+            <section className="ops-panel" style={{ marginBottom: 16 }}>
+              <div className="ops-toolbar">
+                <h2 className="ops-panel-title">Rate budget</h2>
+              </div>
+              <div className="ops-panel-pad">
+                <form
+                  action={updateRateSettings}
+                  className="flex flex-wrap items-end gap-2"
+                >
+                  {AI_RATE_SETTING_KEYS.map((key) => {
+                    const raw = rateSettingsByKey.get(key);
+                    return (
+                      <label
+                        key={key}
+                        className="ops-kpi-label"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                        }}
+                      >
+                        {key}
+                        {key === "ai_rpm_overrides" ? (
+                          <input
+                            type="text"
+                            name={key}
+                            defaultValue={
+                              raw === undefined ? "" : JSON.stringify(raw)
+                            }
+                            placeholder='{"slug": rpm}'
+                            className="ops-input ops-mono"
+                            style={{ width: 280 }}
+                            title="JSON object: model slug -> requests per minute"
+                          />
+                        ) : (
+                          <input
+                            type="number"
+                            name={key}
+                            step="any"
+                            min="0"
+                            defaultValue={
+                              raw === undefined || raw === null
+                                ? ""
+                                : String(raw)
+                            }
+                            className="ops-input"
+                            style={{ width: 110, textAlign: "right" }}
+                          />
+                        )}
+                      </label>
+                    );
+                  })}
+                  <button type="submit" className="ops-btn">
+                    Save
+                  </button>
+                </form>
+                <p className="ops-footnote">
+                  ai_fleet_settings — request pacing for the AI fleet runner
+                  (rpm/rpd budgets, run caps, 429 backoff). Every value must be
+                  a number &gt; 0; ai_rpm_overrides is a JSON object of model
+                  slug to requests/min.
+                </p>
+              </div>
+            </section>
+
             <div className="ops-grid-2col">
               <section className="ops-panel">
                 <div className="ops-toolbar">
@@ -1437,6 +1529,302 @@ export default async function OpenRouterAdminPage({
                           </span>
                         </div>
                       ))
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <section className="ops-panel" style={{ marginTop: 16 }}>
+              <div className="ops-toolbar">
+                <h2 className="ops-panel-title">Fleet coverage &amp; reliability</h2>
+                <Link href={makeLink({ tab: "models" })} className="ops-btn">
+                  Models
+                </Link>
+              </div>
+              <div className="ops-panel-pad">
+                {fleetReliability.length === 0 ? (
+                  <p className="ops-empty" style={{ padding: "8px 0" }}>
+                    No reliability rows.
+                  </p>
+                ) : (
+                  <table className="ops-table">
+                    <thead>
+                      <tr>
+                        <th>Model</th>
+                        <th>Tier</th>
+                        <th>Role</th>
+                        <th className="num">Coverage</th>
+                        <th className="num">OK</th>
+                        <th className="num">Error</th>
+                        <th className="num">Parse fail</th>
+                        <th className="num">429s</th>
+                        <th className="num">p50</th>
+                        <th className="num">p95</th>
+                        <th>Last success</th>
+                        <th>Availability</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fleetReliability.map((row) => (
+                        <tr key={row.ai_player_id}>
+                          <td data-label="Model" title={row.model_id}>
+                            <span className="ops-truncate">{row.name}</span>
+                          </td>
+                          <td data-label="Tier">{row.tier ?? "—"}</td>
+                          <td data-label="Role">
+                            <span
+                              className={`ops-chip ${
+                                row.role === "play"
+                                  ? "ops-chip-ok"
+                                  : row.role === "audit"
+                                  ? "ops-chip-muted"
+                                  : "ops-chip-warn"
+                              }`}
+                            >
+                              {row.role}
+                            </span>
+                          </td>
+                          <td className="num" data-label="Coverage">
+                            {row.coverage_pct === null
+                              ? "—"
+                              : `${toNumber(row.coverage_pct).toFixed(1)}%`}
+                          </td>
+                          <td className="num" data-label="OK">
+                            {row.plays_ok.toLocaleString()}
+                          </td>
+                          <td className="num" data-label="Error">
+                            {row.plays_error.toLocaleString()}
+                          </td>
+                          <td className="num" data-label="Parse fail">
+                            {row.parse_failure_rate === null
+                              ? "—"
+                              : `${(
+                                  toNumber(row.parse_failure_rate) * 100
+                                ).toFixed(1)}%`}
+                          </td>
+                          <td className="num" data-label="429s">
+                            {row.n429}
+                          </td>
+                          <td className="num" data-label="p50">
+                            {row.p50_duration_ms === null
+                              ? "—"
+                              : `${Math.round(
+                                  toNumber(row.p50_duration_ms)
+                                ).toLocaleString()}ms`}
+                          </td>
+                          <td className="num" data-label="p95">
+                            {row.p95_duration_ms === null
+                              ? "—"
+                              : `${Math.round(
+                                  toNumber(row.p95_duration_ms)
+                                ).toLocaleString()}ms`}
+                          </td>
+                          <td
+                            data-label="Last success"
+                            style={{ color: "var(--ops-mute)" }}
+                          >
+                            {formatRelativeTime(row.last_success_at)}
+                          </td>
+                          <td
+                            data-label="Availability"
+                            style={{ color: "var(--ops-mute)" }}
+                          >
+                            {row.availabilityReason}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+
+            <div className="ops-grid-2col" style={{ marginTop: 16 }}>
+              <section className="ops-panel">
+                <div className="ops-toolbar">
+                  <h2 className="ops-panel-title">Event AI difficulty</h2>
+                  <Link href="/admin/dashboard/events" className="ops-btn">
+                    Events
+                  </Link>
+                </div>
+                <div className="ops-panel-pad">
+                  {eventDifficulty.length === 0 ? (
+                    <p className="ops-empty" style={{ padding: "8px 0" }}>
+                      No difficulty data.
+                    </p>
+                  ) : (
+                    <table className="ops-table">
+                      <thead>
+                        <tr>
+                          <th>Event</th>
+                          <th className="num">Models</th>
+                          <th className="num">Avg km</th>
+                          <th className="num">Avg |yr diff|</th>
+                          <th className="num">Difficulty</th>
+                          <th className="num">Authenticity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {eventDifficulty.map((row) => (
+                          <tr key={row.event_id}>
+                            <td
+                              data-label="Event"
+                              title={row.title ?? row.event_id}
+                            >
+                              <span className="ops-truncate">
+                                {row.title ?? row.event_id}
+                              </span>
+                            </td>
+                            <td className="num" data-label="Models">
+                              {row.n_models}
+                            </td>
+                            <td className="num" data-label="Avg km">
+                              {row.avg_distance_km === null
+                                ? "—"
+                                : Math.round(
+                                    toNumber(row.avg_distance_km)
+                                  ).toLocaleString()}
+                            </td>
+                            <td className="num" data-label="Avg |yr diff|">
+                              {row.avg_abs_year_diff === null
+                                ? "—"
+                                : toNumber(row.avg_abs_year_diff).toFixed(1)}
+                            </td>
+                            <td className="num" data-label="Difficulty">
+                              {row.avg_difficulty_score === null
+                                ? "—"
+                                : toNumber(row.avg_difficulty_score).toFixed(1)}
+                            </td>
+                            <td className="num" data-label="Authenticity">
+                              {row.avg_authenticity_score === null
+                                ? "—"
+                                : toNumber(row.avg_authenticity_score).toFixed(
+                                    1
+                                  )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </section>
+
+              <div className="ops-stack">
+                <section className="ops-panel">
+                  <div className="ops-toolbar">
+                    <h2 className="ops-panel-title">Events needing review</h2>
+                  </div>
+                  <div className="ops-panel-pad">
+                    {eventsNeedingReview.length === 0 ? (
+                      <p className="ops-empty" style={{ padding: "8px 0" }}>
+                        Nothing flagged.
+                      </p>
+                    ) : (
+                      eventsNeedingReview.map((row) => (
+                        <div key={row.event_id} className="ops-minirow">
+                          <span className="ops-minirow-main">
+                            <span
+                              className="ops-truncate"
+                              title={`${row.title}${
+                                row.event_year === null
+                                  ? ""
+                                  : ` (${row.event_year})`
+                              }`}
+                            >
+                              {row.title}
+                            </span>
+                          </span>
+                          <span className="ops-minirow-side">
+                            {row.incorrect_hint_reviews > 0 && (
+                              <span className="ops-chip ops-chip-bad">
+                                hints×{row.incorrect_hint_reviews}
+                              </span>
+                            )}
+                            {row.doubtful_or_fabricated_votes > 0 && (
+                              <span className="ops-chip ops-chip-bad">
+                                doubtful×{row.doubtful_or_fabricated_votes}
+                              </span>
+                            )}
+                            {row.year_disagreement && (
+                              <span className="ops-chip ops-chip-warn">
+                                year
+                              </span>
+                            )}
+                            {row.location_disagreement && (
+                              <span className="ops-chip ops-chip-warn">
+                                location
+                              </span>
+                            )}
+                            <span style={{ color: "var(--ops-mute)" }}>
+                              score {toNumber(row.review_score)}
+                            </span>
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                <section className="ops-panel">
+                  <div className="ops-toolbar">
+                    <h2 className="ops-panel-title">Deferred plays</h2>
+                  </div>
+                  <div className="ops-panel-pad">
+                    {deferredPlays.length === 0 ? (
+                      <p className="ops-empty" style={{ padding: "8px 0" }}>
+                        No deferred plays.
+                      </p>
+                    ) : (
+                      <table className="ops-table">
+                        <thead>
+                          <tr>
+                            <th>Model</th>
+                            <th>Event</th>
+                            <th>Mode</th>
+                            <th className="num">429s</th>
+                            <th className="num">Tries</th>
+                            <th>Retry after</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {deferredPlays.map((row) => (
+                            <tr key={row.id}>
+                              <td data-label="Model">
+                                <span className="ops-truncate">
+                                  {row.player_name ?? row.ai_player_id}
+                                </span>
+                              </td>
+                              <td
+                                data-label="Event"
+                                title={row.event_title ?? undefined}
+                              >
+                                <span className="ops-truncate">
+                                  {row.event_title ?? row.event_id}
+                                </span>
+                              </td>
+                              <td data-label="Mode">
+                                <span className="ops-chip ops-chip-muted">
+                                  {row.mode}
+                                </span>
+                              </td>
+                              <td className="num" data-label="429s">
+                                {row.n429}
+                              </td>
+                              <td className="num" data-label="Tries">
+                                {row.attempts}
+                              </td>
+                              <td
+                                data-label="Retry after"
+                                style={{ color: "var(--ops-mute)" }}
+                              >
+                                {formatDateTime(row.retry_after_at)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     )}
                   </div>
                 </section>
