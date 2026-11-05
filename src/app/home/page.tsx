@@ -7,10 +7,12 @@ import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, u
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { PushSoftAsk } from '@/components/PushSoftAsk'
+import GetAppCard from '@/components/GetAppCard'
 import { JourneyCard } from '@/components/home/JourneyCard'
 import { DailyCard } from '@/components/home/DailyCard'
 import { ChallengeCard } from '@/components/home/ChallengeCard'
 import { PracticeCard } from '@/components/home/PracticeCard'
+import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal'
 import { useHomeCardOrder, useIsMobileViewport } from '@/components/home/useHomeCardOrder'
 import { HOME_CARD_DESKTOP_ORDER } from '@/core/homeCardOrder'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
@@ -111,6 +113,25 @@ function HomePageInner() {
     welcomeHandledRef.current = false
   }, [currentPlayerId])
 
+  // GUEST-FIX-FIRSTVISIT-1031-005: one-shot resume for a brand-new guest whose
+  // first Play Now was redirected to /home by a residual race (e.g. the
+  // first-install SW reload). The marker is written by the landing page right
+  // before navigating to /practice/<gameId>; it is removed on read and only
+  // honored within 30s, for anonymous identities only — never for returning
+  // guests or registered users.
+  useEffect(() => {
+    if (identity.status !== 'ready' || !identity.isAnonymous) return
+    try {
+      const raw = sessionStorage.getItem('gh_guest_launch')
+      sessionStorage.removeItem('gh_guest_launch')
+      if (!raw) return
+      const { gameId, ts } = JSON.parse(raw) as { gameId?: string; ts?: number }
+      if (gameId && typeof ts === 'number' && Date.now() - ts < 30000) {
+        router.replace(`/practice/${gameId}`)
+      }
+    } catch {}
+  }, [identity, router])
+
   // Trigger the welcome flow only when we know the persisted flag is false.
   // The profile fetch effect below is the single source of truth for welcome_completed.
   useEffect(() => {
@@ -156,7 +177,10 @@ function HomePageInner() {
         if (session?.user && session.user.id === pid) {
           const createdAt = new Date(session.user.created_at).getTime()
           const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : createdAt
-          setIsNewUserForWelcome(Math.abs(createdAt - lastSignIn) < 300_000)
+          // GUEST-BUILD-ANONSIGNIN-1029-003: anonymous guests never enter the
+          // welcome/assign-avatar flow — welcome_completed must stay false
+          // until after conversion.
+          setIsNewUserForWelcome(!identity.isAnonymous && Math.abs(createdAt - lastSignIn) < 300_000)
         } else {
           setIsNewUserForWelcome(false)
         }
@@ -164,7 +188,7 @@ function HomePageInner() {
         setIsNewUserForWelcome(false)
       }
       try {
-        const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp').eq('player_id', pid).single()
+        const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp,rounds_played').eq('player_id', pid).single()
         if (cancelled) return
         if (stats) {
           setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
@@ -204,6 +228,8 @@ function HomePageInner() {
   }, [])
 
   const [showNavModal, setShowNavModal] = useState(false)
+  const [guestGateOpen, setGuestGateOpen] = useState(false)
+  const handleGuestGate = useCallback(() => setGuestGateOpen(true), [])
   const [practiceModalOpen, setPracticeModalOpen] = useState(false)
   const [resumeModalOpen, setResumeModalOpen] = useState(false)
   const [resumeGameId, setResumeGameId] = useState<string | null>(null)
@@ -354,15 +380,17 @@ function HomePageInner() {
         displayName={displayName}
         onLobby={(gameId) => router.push(`/compete/${gameId}`)}
         onOrderSignal={reportChallenge}
+        onGuestGate={handleGuestGate}
       />
     ),
-    daily: <DailyCard key="daily" playerId={playerId} onOrderSignal={reportDaily} />,
+    daily: <DailyCard key="daily" playerId={playerId} onOrderSignal={reportDaily} onGuestGate={handleGuestGate} />,
     practice: (
       <PracticeCard
         key="practice"
         playerId={playerId}
         onCtaClick={handlePracticeTileClick}
         ctaLoading={practiceTileLoading}
+        onGuestGate={handleGuestGate}
       />
     ),
   }
@@ -416,6 +444,12 @@ function HomePageInner() {
           <div className={styles['hv2-grid']}>
             {visibleHomeOrder.map((id) => homeCards[id])}
           </div>
+          {/* Get the app (Android APK / iOS Add to Home Screen) — below the mode cards;
+              hidden while the WelcomeModal or PushSoftAsk overlay is up. */}
+          <GetAppCard
+            style={{ marginBlockStart: 16 }}
+            suppress={welcomeData !== null || (pushSoftAskDismissed === false && !identity.isAnonymous)}
+          />
         </div>
       </div>
 
@@ -435,11 +469,13 @@ function HomePageInner() {
           onSaved={() => setProfileVersion(v => v + 1)}
         />
       )}
-      {welcomeData === null && isNewUserForWelcome && welcomeCompleted === true && pushSoftAskDismissed === false && (
+      {/* GUEST-BUILD-ANONSIGNIN-1029-003: PushSoftAsk never shows for
+          anonymous guests; for registered users it is deferred until their
+          first completed round — DB-derived via player_global_stats
+          (rounds_played/total_xp), no localStorage, no new column. */}
+      {welcomeData === null && pushSoftAskDismissed === false && !identity.isAnonymous && (
         <PushSoftAsk
           playerId={currentPlayerId ?? ''}
-          isNewUserForWelcome={isNewUserForWelcome}
-          welcomeCompleted={welcomeCompleted === true}
           pushSoftAskDismissed={pushSoftAskDismissed === false ? false : true}
           onDismissed={() => setPushSoftAskDismissed(true)}
         />
@@ -449,6 +485,15 @@ function HomePageInner() {
         onClose={() => setPracticeModalOpen(false)}
         onStart={handlePracticeStart}
         initialSettings={loadPracticeSettings()}
+      />
+      {/* GUEST-BUILD-ANONSIGNIN-1029-003: one shared conversion modal for the
+          Daily/Challenge/Practice card guest gates (JourneyCard keeps its
+          own stage-aware instance). */}
+      <GuestConversionModal
+        isOpen={guestGateOpen}
+        stageNumber={2}
+        onClose={() => setGuestGateOpen(false)}
+        onConverted={() => setGuestGateOpen(false)}
       />
       <PracticeResumeModal
         isOpen={resumeModalOpen}

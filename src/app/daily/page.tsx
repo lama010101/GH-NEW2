@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useIdentity } from "@/hooks/useIdentity";
 import { readSession } from "@/core/supabaseBrowser";
 import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity';
+import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal';
 import pageStyles from "@/app/practice/page.module.css";
 
 export default function DailyEntryPage() {
@@ -17,6 +18,10 @@ export default function DailyEntryPage() {
   const startingRef = useRef(false);
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' });
+  // GUEST-BUILD-ANONSIGNIN-1029-003: anonymous guests get the conversion
+  // modal instead of the auto-start flow (defense in depth under the
+  // server-side gate).
+  const isAnonymous = identity.status === 'ready' && identity.isAnonymous;
 
   const handleForceClear = () => {
     forceClearAuthStorage()
@@ -54,7 +59,7 @@ export default function DailyEntryPage() {
   }, [identity.status])
 
   useEffect(() => {
-    if (identityLoading || identityError || !playerId) return;
+    if (identityLoading || identityError || !playerId || isAnonymous) return;
     if (startingRef.current) return;
 
     startingRef.current = true;
@@ -106,7 +111,7 @@ export default function DailyEntryPage() {
     return () => {
       cancelled = true;
     };
-  }, [playerId, identityLoading, identityError, router, t]);
+  }, [playerId, identityLoading, identityError, isAnonymous, router, t]);
 
   return (
     <div className={pageStyles.loadingScreen}>
@@ -164,6 +169,12 @@ export default function DailyEntryPage() {
           </>
         )}
       </div>
+      <GuestConversionModal
+        isOpen={isAnonymous}
+        stageNumber={2}
+        onClose={() => router.push('/home')}
+        onConverted={() => {}}
+      />
     </div>
   );
 }

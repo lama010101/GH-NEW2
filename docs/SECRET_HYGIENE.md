@@ -43,12 +43,15 @@ printed, so output is safe in public CI logs):
   claims or the token.
 - `SB_SECRET` — `sb_secret_*` keys. `OPENROUTER_KEY` — `sk-or-v1-*`.
   `GOOGLE_OAUTH_SECRET` — `GOCSPX-*`. `PRIVATE_KEY_BLOCK` — PEM private-key
-  headers.
+  headers. `GITHUB_TOKEN` — `gh[pousr]_*` and `github_pat_*` tokens.
 - `HEX64_SECRET` — a 64-hex literal on a line naming a secret/token/key/password.
 - `GENERIC_ASSIGNMENT` — `NAME` containing `SECRET|TOKEN|PASSWORD|PRIVATE_KEY|API_KEY`
   assigned a 20+ char literal. Placeholders (`<…>`, `${…}`, `YOUR`, `xxx`,
-  `placeholder`, `example`, `redacted`, `changeme`, single-repeated-char,
-  empty) never count.
+  `placeholder`, `example`, `redacted`, `changeme`, `replace`,
+  single-repeated-char, empty) never count; neither does a pure variable
+  reference (`$VAR`, `${VAR}`, `%VAR%` — uppercase env-var form only, since
+  a lowercase/digit run after `$` is a value, not a reference). A backslash
+  ends a bare value: a `\"` escape is the closing quote, not part of it.
 - `FORBIDDEN_FILE` — newly **added** files named `.dev.vars`, `.env`,
   `.env.*` (except `.env.example` / `.env.local.example`), `*.pem`, `*.key`,
   `*.log`, or anything under `test-results/` / `playwright-report/`

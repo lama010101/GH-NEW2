@@ -632,13 +632,16 @@
     "err_passwords_mismatch": "Пароли не совпадают",
     "err_password_min_length": "Пароль должен быть не менее 6 символов",
     "err_enter_email_first": "Сначала введи email, затем нажми «Забыли пароль?».",
+    "err_network": "Не удалось связаться со службой входа. Возможно, её блокирует расширение конфиденциальности, блокировщик контента или проблема с сетью. Попробуйте отключить блокировщики для этого сайта или используйте другую сеть.",
     "redirecting": "Перенаправление…",
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Письмо для сброса пароля отправлено. Проверь почту.",
     "confirm_email_sent": "Проверь почту для подтверждения аккаунта.",
     "remember_me": "Запомнить меня",
-    "confirm_password": "Подтверди пароль"
+    "confirm_password": "Подтверди пароль",
+    "cookies_blocked_notice": "В вашем браузере заблокированы файлы cookie, поэтому вы не останетесь в системе. Разрешите cookie для guess-history.com и повторите попытку.",
+    "invite_banner": "Друг пригласил вас в живую игру. Войдите или создайте аккаунт, чтобы присоединиться."
   },
   "leaderboard": {
     "title": "РЕЙТИНГ",
@@ -844,7 +847,11 @@
     "max_rank": "Максимальный ранг достигнут",
     "badge_aria": "Значок ранга {tier}",
     "rail_hint_swipe": "свайп",
-    "tier_of_10": "Уровень {tier}/10"
+    "tier_of_10": "Уровень {tier}/10",
+    "gate_xp_ready": "XP накоплено",
+    "gate_accuracy_needed": "Требуемая точность: {pct}%",
+    "gate_your_accuracy": "Вы: {pct}%",
+    "gate_rounds_needed": "Ещё {count} раундов для повышения"
   },
   "grow": {
     "meta_title": "Расти с нами — Back to the Past",
@@ -1396,7 +1403,33 @@
     "list_best_aria": "Лучший результат: {pct}%",
     "list_stage_title": "Этап {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Завершено"
+    "list_completed": "Завершено",
+    "journey_tier_1": "Искусственный интеллект",
+    "journey_tier_2": "Смартфон",
+    "journey_tier_3": "Всемирная паутина",
+    "journey_tier_4": "Персональный компьютер",
+    "journey_tier_5": "Интегральная схема",
+    "journey_tier_6": "Транзистор",
+    "journey_tier_7": "Телефон",
+    "journey_tier_8": "Телеграф",
+    "journey_tier_9": "Паровая машина",
+    "journey_tier_10": "Печатный станок",
+    "journey_tier_11": "Механические часы",
+    "journey_tier_12": "Магнитный компас",
+    "journey_tier_13": "Порох",
+    "journey_tier_14": "Бумага",
+    "journey_tier_15": "Водяное колесо",
+    "journey_tier_16": "Плуг",
+    "journey_tier_17": "Парусная лодка",
+    "journey_tier_18": "Колесо",
+    "journey_tier_19": "Бронза",
+    "journey_tier_20": "Письменность",
+    "journey_sub_1": "Посвящённый",
+    "journey_sub_2": "Ученик",
+    "journey_sub_3": "Адепт",
+    "journey_sub_4": "Эксперт",
+    "journey_sub_5": "Пионер",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

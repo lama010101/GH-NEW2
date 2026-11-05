@@ -632,13 +632,16 @@
     "err_passwords_mismatch": "Wachtwoorden komen niet overeen",
     "err_password_min_length": "Wachtwoord moet minstens 6 tekens zijn",
     "err_enter_email_first": "Voer eerst je e-mailadres in, klik dan op Wachtwoord vergeten.",
+    "err_network": "We konden de aanmeldservice niet bereiken. Een privacy-extensie, contentblocker of netwerkprobleem blokkeert deze mogelijk. Schakel blockers voor deze site uit of probeer een ander netwerk.",
     "redirecting": "Doorsturen…",
     "email_placeholder": "jij@voorbeeld.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-mail voor wachtwoordreset verzonden. Controleer je inbox.",
     "confirm_email_sent": "Controleer je e-mail om je account te bevestigen.",
     "remember_me": "Onthoud mij",
-    "confirm_password": "Bevestig wachtwoord"
+    "confirm_password": "Bevestig wachtwoord",
+    "cookies_blocked_notice": "Cookies zijn geblokkeerd in je browser, dus je blijft niet aangemeld. Sta cookies toe voor guess-history.com en probeer het opnieuw.",
+    "invite_banner": "Een vriend heeft je uitgenodigd voor een live spel. Log in of maak een account om mee te spelen."
   },
   "leaderboard": {
     "title": "RANGLIJST",
@@ -844,7 +847,11 @@
     "max_rank": "Maximale rang bereikt",
     "badge_aria": "Rang {tier} badge",
     "rail_hint_swipe": "veeg",
-    "tier_of_10": "Niveau {tier}/10"
+    "tier_of_10": "Niveau {tier}/10",
+    "gate_xp_ready": "XP gereed",
+    "gate_accuracy_needed": "Vereiste nauwkeurigheid: {pct}%",
+    "gate_your_accuracy": "Jij: {pct}%",
+    "gate_rounds_needed": "Nog {count} rondes om te kwalificeren"
   },
   "grow": {
     "meta_title": "Groei met ons — Back to the Past",
@@ -1396,7 +1403,33 @@
     "list_best_aria": "Beste score: {pct}%",
     "list_stage_title": "Etappe {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Voltooid"
+    "list_completed": "Voltooid",
+    "journey_tier_1": "Kunstmatige intelligentie",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "World Wide Web",
+    "journey_tier_4": "Personal computer",
+    "journey_tier_5": "Geïntegreerde schakeling",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Telefoon",
+    "journey_tier_8": "Telegraaf",
+    "journey_tier_9": "Stoommachine",
+    "journey_tier_10": "Drukpers",
+    "journey_tier_11": "Mechanisch uurwerk",
+    "journey_tier_12": "Magnetisch kompas",
+    "journey_tier_13": "Buskruit",
+    "journey_tier_14": "Papier",
+    "journey_tier_15": "Waterrad",
+    "journey_tier_16": "Ploeg",
+    "journey_tier_17": "Zeilboot",
+    "journey_tier_18": "Wiel",
+    "journey_tier_19": "Brons",
+    "journey_tier_20": "Schrift",
+    "journey_sub_1": "Ingewijde",
+    "journey_sub_2": "Leerling",
+    "journey_sub_3": "Adept",
+    "journey_sub_4": "Expert",
+    "journey_sub_5": "Pionier",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

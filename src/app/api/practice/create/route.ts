@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { CreateCompeteSessionInput } from "@/core/types";
 import { createCompeteSession } from "@/server/sessionCore";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const guest = rejectIfGuest(user);
+    if (guest) return guest;
 
     const body = (await request.json().catch(() => ({}))) as Partial<CreateCompeteSessionInput>;
 

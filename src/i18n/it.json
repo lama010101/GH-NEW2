@@ -632,13 +632,16 @@
     "err_passwords_mismatch": "Le password non coincidono",
     "err_password_min_length": "La password deve essere di almeno 6 caratteri",
     "err_enter_email_first": "Inserisci prima la tua email, poi fai clic su Password dimenticata.",
+    "err_network": "Impossibile raggiungere il servizio di accesso. Un'estensione per la privacy, un blocco dei contenuti o un problema di rete potrebbe impedire la connessione. Prova a disattivare i blocchi per questo sito o a usare un'altra rete.",
     "redirecting": "Reindirizzamento…",
     "email_placeholder": "tu@esempio.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Email di reset password inviata. Controlla la tua casella.",
     "confirm_email_sent": "Controlla la tua email per confermare l'account.",
     "remember_me": "Ricordami",
-    "confirm_password": "Conferma password"
+    "confirm_password": "Conferma password",
+    "cookies_blocked_notice": "I cookie sono bloccati nel tuo browser, quindi non resterai connesso. Consenti i cookie per guess-history.com e riprova.",
+    "invite_banner": "Un amico ti ha invitato a una partita dal vivo. Accedi o crea un account per unirti."
   },
   "leaderboard": {
     "title": "CLASSIFICA",
@@ -844,7 +847,11 @@
     "max_rank": "Rango massimo raggiunto",
     "badge_aria": "Medaglia rango {tier}",
     "rail_hint_swipe": "scorri",
-    "tier_of_10": "Liv. {tier}/10"
+    "tier_of_10": "Liv. {tier}/10",
+    "gate_xp_ready": "XP pronto",
+    "gate_accuracy_needed": "Precisione richiesta: {pct}%",
+    "gate_your_accuracy": "Tu: {pct}%",
+    "gate_rounds_needed": "Ancora {count} round per qualificarti"
   },
   "grow": {
     "meta_title": "Cresci con noi — Back to the Past",
@@ -1396,7 +1403,33 @@
     "list_best_aria": "Miglior punteggio: {pct}%",
     "list_stage_title": "Tappa {number} · {era}",
     "list_pass_chip": "≥{pct}%",
-    "list_completed": "Completata"
+    "list_completed": "Completata",
+    "journey_tier_1": "Intelligenza artificiale",
+    "journey_tier_2": "Smartphone",
+    "journey_tier_3": "World Wide Web",
+    "journey_tier_4": "Personal computer",
+    "journey_tier_5": "Circuito integrato",
+    "journey_tier_6": "Transistor",
+    "journey_tier_7": "Telefono",
+    "journey_tier_8": "Telegrafo",
+    "journey_tier_9": "Motore a vapore",
+    "journey_tier_10": "Macchina da stampa",
+    "journey_tier_11": "Orologio meccanico",
+    "journey_tier_12": "Bussola magnetica",
+    "journey_tier_13": "Polvere da sparo",
+    "journey_tier_14": "Carta",
+    "journey_tier_15": "Ruota idraulica",
+    "journey_tier_16": "Aratro",
+    "journey_tier_17": "Barca a vela",
+    "journey_tier_18": "Ruota",
+    "journey_tier_19": "Bronzo",
+    "journey_tier_20": "Scrittura",
+    "journey_sub_1": "Iniziato",
+    "journey_sub_2": "Apprendista",
+    "journey_sub_3": "Adepto",
+    "journey_sub_4": "Esperto",
+    "journey_sub_5": "Pioniere",
+    "stage_name": "{tier} {sub}"
   },
   "legal": {
     "privacy": {

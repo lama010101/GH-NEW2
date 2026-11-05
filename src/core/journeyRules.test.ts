@@ -6,6 +6,7 @@ import {
   journeyRoundTimerSec,
   journeyStageEraKey,
   journeyStageIconFile,
+  journeyStageNameParts,
   journeyYearLabel,
 } from "./journeyRules";
 
@@ -119,5 +120,24 @@ describe("journeyRoundCount", () => {
         journeyRoundCount(n - 1)
       );
     }
+  });
+});
+
+// JOURNEY-BUILD-TIERNAMES-1103-002 — tier/sub-title index pairs for the
+// derived stage name (20 tiers x 5 sub-titles, clamped to stages 1-100).
+describe("journeyStageNameParts", () => {
+  it.each([
+    [1, 0, 0],
+    [5, 0, 4],
+    [6, 1, 0],
+    [47, 9, 1],
+    [100, 19, 4],
+  ])("stage %i → tierIndex %i, subIndex %i", (stage, tierIndex, subIndex) => {
+    expect(journeyStageNameParts(stage)).toEqual({ tierIndex, subIndex });
+  });
+
+  it("clamps out-of-range stages: 0 → (0,0), 101 → (19,4)", () => {
+    expect(journeyStageNameParts(0)).toEqual({ tierIndex: 0, subIndex: 0 });
+    expect(journeyStageNameParts(101)).toEqual({ tierIndex: 19, subIndex: 4 });
   });
 });

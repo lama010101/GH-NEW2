@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
-async function getAuthenticatedUser(): Promise<{ user: { id: string }; supabase: ReturnType<typeof createAuthenticatedServerClient> } | null> {
+async function getAuthenticatedUser(): Promise<{ user: { id: string; is_anonymous?: boolean | null }; supabase: ReturnType<typeof createAuthenticatedServerClient> } | null> {
   const supabase = createAuthenticatedServerClient();
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -27,6 +28,9 @@ export async function POST(request: NextRequest) {
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(auth.user);
+  if (guest) return guest;
 
   const { user } = auth;
 
@@ -111,6 +115,9 @@ export async function GET(_request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(user);
+  if (guest) return guest;
 
   const serviceRoleClient = createSupabaseServerClient();
 

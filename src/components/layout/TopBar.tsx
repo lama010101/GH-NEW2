@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react'
 import { rankForXp } from '@/core/rank'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import { useIdentity } from '@/hooks/useIdentity'
+import { usePlayerRank } from '@/hooks/usePlayerRank'
 import BrandMark from '@/components/brand/BrandMark'
 import NotificationBell from '@/components/NotificationBell'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
@@ -24,6 +25,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   const t = useTranslations('landing')
   const tNav = useTranslations('nav')
   const { playerId } = useIdentity()
+  const { status: playerRankStatus, tier: gatedTier } = usePlayerRank()
   const [imgError, setImgError] = useState(false)
   const [rankModalOpen, setRankModalOpen] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
@@ -31,7 +33,10 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   // Derive rank tier from xp string for the "Rank" badge.
   // xp may be "--" (loading) or a locale-formatted number like "32 500".
   const xpNum = Number(xp.replace(/[^\d]/g, ''))
-  const tier = Number.isFinite(xpNum) && xpNum >= 0 ? rankForXp(xpNum).tier : 1
+  const xpTier = Number.isFinite(xpNum) && xpNum >= 0 ? rankForXp(xpNum).tier : 1
+  // Gate flag on: the pill shows the gated high-water-mark tier, and only once
+  // the status is ready — never an XP-derived tier that could then drop.
+  const tier = playerRankStatus === 'disabled' ? xpTier : playerRankStatus === 'ready' ? gatedTier : null
 
   return (
     <div className={styles.topbar}>
@@ -45,7 +50,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           onClick={() => setRankModalOpen(true)}
           aria-haspopup="dialog"
         >
-          <span className={styles.xpPillBadge}>{t('rank_label')} {tier}</span>
+          <span className={styles.xpPillBadge}>{t('rank_label')}{tier !== null ? ` ${tier}` : ''}</span>
           <span className={styles.xpPillAccuracy} style={{ color: getAccuracyColor(Number(accuracy)) }}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
         </button>
       </div>

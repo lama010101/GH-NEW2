@@ -24,7 +24,7 @@
   font-size: var(--font-2xs); font-weight: 900; letter-spacing: 1px; padding: 4px 10px;
   border-radius: 999px; border: 1px solid; flex-shrink: 0;
 }
-.headRight { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; }
+.headRight { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px; flex: 0 0 100%; }
 .countBadge {
   font-size: var(--font-2xs); font-weight: 800; padding: 4px 10px; border-radius: 999px;
   background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.22);
@@ -72,8 +72,8 @@
 .streakBadge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 9px; border-radius: 999px;
-  background: rgba(251,146,60,0.2); border: 1px solid rgba(251,146,60,0.55);
-  font-size: var(--font-2xs); font-weight: 800; color: #fb923c;
+  background: rgba(0,0,0,0.32); border: 1px solid #fdba74;
+  font-size: var(--font-2xs); font-weight: 800; color: #fdba74;
 }
 .streakTxt { font-size: var(--font-xs); font-weight: 800; color: #fff; }
 .week { display: flex; gap: 6px; }

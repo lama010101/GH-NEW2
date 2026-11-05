@@ -6,6 +6,7 @@ import {
   loadCompeteSessionSnapshot,
   validateJoinEligibility,
 } from "@/server/sessionCore";
+import { rejectIfGuest } from "@/server/guestGate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const guest = rejectIfGuest(user);
+  if (guest) return guest;
 
   const body = await request.json().catch(() => ({}));
   const { invitation_id } = body as { invitation_id?: string };
