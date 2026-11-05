@@ -40,7 +40,11 @@ config({ path: ".env.local" });
 
 const WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers-v3.ts");
 const AUDIT_SCRIPT = resolve(process.cwd(), "scripts/ai-players/audit-run.ts");
-const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
+// Run scripts through `node <tsx-cli>` rather than node_modules/.bin/tsx: the
+// .bin shim is a POSIX script on macOS/Linux and a .cmd on Windows, which
+// child_process.spawn cannot exec directly (spawn of .cmd without shell is
+// also blocked by Node >=18.20). The CLI entry is identical on every OS.
+const TSX_CLI = resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs");
 
 const PLAYER_CONCURRENCY = 3;
 const MAX_RETRIES = 2;
@@ -310,8 +314,9 @@ function parseArgs(): { dryRun: boolean; phase: Phase } {
 function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn(
-      TSX_BIN,
+      process.execPath,
       [
+        TSX_CLI,
         WORKER_SCRIPT,
         item.eventId,
         `--model=${item.player.model_id}`,
@@ -1214,7 +1219,7 @@ async function runAuditPhase(dryRun: boolean): Promise<number> {
 
 function spawnScript(script: string, extraArgs: string[]): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    const child = spawn(TSX_BIN, [script, ...extraArgs], {
+    const child = spawn(process.execPath, [TSX_CLI, script, ...extraArgs], {
       cwd: process.cwd(),
       env: process.env,
       stdio: "pipe",

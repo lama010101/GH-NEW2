@@ -263,6 +263,26 @@ describe("buildQueue — caps", () => {
     expect(q[3].playerId).toBe("p-2");
   });
 
+  it("daily misses of LATER players beat an earlier player's refresh backlog", () => {
+    // PROD 2026-11-05 regression: p-1's 5 step-4 error refreshes consumed the
+    // whole cap in raw emission order, starving p-2's 3 step-1 daily misses.
+    const q = buildQueue(
+      input({
+        players: [player(), player({ playerId: "p-2" })],
+        dailyEventIds: ["d1", "d2", "d3"],
+        errorRows: [1, 2, 3, 4, 5].map((n) => ({
+          playerId: "p-1",
+          eventId: `e-err-${n}`,
+          mode: "daily" as const,
+        })),
+        maxPlaysPerRun: 6,
+      })
+    );
+    expect(q.filter((i) => i.step === 1)).toHaveLength(6); // all daily misses first
+    expect(q.filter((i) => i.playerId === "p-2" && i.step === 1)).toHaveLength(3);
+    expect(q.every((i) => i.step === 1)).toBe(true); // no refresh item fits
+  });
+
   it("zero caps => empty queue", () => {
     expect(
       buildQueue(input({ dailyEventIds: ["d1"], maxPlaysPerRun: 0 }))
