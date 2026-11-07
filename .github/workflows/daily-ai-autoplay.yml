@@ -6,12 +6,27 @@ concurrency:
 
 on:
   schedule:
+    # 10:17 UTC — Daily-challenge plays only (AIP-BUILD-FLEETFINAL-1103-060).
     - cron: '17 10 * * *'
+    # 20:37 UTC — coverage backlog fill + text-only event audits.
+    - cron: '37 20 * * *'
   workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Fleet phase to run'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - coverage
+          - audit
+          - all
 
 jobs:
   daily-autoplay:
     name: Run active AI players against today's Daily challenge
+    if: github.event.schedule == '17 10 * * *' || inputs.phase == 'daily'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -31,4 +46,44 @@ jobs:
         run: npm ci
 
       - name: Run daily AI autoplay
-        run: npx tsx scripts/ai-players/daily-autoplay.ts
+        run: npx tsx scripts/ai-players/daily-autoplay.ts --phase=daily
+
+  coverage-audit:
+    # Coverage backlog fill (practice plays) + text-only event audits.
+    # 45m justified: the coverage backlog is much larger than the daily set.
+    name: Coverage plays + event audits
+    if: >-
+      github.event.schedule == '37 20 * * *' ||
+      inputs.phase == 'coverage' || inputs.phase == 'audit' || inputs.phase == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SUPABASE_DB_CONNECTION: ${{ secrets.GH_SUPABASE_DB_CONNECTION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Dispatching 'all' runs every phase in ONE supervisor invocation
+      # (daily -> coverage -> audit); the schedule and the narrower phase
+      # dispatches never re-run daily here.
+      - name: Run all phases
+        if: inputs.phase == 'all'
+        run: npx tsx scripts/ai-players/daily-autoplay.ts --phase=all
+
+      - name: Run coverage AI autoplay
+        if: github.event.schedule == '37 20 * * *' || inputs.phase == 'coverage'
+        run: npx tsx scripts/ai-players/daily-autoplay.ts --phase=coverage
+
+      - name: Run event audits
+        if: github.event.schedule == '37 20 * * *' || inputs.phase == 'audit'
+        run: npx tsx scripts/ai-players/audit-run.ts

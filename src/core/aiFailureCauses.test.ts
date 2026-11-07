@@ -51,6 +51,18 @@ describe("classifyFailure (single source, mirrors SQL view precedence)", () => {
       expected: "rate_limit",
     },
     {
+      name: "RATE_LIMIT_DEFERRED marker => rate_limit_deferred (AIP-BUILD-FLEETFINAL-1103-060)",
+      error:
+        "RATE_LIMIT_DEFERRED retry_after_ms=30000 Parasail/upstream_provider_shared_pool",
+      expected: "rate_limit_deferred",
+    },
+    {
+      name: "marker wins over an embedded 429 (checked BEFORE the generic 429 rule)",
+      error:
+        "RATE_LIMIT_DEFERRED retry_after_ms=0 after OpenRouter request failed: 429 Too Many Requests",
+      expected: "rate_limit_deferred",
+    },
+    {
       name: "starts with 'Failed to parse' => bad_output",
       error:
         "Failed to parse AI turn 1 response: Unexpected end of JSON input",

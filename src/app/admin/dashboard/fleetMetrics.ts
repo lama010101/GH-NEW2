@@ -33,7 +33,13 @@ export type { FailureCause } from "@/core/aiFailureCauses";
 export { classifyFailure } from "@/core/aiFailureCauses";
 import type { FailureCause } from "@/core/aiFailureCauses";
 
-export const FAILURE_CAUSES: readonly FailureCause[] = [
+/** Causes with failed_* counters on ai_fleet_runs / display rows. AIP-BUILD-
+ *  FLEETFINAL-1103-060: rate_limit_deferred is deliberately NOT here — a
+ *  deferred item writes no ai_answer_bank error row and is counted separately
+ *  via ai_play_deferrals, so it has no failed_* column to render. */
+export type BankedFailureCause = Exclude<FailureCause, "rate_limit_deferred">;
+
+export const FAILURE_CAUSES: readonly BankedFailureCause[] = [
   "auth",
   "gone",
   "rate_limit",
@@ -45,6 +51,7 @@ export const FAILURE_CAUSE_LABEL: Record<FailureCause, string> = {
   auth: "auth",
   gone: "gone",
   rate_limit: "rate_limit",
+  rate_limit_deferred: "rate_limit_deferred",
   bad_output: "bad_output",
   other: "other",
 };

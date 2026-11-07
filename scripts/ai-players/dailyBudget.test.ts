@@ -38,6 +38,12 @@ const mocks = vi.hoisted(() => ({
   spendError: null as Error | null,
   fleetCapRows: [] as Array<{ value: unknown }>,
   capError: null as Error | null,
+  // AIP-BUILD-FLEETFINAL-1103-060: D3 rate settings rows — high rpm so the
+  // token-bucket pacing is instant in tests.
+  rateSettingsRows: [
+    { key: "ai_rpm_free", value: 600000 },
+    { key: "ai_rpm_paid", value: 600000 },
+  ],
   finalizeCalls: [] as Array<{ sql: string; params: unknown[] }>,
   alertInserts: [] as Array<{ sql: string; params: unknown[] }>,
 }));
@@ -89,6 +95,21 @@ vi.mock("./rosterPreflight", () => ({
 
 vi.mock("dotenv", () => ({ config: () => ({ parsed: {} }), default: { config: () => ({}) } }));
 
+// AIP-BUILD-FLEETFINAL-1103-060: roster is classified via the DB catalog
+// (openrouter_models), not preflightRoster — mark every test player
+// free+vision+available so classifyPlayer keeps it as a player.
+function catalogRows() {
+  return mocks.players.map((p) => ({
+    model_id: p.model_id,
+    is_free: true,
+    is_vision: true,
+    availability_status: "available",
+    context_length: null,
+    price_prompt_usd: 0,
+    price_completion_usd: 0,
+  }));
+}
+
 const P1: Player = {
   id: "p-1",
   name: "BotOne",
@@ -127,18 +148,27 @@ function resetState() {
   mocks.poolEnd.mockClear();
   mocks.poolQuery.mockReset();
   mocks.poolQuery.mockImplementation(async (sql: string) => {
-    // Order matters: the spend query JOINs ai_answer_bank, so test the calls
-    // table first.
+    // Order matters: the D3 usage query also hits ai_answer_bank_calls —
+    // route it before the spend query (it's the date_trunc one).
+    if (sql.includes("date_trunc")) return { rows: [] };
     if (sql.includes("ai_answer_bank_calls")) {
       if (mocks.spendError) throw mocks.spendError;
       return { rows: mocks.spendQueue.shift() ?? [] };
     }
-    if (sql.includes("FROM ai_answer_bank")) return { rows: [] };
     if (sql.includes("FROM ai_players")) return { rows: mocks.players };
+    if (sql.includes("FROM openrouter_models")) return { rows: catalogRows() };
+    // The D3 rate-settings read shares the table but is a different query —
+    // capError simulates the CAP query failing only (settings still parse).
+    if (sql.includes("SELECT key, value FROM ai_fleet_settings")) {
+      return { rows: mocks.rateSettingsRows };
+    }
     if (sql.includes("FROM ai_fleet_settings")) {
       if (mocks.capError) throw mocks.capError;
       return { rows: mocks.fleetCapRows };
     }
+    if (sql.includes("ai_play_deferrals")) return { rows: [] };
+    if (sql.includes("FROM ai_answer_bank")) return { rows: [] };
+    if (sql.includes("FROM events")) return { rows: [] };
     if (sql.includes("INSERT INTO ai_fleet_runs")) return { rows: [{ id: "run-1" }] };
     if (sql.includes("UPDATE ai_fleet_runs")) {
       mocks.finalizeCalls.push({ sql, params: [] });
@@ -181,7 +211,11 @@ function startRun(): void {
 async function waitFor(pred: () => boolean, ms = 5000): Promise<void> {
   const start = Date.now();
   while (!pred()) {
-    if (Date.now() - start > ms) throw new Error("waitFor timeout");
+    if (Date.now() - start > ms) {
+      const out = consoleLog.mock.calls.map((c) => c.join(" ")).join("\n");
+      const err = consoleErr.mock.calls.map((c) => c.join(" ")).join("\n");
+      throw new Error(`waitFor timeout\nLOGS:\n${out}\nERRORS:\n${err}`);
+    }
     await new Promise((r) => setImmediate(r));
   }
 }
