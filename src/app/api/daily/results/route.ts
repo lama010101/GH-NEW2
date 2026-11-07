@@ -3,6 +3,7 @@ import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { dbPool } from "@/server/db";
 import { resolvePlayerIdentities } from "@/core/playerIdentity";
+import { AI_PLAYER_DAILY_SQL } from "@/core/aiPlayerPredicates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +55,7 @@ async function loadDailyResults(date: string): Promise<RawDailyRow[]> {
         MAX(a.created_at) AS completed_at,
         MAX(a.round_accuracy)::numeric(5,2) AS best_round_accuracy
       FROM ai_answer_bank a
-      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active = true
+      JOIN ai_players ap ON ap.id = a.ai_player_id AND ${AI_PLAYER_DAILY_SQL}
       JOIN daily_challenges dc ON dc.date = $1 AND a.event_id = ANY(dc.event_ids)
       WHERE a.error IS NULL
       GROUP BY a.ai_player_id
