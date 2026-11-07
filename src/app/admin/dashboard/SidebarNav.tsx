@@ -45,12 +45,6 @@ const GROUPS: NavGroup[] = [
     heading: "Fleet",
     items: [
       {
-        label: "Models",
-        href: "/admin/dashboard?tab=models",
-        match: "tab=models",
-        icon: <Icon d="M5 5h14v14H5zM9 9h6v6H9z" />,
-      },
-      {
         label: "Add AI",
         href: "/admin/dashboard/catalog",
         match: "/admin/dashboard/catalog",
@@ -72,18 +66,6 @@ const GROUPS: NavGroup[] = [
         href: "/admin/dashboard/events",
         match: "/admin/dashboard/events",
         icon: <Icon d="M3 5h18v16H3zM8 3v4M16 3v4M3 10h18" />,
-      },
-      {
-        label: "Analytics",
-        href: "/admin/dashboard?tab=analytics",
-        match: "tab=analytics",
-        icon: <Icon d="M6 20V10M12 20V4M18 20v-6M3 20h18" />,
-      },
-      {
-        label: "Compare",
-        href: "/admin/dashboard?tab=compare",
-        match: "tab=compare",
-        icon: <Icon d="M4 4h6v16H4zM14 4h6v16h-6z" />,
       },
     ],
   },
@@ -118,17 +100,6 @@ const GROUPS: NavGroup[] = [
         href: "/admin/dashboard/generator",
         match: "/admin/dashboard/generator",
         icon: <Icon d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" />,
-      },
-    ],
-  },
-  {
-    heading: "System",
-    items: [
-      {
-        label: "Debug",
-        href: "/admin/dashboard?tab=debug",
-        match: "tab=debug",
-        icon: <Icon d="M4 17l6-5-6-5M12 19h8" />,
       },
     ],
   },

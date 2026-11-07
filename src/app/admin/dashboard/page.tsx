@@ -2,292 +2,147 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDbPool } from "@/server/db";
-import { ResultsModal } from "./ResultsModal";
-import { AddModelModal } from "./models/AddModelModal";
-import { ModelControls } from "./models/ModelControls";
+import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
+import {
+  classifyPlayer,
+  catalogModelFromRow,
+  type CatalogModelRow,
+} from "@/core/aiEligibility";
+import { derivePrice } from "./fleetMetrics";
+import {
+  fetchFleetRoster,
+  fetchModelUsage,
+  fetchFleetSpend7d,
+  fetchDeferralStats,
+  fetchEligibleEventStats,
+  fetchAuditVotes,
+  fetchPracticePlays7d,
+  fetchRecentErrorRows,
+  fetchRecentFleetRuns,
+  fetchOpenFleetAlerts,
+  fetchRateSettings,
+} from "./queries";
+import { setFleetDailyCap, updateRateSettings } from "./actions";
 import { updateDailyCostCap } from "./models/actions";
 import { scheduleAiPlayerModeChange } from "./scheduling/actions";
-import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, fetchOpenFleetAlerts, fetchRecentFleetRuns, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RecentErrorRow, type ScheduledChangeRow, type FleetAlertRow, type FleetRunRow } from "./queries";
-import { resolveFleetAlert, setFleetDailyCap, updateRateSettings } from "./actions";
-import { fetchFleetReliability, fetchEventDifficulty, fetchEventsNeedingReview, fetchRateSettings, fetchDeferredPlays, AI_RATE_SETTING_KEYS, type FleetReliabilityRow, type EventDifficultyRow, type EventNeedingReviewRow, type RateSettingRow, type DeferredPlayRow } from "./fleetData";
-import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
-import { getAccuracyColor } from "@/core/accuracyColor";
-import { CallDebugModal } from "./CallDebugModal";
-import { classifyFailure, coveragePct, deriveFailing, deriveModelState, derivePrice, deriveTrack, modelGroupKey, trackPriceGroupLabel, FAILURE_CAUSES, TRACK_LABEL, PRICE_LABEL, TRACK_PRICE_GROUP_ORDER, TRACK_GROUP_ORDER, PRICE_GROUP_ORDER, type FleetModelState, type GroupMode } from "./fleetMetrics";
+import {
+  AI_RATE_SETTING_KEYS,
+  RATE_SETTING_META,
+  rateSettingDisplayValue,
+  type AiRateSettingKey,
+} from "./fleetData";
+import {
+  buildRecommendations,
+  classifyEventAudit,
+  classifyModelStatus,
+  classifyProblem,
+  describeRun,
+  FLEET_MODEL_STATUS_LABEL,
+  PROBLEM_CLASS_INFO,
+  PROBLEM_CLASS_LABEL,
+  type FleetModelStatus,
+  type ProblemClass,
+} from "./fleetOverview";
+import { SortableTable, type SortableColumn, type SortableRow } from "./SortableTable";
+import { FleetModelsTable, type FleetModelTableRow } from "./FleetModelsTable";
+import { CollapsibleSection, DismissAlertButton, ModeToggle } from "./FleetControls";
+import { ModelControls } from "./models/ModelControls";
 import { RecordDrawer, type DrawerField } from "./components/RecordDrawer";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 25;
-
 type SearchParams = { [key: string]: string | string[] | undefined };
 
-// Row shape of the read-only admin_fleet_model_stats view
-// (supabase/migrations/20261101090000_admin_fleet_truth_views.sql).
-type FleetStatRow = {
-  ai_player_id: string;
-  name: string;
-  model_id: string;
-  is_active: boolean;
-  is_active_practice: boolean;
-  is_active_daily: boolean;
-  daily_cost_cap_usd: string | number | null;
-  has_catalog_row: boolean;
-  is_vision: boolean | null;
-  is_free: boolean | null;
-  availability_status: string | null;
-  ok_plays: number;
-  failed_plays: number;
-  failed_auth: number;
-  failed_gone: number;
-  failed_rate_limit: number;
-  failed_bad_output: number;
-  failed_other: number;
-  distinct_events_ok: number;
-  ok_event_ids: string[] | null;
-  avg_year_diff: number | null;
-  avg_distance_km: number | null;
-  last_ok_at: string | null;
-  last_play_at: string | null;
-  plays_7d: number;
-  ok_7d: number;
-  auth_7d: number;
-};
-
-type FleetCoverageRow = {
-  eligible_total: number;
-  covered_total: number;
-  depth_0: number;
-  depth_1: number;
-  depth_2: number;
-  depth_3plus: number;
-  covered_vision: number;
-  covered_text: number;
-  covered_unknown: number;
-};
-
-type FleetRow = FleetStatRow & {
-  state: ReturnType<typeof deriveModelState>;
-  failing: boolean;
-  failingRate: number | null;
-  track: ReturnType<typeof deriveTrack>;
-  price: ReturnType<typeof derivePrice>;
-  coveredN: number;
-  coveredPct: number;
-  totalCost: number;
-  costPerOk: number | null;
-};
-
-// One badge per model + one-line reason (ADMIN-BUILD-FLEETTRUTH-1101-031).
-function FleetBadge({
-  state,
-  failing,
-}: {
-  state: FleetModelState;
-  failing: boolean;
-}) {
-  const [label, cls] = failing
-    ? ["Failing", "ops-chip-bad"]
-    : state === "running"
-    ? ["Running", "ops-chip-ok"]
-    : state === "blocked"
-    ? ["Blocked", "ops-chip-warn"]
-    : ["Paused", "ops-chip-muted"];
-  return <span className={`ops-chip ${cls}`}>{label}</span>;
-}
-
-function fleetStateTier(
-  state: FleetModelState,
-  failing: boolean
-): "ok" | "warn" | "bad" | "off" {
-  if (failing) return "bad";
-  if (state === "running") return "ok";
-  if (state === "blocked") return "warn";
-  return "off";
-}
-
-type ActivityRow = {
-  id: string;
-  model_name: string;
-  model_id: string;
-  event_title: string;
-  mode: string;
-  round_accuracy: number | null;
-  location_accuracy: number | null;
-  year_accuracy: number | null;
-  cost: string | number | null;
-  error: string | null;
-  created_at: string;
-  total_count: number;
-};
+const HOUR_MS = 3_600_000;
+const RATE_LIMIT_RECENT_MS = 36 * HOUR_MS;
 
 function getParam(searchParams: SearchParams, key: string): string | undefined {
   const value = searchParams[key];
   return Array.isArray(value) ? value[0] : value;
 }
 
-function toNumber(value: string | number | null | undefined): number {
+function num(value: unknown): number {
   if (value === null || value === undefined) return 0;
-  const parsed = typeof value === "string" ? parseFloat(value) : Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const n = typeof value === "string" ? parseFloat(value) : Number(value);
+  return Number.isFinite(n) ? n : 0;
 }
 
-function formatCost(value: number): string {
-  if (value === 0) return "0.000000";
-  return value.toFixed(6);
+function fmtUsd(value: number): string {
+  if (!Number.isFinite(value)) return "$0.00";
+  if (value > 0 && value < 0.01) return `$${value.toFixed(4)}`;
+  return `$${value.toFixed(2)}`;
 }
 
-function formatDateTime(iso: string | null | undefined): string {
+function fmtPct(value: number): string {
+  return `${value.toFixed(1)}%`;
+}
+
+function fmtDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("en-US", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return "—";
+  return new Date(ms).toISOString().slice(0, 16).replace("T", " ") + " UTC";
 }
 
-function formatRelativeTime(iso: string | null | undefined): string {
+function fmtRelative(iso: string | null | undefined, nowMs: number): string {
   if (!iso) return "—";
-  try {
-    const ms = Date.now() - new Date(iso).getTime();
-    if (ms < 0) return "just now";
-    const seconds = Math.floor(ms / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  } catch {
-    return "—";
-  }
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return "—";
+  const diff = nowMs - ms;
+  if (diff < 0) return "just now";
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
-function formatAccuracy(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  return `${value}%`;
-}
-
-function shortError(error: string | null | undefined): string {
-  if (!error) return "—";
-  return error.length > 80 ? `${error.slice(0, 80)}…` : error;
-}
-
-function defaultDir(column: string): "asc" | "desc" {
-  return column === "name" ||
-    column === "event_title" ||
-    column === "error" ||
-    column === "mode"
-    ? "asc"
-    : "desc";
-}
-
-// Client-side sort of the fleet rows (data set is small — one row per live
-// ai_player). Sort keys match the Models tab columns; state sorts by
-// severity: failing > blocked > running > paused.
-const STATE_RANK: Record<FleetModelState, number> = {
-  paused: 0,
-  running: 1,
-  blocked: 2,
-};
-
-function fleetSortValue(row: FleetRow, column: string): number | string {
-  switch (column) {
-    case "name":
-      return row.name;
-    case "state":
-      return (row.failing ? 3 : STATE_RANK[row.state.state]);
-    case "track":
-      return TRACK_LABEL[row.track];
-    case "price":
-      return PRICE_LABEL[row.price];
-    case "ok_plays":
-      return row.ok_plays;
-    case "failed":
-      return row.failed_plays;
-    case "covered":
-      return row.coveredN;
-    case "avg_year":
-      return row.avg_year_diff ?? -1;
-    case "avg_km":
-      return row.avg_distance_km ?? -1;
-    case "cost_total":
-      return row.totalCost;
-    case "cost_per_ok":
-      return row.costPerOk ?? -1;
-    case "last_ok":
-      return row.last_ok_at ?? "";
-    default:
-      return row.ok_plays;
-  }
-}
-
-function activitySortExpression(
-  column: string,
-  direction: "asc" | "desc"
-): string {
-  const dir = direction.toUpperCase();
-  const nulls = direction === "asc" ? "NULLS FIRST" : "NULLS LAST";
-  switch (column) {
-    case "created_at":
-      return `ab.created_at ${dir} ${nulls}`;
-    case "model_name":
-      return `p.name ${dir}`;
-    case "event_title":
-      return `e.title ${dir}`;
-    case "mode":
-      return `(CASE WHEN dc.date IS NOT NULL THEN 0 ELSE 1 END) ${dir}`;
-    case "round_accuracy":
-      return `ab.round_accuracy ${dir} ${nulls}`;
-    case "location_accuracy":
-      return `ab.location_accuracy ${dir} ${nulls}`;
-    case "year_accuracy":
-      return `ab.year_accuracy ${dir} ${nulls}`;
-    case "cost":
-      return `COALESCE(ac.cost, 0) ${dir} ${nulls}`;
-    case "error":
-      return `ab.error ${dir} ${nulls}`;
-    default:
-      return `ab.created_at DESC NULLS LAST`;
-  }
-}
-
-function sortIndicator(
-  column: string,
-  current: string,
-  direction: "asc" | "desc"
-): string {
-  if (column !== current) return "";
-  return direction === "asc" ? " ↑" : " ↓";
-}
-
-function SortHeader({
-  href,
-  label,
-  column,
-  sort,
-  dir,
+function SummaryCard({
+  title,
+  children,
 }: {
-  href: string;
-  label: string;
-  column: string;
-  sort: string;
-  dir: "asc" | "desc";
+  title: string;
+  children: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="hover:underline">
-      {label}
-      {sortIndicator(column, sort, dir)}
-    </Link>
+    <section className="fleet-card">
+      <h3 className="fleet-card-title">{title}</h3>
+      <div className="fleet-card-body">{children}</div>
+    </section>
   );
 }
 
+function Bar({ pct, label }: { pct: number; label: string }) {
+  const clamped = Math.max(0, Math.min(100, pct));
+  return (
+    <div
+      className="fleet-bar"
+      role="progressbar"
+      aria-valuenow={Math.round(clamped)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label}
+    >
+      <div className="fleet-bar-fill" style={{ width: `${clamped}%` }} />
+    </div>
+  );
+}
 
-export default async function OpenRouterAdminPage({
+const STATUS_CHIP_CLASS: Record<FleetModelStatus, string> = {
+  playing: "ops-chip ops-chip-ok",
+  waiting: "ops-chip ops-chip-info",
+  stopped: "ops-chip ops-chip-bad",
+  off: "ops-chip ops-chip-muted",
+};
+
+const RUN_KIND_LABEL: Record<string, string> = {
+  daily: "Daily play",
+  practice: "Coverage",
+  manual: "Manual",
+};
+
+export default async function AiFleetPage({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -296,2523 +151,807 @@ export default async function OpenRouterAdminPage({
   const {
     data: { session },
   } = await authSupabase.auth.getSession();
-
   if (!session) {
     redirect("/login?next=/admin/dashboard");
   }
 
   const pool = getDbPool();
+  const nowMs = Date.now();
+  const utcToday = new Date(nowMs).toISOString().slice(0, 10);
+  const drawerId = getParam(searchParams, "drawer") ?? null;
 
-  const modelFilterRaw = getParam(searchParams, "model");
-  const modelFilter = modelFilterRaw || null;
+  const [
+    roster,
+    usage,
+    spend7d,
+    deferrals,
+    eventStats,
+    auditVotes,
+    practicePlays7d,
+    errorRows,
+    runs,
+    alerts,
+    settingsRows,
+    spendToday,
+    fleetCap,
+  ] = await Promise.all([
+    fetchFleetRoster(pool),
+    fetchModelUsage(pool, utcToday),
+    fetchFleetSpend7d(pool),
+    fetchDeferralStats(pool),
+    fetchEligibleEventStats(pool),
+    fetchAuditVotes(pool),
+    fetchPracticePlays7d(pool),
+    fetchRecentErrorRows(pool, { days: 7, limit: 3000 }),
+    fetchRecentFleetRuns(pool, 15),
+    fetchOpenFleetAlerts(pool),
+    fetchRateSettings(pool),
+    fetchSpendTodayByPlayer(pool, utcToday),
+    getFleetDailyCap(pool),
+  ]);
 
-  const mSort = getParam(searchParams, "m_sort") || "ok_plays";
-  const capFilterRaw = getParam(searchParams, "cap_filter") || "";
-  const capFilter =
-    capFilterRaw === "capped" || capFilterRaw === "uncapped" ? capFilterRaw : null;
-  const mDirRaw = getParam(searchParams, "m_dir") || "desc";
-  const mDir: "asc" | "desc" = mDirRaw === "asc" ? "asc" : "desc";
-  const mGroupRaw = getParam(searchParams, "m_group") || "track_price";
-  const mGroup: GroupMode =
-    mGroupRaw === "track" || mGroupRaw === "price" || mGroupRaw === "none"
-      ? mGroupRaw
-      : "track_price";
-
-  const aSort = getParam(searchParams, "a_sort") || "created_at";
-  const aDirRaw = getParam(searchParams, "a_dir") || "desc";
-  const aDir: "asc" | "desc" = aDirRaw === "asc" ? "asc" : "desc";
-
-  const cSort = getParam(searchParams, "c_sort") || "avg_round_accuracy";
-  const cDirRaw = getParam(searchParams, "c_dir") || "desc";
-  const cDir: "asc" | "desc" = cDirRaw === "asc" ? "asc" : "desc";
-
-  const errTypeRaw = getParam(searchParams, "errType");
-  const errType: ErrorBucket | null =
-    errTypeRaw === "rate_limit" ||
-    errTypeRaw === "not_found" ||
-    errTypeRaw === "parse" ||
-    errTypeRaw === "other"
-      ? errTypeRaw
-      : null;
-
-  const pageRaw = getParam(searchParams, "page");
-  const page = Math.max(1, parseInt(pageRaw || "1", 10) || 1);
-
-  const tabRaw = getParam(searchParams, "tab") || "overview";
-  const tab: "overview" | "models" | "analytics" | "compare" | "debug" | "events" =
-    tabRaw === "models" ||
-    tabRaw === "analytics" ||
-    tabRaw === "compare" ||
-    tabRaw === "debug" ||
-    tabRaw === "events"
-      ? tabRaw
-      : "overview";
-
-  const currentParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(searchParams)) {
-    if (value == null) continue;
-    if (Array.isArray(value)) {
-      value.forEach((v) => currentParams.append(key, v));
-    } else {
-      currentParams.set(key, value);
-    }
-  }
-
-  function makeLink(
-    updates: Record<string, string | undefined>
-  ): string {
-    const next = new URLSearchParams(currentParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (value === undefined) next.delete(key);
-      else next.set(key, value);
-    }
-    const qs = next.toString();
-    return `/admin/dashboard${qs ? `?${qs}` : ""}`;
-  }
-
-  function modelSortLink(column: string): string {
-    const nextDir =
-      mSort === column
-        ? mDir === "desc"
-          ? "asc"
-          : "desc"
-        : defaultDir(column);
-    return makeLink({ m_sort: column, m_dir: nextDir });
-  }
-
-  function activitySortLink(column: string): string {
-    const nextDir =
-      aSort === column
-        ? aDir === "desc"
-          ? "asc"
-          : "desc"
-        : defaultDir(column);
-    return makeLink({ a_sort: column, a_dir: nextDir, page: undefined });
-  }
-
-  function detailLink(id: string): string {
-    return makeLink({ detail: id });
-  }
-
-  function pageLink(pageNum: number): string {
-    return makeLink({ page: String(pageNum) });
-  }
-
-  function compareSortLink(column: string): string {
-    const nextDir =
-      cSort === column
-        ? cDir === "desc"
-          ? "asc"
-          : "desc"
-        : column === "model_name"
-        ? "asc"
-        : "desc";
-    return makeLink({ c_sort: column, c_dir: nextDir });
-  }
-
-  const needFleet = tab === "overview" || tab === "models";
-  const needActivity = tab === "analytics";
-  const needOverview = tab === "overview";
-  const needRecentErrors = tab === "overview";
-  const needCostWeek = tab === "overview";
-  const needScheduled = tab === "overview";
-
-  // Fleet truth: per-model play stats from the read-only view
-  // admin_fleet_model_stats (migration 20261101090000). One row per live
-  // ai_player; deleted rows never appear here (they live in Trash).
-  const { rows: fleetStatRows } = needFleet
-    ? await pool.query<FleetStatRow>(
-        `SELECT * FROM admin_fleet_model_stats ORDER BY name`
-      )
-    : { rows: [] as FleetStatRow[] };
-
-  const { rows: coverageRows } = needFleet
-    ? await pool.query<FleetCoverageRow>(`SELECT * FROM admin_fleet_coverage`)
-    : { rows: [] as FleetCoverageRow[] };
-  const coverage = coverageRows[0] ?? null;
-  const eligibleTotal = coverage?.eligible_total ?? 0;
-
-  // Distinct eligible events with >=1 OK play, per player — from the view's
-  // ok_event_ids (single eligibility definition lives in the migration).
-  // Powers per-group union counts on the Models tab.
-  const coveredByPlayer = new Map<string, Set<string>>();
-  for (const r of fleetStatRows) {
-    coveredByPlayer.set(r.ai_player_id, new Set(r.ok_event_ids ?? []));
-  }
-
-  // Per-model total cost — the existing cost computation, unchanged
-  // (SUM of response_payload->'usage'->>'cost' over ai_answer_bank_calls).
-  const { rows: modelCostRows } = needFleet
-    ? await pool.query<{ ai_player_id: string; total_cost: string | number }>(
-        `
-        SELECT
-          ab.ai_player_id,
-          COALESCE(
-            SUM((c.response_payload->'usage'->>'cost')::numeric)
-            FILTER (WHERE c.response_payload IS NOT NULL),
-            0
-          ) AS total_cost
-        FROM ai_answer_bank ab
-        JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
-        GROUP BY ab.ai_player_id
-        `
-      )
-    : { rows: [] as { ai_player_id: string; total_cost: string | number }[] };
-  const costByPlayer = new Map<string, number>(
-    modelCostRows.map((r) => [r.ai_player_id, toNumber(r.total_cost)])
+  const usageByPlayer = new Map(
+    usage.filter((u) => u.ai_player_id !== null).map((u) => [u.ai_player_id as string, u])
   );
+  const deferByPlayer = new Map(deferrals.map((d) => [d.ai_player_id, d]));
+  const settingsByKey = new Map(settingsRows.map((s) => [s.key, s.value]));
 
-  const activityOrderBy = activitySortExpression(aSort, aDir);
-  const offset = (page - 1) * PAGE_SIZE;
-  const { rows: activityRows } = needActivity
-    ? await pool.query<ActivityRow>(
-    `
-    WITH activity_costs AS (
-      SELECT
-        c.ai_answer_bank_id,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-          FILTER (WHERE c.response_payload IS NOT NULL),
-          0
-        ) AS cost
-      FROM ai_answer_bank_calls c
-      GROUP BY c.ai_answer_bank_id
-    )
-    SELECT
-      ab.id,
-      p.name AS model_name,
-      p.model_id,
-      e.title AS event_title,
-      ab.round_accuracy,
-      ab.location_accuracy,
-      ab.year_accuracy,
-      COALESCE(ac.cost, 0) AS cost,
-      ab.error,
-      ab.created_at,
-      CASE WHEN dc.date IS NOT NULL THEN 'Daily (inferred)' ELSE 'Practice' END AS mode,
-      COUNT(*) OVER() AS total_count
-    FROM ai_answer_bank ab
-    JOIN ai_players p ON p.id = ab.ai_player_id
-    JOIN events e ON e.id = ab.event_id
-    LEFT JOIN activity_costs ac ON ac.ai_answer_bank_id = ab.id
-    LEFT JOIN daily_challenges dc
-      ON dc.date = ab.created_at::date AND ab.event_id = ANY(dc.event_ids)
-    ORDER BY ${activityOrderBy}
-    LIMIT $1 OFFSET $2
-    `,
-    [PAGE_SIZE, offset]
-  )
-    : { rows: [] as ActivityRow[] };
+  const fleetSpendToday = spendToday.total;
+  const fleetHalted =
+    alerts.some((a) => a.kind === "auth_fleet") ||
+    runs.some(
+      (r) =>
+        r.halt_reason === "auth_fleet" &&
+        Date.parse(r.started_at) > nowMs - 24 * HOUR_MS
+    );
 
-  const totalCount = activityRows[0]?.total_count ?? 0;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  // ---------------- per-model view rows ----------------
+  type ModelView = {
+    row: (typeof roster)[number];
+    playerId: string;
+    name: string;
+    modelId: string;
+    price: string;
+    status: FleetModelStatus;
+    whyText: string;
+    eventsPlayed: number;
+    spendTodayUsd: number;
+    cost7dUsd: number;
+    callsToday: number;
+    lastSuccessAt: string | null;
+    dailyCapUsd: number | null;
+    catalogAvailable: boolean;
+    deadSlug: boolean;
+    ownCapReached: boolean;
+    capStoppedAtMs: number | null;
+    rateLimitDays3d: number;
+    rateLimited: boolean;
+    suggestible: boolean;
+    dailyOn: boolean;
+    practiceOn: boolean;
+    role: string;
+    isActive: boolean;
+  };
 
-  // --- Fleet truth derivation (single definitions, fleetMetrics.ts) ---
-  const fleet: FleetRow[] = fleetStatRows.map((row) => {
-    const state = deriveModelState({
-      is_active: row.is_active,
-      is_active_practice: row.is_active_practice,
-      is_active_daily: row.is_active_daily,
+  const modelViews: ModelView[] = roster.map((row) => {
+    const catalogRow: CatalogModelRow = {
+      model_id: row.model_id,
+      is_free: row.is_free,
+      is_vision: row.is_vision,
       availability_status: row.availability_status,
-      has_catalog_row: row.has_catalog_row,
+      context_length: row.context_length,
+      price_prompt_usd: row.price_prompt_usd,
+      price_completion_usd: row.price_completion_usd,
+    };
+    const catalogModel = catalogModelFromRow(catalogRow);
+    const verdict = classifyPlayer(
+      {
+        id: row.ai_player_id,
+        model_id: row.model_id,
+        is_active: row.is_active,
+        is_active_daily: row.is_active_daily,
+        is_active_practice: row.is_active_practice,
+        deleted_at: null,
+      },
+      catalogModel,
+      { action: "proceed" }
+    );
+    const u = usageByPlayer.get(row.ai_player_id);
+    const d = deferByPlayer.get(row.ai_player_id);
+    const spendTodayUsd = num(u?.cost_today);
+    const cost7dUsd = num(u?.cost_7d);
+    const lastCallMs = u?.last_call_today ? Date.parse(u.last_call_today) : null;
+    const lastSuccessMs = row.last_success_at ? Date.parse(row.last_success_at) : null;
+    const dailyCapUsd =
+      row.daily_cost_cap_usd === null ? null : num(row.daily_cost_cap_usd);
+    const cap =
+      dailyCapUsd !== null && Number.isFinite(dailyCapUsd) && dailyCapUsd > 0
+        ? dailyCapUsd
+        : null;
+    const ownCapReached = cap !== null && spendTodayUsd >= cap;
+    const rateLimited =
+      d?.last_deferred_at != null &&
+      Date.parse(d.last_deferred_at) >= nowMs - RATE_LIMIT_RECENT_MS;
+    const statusRes = classifyModelStatus({
+      nowMs,
+      catalogAvailable: catalogModel !== null,
+      eligibilityRole: verdict.role,
+      eligibilityReason: verdict.reason,
+      isVision: catalogModel?.isVision === true,
+      isActiveDaily: row.is_active_daily === true,
+      isActivePractice: row.is_active_practice === true,
+      freeVisionAlwaysOn: verdict.reason === "free_vision",
+      spendTodayUsd,
+      dailyCapUsd: cap,
+      fleetSpendTodayUsd: fleetSpendToday,
+      fleetCapUsd: fleetCap,
+      fleetHalted,
+      rateLimited,
+      lastSuccessAtMs: lastSuccessMs,
+      lastActivityAtMs: lastCallMs,
     });
-    const fail = deriveFailing({
-      plays_7d: row.plays_7d,
-      ok_7d: row.ok_7d,
-      auth_7d: row.auth_7d,
-    });
-    const coveredN = row.distinct_events_ok;
-    const totalCost = costByPlayer.get(row.ai_player_id) ?? 0;
     return {
-      ...row,
-      state,
-      failing: state.state === "running" && fail.failing,
-      failingRate: fail.okRate,
-      track: deriveTrack(row.is_vision),
+      row,
+      playerId: row.ai_player_id,
+      name: row.name,
+      modelId: row.model_id,
       price: derivePrice(row.is_free, row.model_id),
-      coveredN,
-      coveredPct: coveragePct(coveredN, eligibleTotal),
-      totalCost,
-      costPerOk: row.ok_plays > 0 ? totalCost / row.ok_plays : null,
+      status: statusRes.status,
+      whyText: statusRes.whyText,
+      eventsPlayed: row.events_played,
+      spendTodayUsd,
+      cost7dUsd,
+      callsToday: u?.calls_today ?? 0,
+      lastSuccessAt: row.last_success_at,
+      dailyCapUsd: cap,
+      catalogAvailable: catalogModel !== null,
+      deadSlug: catalogModel === null,
+      ownCapReached,
+      capStoppedAtMs: ownCapReached ? lastCallMs : null,
+      rateLimitDays3d: d?.defer_days_3d ?? 0,
+      rateLimited,
+      suggestible: verdict.role === "player" && verdict.tier !== "free",
+      dailyOn: row.is_active_daily === true,
+      practiceOn: row.is_active_practice === true,
+      role: verdict.role,
+      isActive: row.is_active === true,
     };
   });
 
-  // Fleet-status counts (Overview block 1).
-  const runningCount = fleet.filter((r) => r.state.state === "running").length;
-  const pausedCount = fleet.filter((r) => r.state.state === "paused").length;
-  const blockedCount = fleet.filter((r) => r.state.state === "blocked").length;
-  const failingCount = fleet.filter((r) => r.failing).length;
-  // Practice flag count — flags only, NOT running models: no scheduler reads
-  // is_active_practice (run-batch is manual --model only).
-  const practiceFlaggedCount = fleet.filter((r) => r.is_active_practice).length;
-  const lastOkAt = fleet.reduce((latest, row) => {
-    if (row.last_ok_at && (!latest || row.last_ok_at > latest)) {
-      return row.last_ok_at;
-    }
-    return latest;
-  }, null as string | null);
+  // ---------------- summary numbers ----------------
+  const totalModels = modelViews.length;
+  const visionCount = roster.filter((r) => r.is_vision === true).length;
+  const textCount = roster.filter((r) => r.is_vision === false).length;
+  const unknownCatalog = roster.filter((r) => r.is_vision === null).length;
+  const askedToday = modelViews.filter((m) => m.callsToday > 0).length;
+  const offCount = modelViews.filter((m) => m.status === "off").length;
+  const dailyOnCount = roster.filter((r) => r.is_active_daily === true).length;
+  const practiceOnCount = roster.filter((r) => r.is_active_practice === true).length;
+  const eligibleModels = modelViews.filter((m) => m.role === "player").length;
 
-  // Needs attention: only Blocked or Failing models (Paused is not an
-  // exception).
-  const needsAttention = fleet.filter(
-    (r) => r.state.state === "blocked" || r.failing
-  );
+  const eligibleTotal = eventStats.eligible_total;
+  const eventsPct =
+    eligibleTotal > 0 ? (eventStats.events_with_play / eligibleTotal) * 100 : 0;
+  const avgModelsPerEvent =
+    eligibleTotal > 0 ? eventStats.ok_pairs / eligibleTotal : 0;
 
-  // --- Health (24h): plays at ai_answer_bank row level, not API calls ---
-  const { rows: plays24hRows } = needOverview
-    ? await pool.query<{ error: string | null }>(
-        `SELECT error FROM ai_answer_bank
-         WHERE created_at >= now() - interval '24 hours'`
-      )
-    : { rows: [] as { error: string | null }[] };
-  const plays24h = plays24hRows.length;
-  const ok24h = plays24hRows.filter((r) => r.error === null).length;
-  const failed24h = plays24h - ok24h;
-  const okRate24h = plays24h > 0 ? (ok24h / plays24h) * 100 : 0;
-  const cause24h: Record<string, number> = {};
-  for (const r of plays24hRows) {
-    const cause = classifyFailure(r.error);
-    if (cause) cause24h[cause] = (cause24h[cause] ?? 0) + 1;
+  // Audit verdicts per event
+  const auditByEvent = new Map<string, { t: number; f: number; u: number }>();
+  for (const v of auditVotes) {
+    const e = auditByEvent.get(v.event_id) ?? { t: 0, f: 0, u: 0 };
+    if (v.is_real_event === "real" || v.is_real_event === "likely_real") e.t += v.n;
+    else if (v.is_real_event === "doubtful" || v.is_real_event === "fabricated") e.f += v.n;
+    else e.u += v.n;
+    auditByEvent.set(v.event_id, e);
   }
-  const auth24h = cause24h["auth"] ?? 0;
+  let auditTrue = 0;
+  let auditFalse = 0;
+  let auditUnsure = 0;
+  for (const e of auditByEvent.values()) {
+    const v = classifyEventAudit(e.t, e.f, e.u);
+    if (v === "true") auditTrue++;
+    else if (v === "false") auditFalse++;
+    else auditUnsure++;
+  }
+  const auditedEvents = auditByEvent.size;
+  const auditedPct = eligibleTotal > 0 ? (auditedEvents / eligibleTotal) * 100 : 0;
 
-  // AIP-BUILD-BUDGET-1103-004: "Cost today" and the fleet cap card use the
-  // shared spend function (UTC calendar date) — the same numbers the Daily
-  // runner enforces against. The previous rolling '24 hours' window is
-  // retired; "Total" is unchanged.
-  const utcToday = new Date().toISOString().slice(0, 10);
-  const spendToday =
-    needOverview || needFleet
-      ? await fetchSpendTodayByPlayer(pool, utcToday)
-      : { byPlayer: new Map<string, number>(), total: 0 };
-  const fleetDailyCap = needOverview
-    ? await getFleetDailyCap(pool).catch(() => null)
-    : null;
-  const { rows: costTotalRows } = needOverview
-    ? await pool.query<{
-        cost_total: string | number | null;
-      }>(
-        `
-        SELECT
-          COALESCE(
-            SUM((c.response_payload->'usage'->>'cost')::numeric)
-              FILTER (WHERE c.response_payload IS NOT NULL),
-            0
-          ) AS cost_total
-        FROM ai_answer_bank_calls c
-        `
-      )
-    : { rows: [] as { cost_total: string | number | null }[] };
-  const costToday = spendToday.total;
-  const costTotal = toNumber(costTotalRows[0]?.cost_total);
-  const costWeek = needCostWeek ? await fetchCostWeek(pool) : 0;
-  const okPlaysTotal = fleet.reduce((sum, r) => sum + r.ok_plays, 0);
-  const costPerOkPlay = okPlaysTotal > 0 ? costTotal / okPlaysTotal : null;
+  // Spend
+  const spendPct = fleetCap && fleetCap > 0 ? (fleetSpendToday / fleetCap) * 100 : 0;
 
-  // --- Scheduled changes + recent errors (unchanged sources) ---
-  const recentErrorsRaw: RecentErrorRow[] = needRecentErrors
-    ? await fetchRecentErrors(pool, 5)
-    : [];
-  const scheduledRaw: ScheduledChangeRow[] = needScheduled
-    ? await fetchScheduledChanges(pool, { limit: 5 })
-    : [];
-  const pendingScheduled = scheduledRaw.filter((r) => r.status === "pending");
+  // ---------------- recommendations ----------------
+  const recommendations = buildRecommendations({
+    nowMs,
+    fleetSpendTodayUsd: fleetSpendToday,
+    fleetCapUsd: fleetCap,
+    fleetHalted,
+    practicePlaysLast7d: practicePlays7d,
+    alerts: alerts.map((a) => ({
+      id: a.id,
+      kind: a.kind,
+      severity: a.severity,
+      message: a.message,
+      occurrences: a.occurrences,
+    })),
+    models: modelViews.map((m) => ({
+      playerId: m.playerId,
+      name: m.name,
+      modelId: m.modelId,
+      status: m.status,
+      deadSlug: m.deadSlug,
+      ownCapReached: m.ownCapReached,
+      ownCapUsd: m.dailyCapUsd,
+      capStoppedAtMs: m.capStoppedAtMs,
+      rateLimitDays3d: m.rateLimitDays3d,
+      suggestible: m.suggestible,
+      dailyOn: m.dailyOn,
+      practiceOn: m.practiceOn,
+    })),
+  });
 
-  // Fleet alerts + recent runs (AIP-BUILD-FLEETHALT-1102-043; tables from
-  // migration 20261102140000_ai_fleet_runs_alerts.sql).
-  const openAlerts: FleetAlertRow[] = needOverview
-    ? await fetchOpenFleetAlerts(pool)
-    : [];
-  const recentRuns: FleetRunRow[] = needOverview
-    ? await fetchRecentFleetRuns(pool, 7)
-    : [];
+  // ---------------- models table ----------------
+  const eligibleDenom = Math.max(eligibleTotal, 1);
+  const modelColumns: SortableColumn[] = [
+    { key: "model", label: "Model", kind: "text" },
+    { key: "price", label: "Price", kind: "text" },
+    { key: "daily", label: "Daily", kind: "text" },
+    { key: "practice", label: "Practice", kind: "text" },
+    { key: "status", label: "Status", kind: "text" },
+    { key: "why", label: "Why", kind: "text" },
+    { key: "events", label: "Events played", kind: "number", align: "right" },
+    { key: "costToday", label: "Cost today", kind: "number", align: "right" },
+    { key: "cost7d", label: "Cost 7 days", kind: "number", align: "right" },
+    { key: "lastSuccess", label: "Last success", kind: "date", align: "right" },
+  ];
 
-  // AIP-BUILD-FLEETFINAL-1103-060 (E5): view-backed fleet-final panels.
-  // The views ship in migration 20261103120000 — degrade to empty lists when
-  // they are absent on an environment (same pattern as getFleetDailyCap).
-  const fleetReliability: FleetReliabilityRow[] = needOverview
-    ? await fetchFleetReliability(pool).catch(() => [] as FleetReliabilityRow[])
-    : [];
-  const eventDifficulty: EventDifficultyRow[] = needOverview
-    ? await fetchEventDifficulty(pool, 50).catch(
-        () => [] as EventDifficultyRow[]
-      )
-    : [];
-  const eventsNeedingReview: EventNeedingReviewRow[] = needOverview
-    ? await fetchEventsNeedingReview(pool, 100).catch(
-        () => [] as EventNeedingReviewRow[]
-      )
-    : [];
-  const rateSettingRows: RateSettingRow[] = needOverview
-    ? await fetchRateSettings(pool).catch(() => [] as RateSettingRow[])
-    : [];
-  const deferredPlays: DeferredPlayRow[] = needOverview
-    ? await fetchDeferredPlays(pool).catch(() => [] as DeferredPlayRow[])
-    : [];
-  const rateSettingsByKey = new Map<string, unknown>(
-    rateSettingRows.map((r) => [r.key, r.value])
-  );
+  const modelRows: FleetModelTableRow[] = modelViews.map((m) => {
+    const eventsPctModel = (m.eventsPlayed / eligibleDenom) * 100;
+    const costBarDenom = m.dailyCapUsd ?? fleetCap ?? 0;
+    const costBarPct = costBarDenom > 0 ? (m.spendTodayUsd / costBarDenom) * 100 : 0;
+    const drawerHref = `/admin/dashboard?drawer=${m.playerId}`;
+    return {
+      id: m.playerId,
+      status: m.status,
+      sort: {
+        model: m.name.toLowerCase(),
+        price: m.price,
+        daily: m.dailyOn ? 1 : 0,
+        practice: m.practiceOn ? 1 : 0,
+        status: FLEET_MODEL_STATUS_LABEL[m.status],
+        why: m.whyText,
+        events: m.eventsPlayed,
+        costToday: m.spendTodayUsd,
+        cost7d: m.cost7dUsd,
+        lastSuccess: m.lastSuccessAt,
+      },
+      cells: [
+        <span key="m" className="fleet-modelcell">
+          <Link href={drawerHref} className="ops-celllink" title="Open details">
+            <span className="ops-cellname">
+              <span className="ops-truncate">{m.name}</span>
+            </span>
+          </Link>
+          <span className="fleet-modelid">{m.modelId}</span>
+        </span>,
+        <span key="p">{m.price === "unknown" ? "Unknown" : m.price === "free" ? "Free" : "Paid"}</span>,
+        <ModeToggle key="d" playerId={m.playerId} mode="daily" on={m.dailyOn} label="Daily" />,
+        <ModeToggle key="pr" playerId={m.playerId} mode="practice" on={m.practiceOn} label="Practice" />,
+        <span key="s" className={STATUS_CHIP_CLASS[m.status]}>
+          {FLEET_MODEL_STATUS_LABEL[m.status]}
+        </span>,
+        <span key="w" className="fleet-why">{m.whyText}</span>,
+        <span key="e" className="fleet-numcell">
+          {m.eventsPlayed} / {eligibleTotal}
+          <Bar pct={eventsPctModel} label={`${m.name} events played`} />
+        </span>,
+        <span key="ct" className="fleet-numcell">
+          {fmtUsd(m.spendTodayUsd)}
+          <Bar pct={costBarPct} label={`${m.name} cost today vs cap`} />
+        </span>,
+        <span key="c7" className="fleet-numcell">{fmtUsd(m.cost7dUsd)}</span>,
+        <span key="ls">{fmtRelative(m.lastSuccessAt, nowMs)}</span>,
+      ],
+    };
+  });
 
-  const recentErrors = recentErrorsRaw.map((row) => ({
-    id: row.id,
-    model_name: row.model_name,
-    error: row.error,
-    cause: classifyFailure(row.error),
-    created_at_relative: formatRelativeTime(row.created_at),
+  const totalEventsPlayed = modelViews.reduce((s, m) => s + m.eventsPlayed, 0);
+  const totalCostToday = modelViews.reduce((s, m) => s + m.spendTodayUsd, 0);
+  const totalCost7d = modelViews.reduce((s, m) => s + m.cost7dUsd, 0);
+  const latestSuccess = modelViews
+    .map((m) => m.lastSuccessAt)
+    .filter((x): x is string => x !== null)
+    .sort()
+    .pop();
+  // Spend on players no longer in the live roster (soft-deleted etc.).
+  const rosterIds = new Set(modelViews.map((m) => m.playerId));
+  let unattributedToday = 0;
+  let unattributed7d = 0;
+  for (const u of usage) {
+    if (u.ai_player_id === null || rosterIds.has(u.ai_player_id)) continue;
+    unattributedToday += num(u.cost_today);
+    unattributed7d += num(u.cost_7d);
+  }
+
+  const modelFooter: React.ReactNode[] = [
+    <strong key="t">Totals</strong>,
+    "—",
+    "—",
+    "—",
+    "—",
+    `${totalEventsPlayed.toLocaleString()} plays`,
+    fmtUsd(totalCostToday),
+    fmtUsd(totalCost7d),
+    latestSuccess ? fmtRelative(latestSuccess, nowMs) : "—",
+  ];
+
+  // ---------------- recent runs ----------------
+  const runColumns: SortableColumn[] = [
+    { key: "started", label: "Started", kind: "date" },
+    { key: "kind", label: "Kind", kind: "text" },
+    { key: "models", label: "Models", kind: "text" },
+    { key: "plays", label: "Plays", kind: "number", align: "right" },
+    { key: "refused", label: "Refused", kind: "number", align: "right" },
+    { key: "cost", label: "Cost", kind: "text", align: "right" },
+    { key: "what", label: "What happened", kind: "text" },
+  ];
+  const runRows: SortableRow[] = runs.map((r) => ({
+    id: r.id,
+    sort: {
+      started: r.started_at,
+      kind: RUN_KIND_LABEL[r.kind] ?? r.kind,
+      models: null,
+      plays: r.plays_ok,
+      refused: r.failed_rate_limit,
+      cost: null,
+      what: describeRun(r),
+    },
+    cells: [
+      <span key="s">{fmtDateTime(r.started_at)}</span>,
+      <span key="k">{RUN_KIND_LABEL[r.kind] ?? r.kind}</span>,
+      <span key="m" title="Per-run model list is not recorded">-</span>,
+      <span key="p" className="fleet-numcell">
+        {r.plays_ok}
+        <span className="fleet-sub"> / {r.plays_attempted} tried</span>
+      </span>,
+      <span key="r" className="fleet-numcell">{r.failed_rate_limit}</span>,
+      <span key="c" title="Per-run cost is not recorded">-</span>,
+      <span key="w" className="fleet-why">{describeRun(r)}</span>,
+    ],
   }));
 
-  // --- Models tab: filter, sort (client-side), group ---
-  const fleetFiltered = fleet.filter(
-    (r) =>
-      (modelFilter === null || r.model_id === modelFilter) &&
-      (capFilter === null ||
-        (capFilter === "capped"
-          ? r.daily_cost_cap_usd !== null
-          : r.daily_cost_cap_usd === null))
-  );
-  const fleetSorted = [...fleetFiltered].sort((a, b) => {
-    const av = fleetSortValue(a, mSort);
-    const bv = fleetSortValue(b, mSort);
-    const dir = mDir === "asc" ? 1 : -1;
-    if (typeof av === "string" && typeof bv === "string") {
-      return dir * av.localeCompare(bv);
-    }
-    return dir * ((av as number) - (bv as number));
-  });
-
-  type FleetGroup = {
-    key: string;
-    label: string | null;
-    rows: FleetRow[];
-    running: number;
-    okPlays: number;
-    coveredEvents: number;
+  // ---------------- problems ----------------
+  type ProblemGroup = {
+    cls: ProblemClass;
+    model: string;
+    times: number;
+    lastSeen: string;
   };
-  const fleetGroups: FleetGroup[] = (() => {
-    const keyOf = (r: FleetRow): string => {
-      if (mGroup === "track") return r.track;
-      if (mGroup === "price") return r.price;
-      if (mGroup === "none") return "all";
-      return modelGroupKey(r.track, r.price);
+  const problemMap = new Map<string, ProblemGroup>();
+  for (const e of errorRows) {
+    const cls = classifyProblem(e.error);
+    const key = `${cls}|${e.model_name}`;
+    const g = problemMap.get(key) ?? {
+      cls,
+      model: e.model_name,
+      times: 0,
+      lastSeen: e.created_at,
     };
-    const order: readonly string[] =
-      mGroup === "track"
-        ? TRACK_GROUP_ORDER
-        : mGroup === "price"
-        ? PRICE_GROUP_ORDER
-        : mGroup === "none"
-        ? ["all"]
-        : TRACK_PRICE_GROUP_ORDER;
-    const labelOf = (key: string): string | null => {
-      if (mGroup === "none") return null;
-      if (mGroup === "track") return TRACK_LABEL[key as FleetRow["track"]];
-      if (mGroup === "price") return PRICE_LABEL[key as FleetRow["price"]];
-      return trackPriceGroupLabel(key);
+    g.times += 1;
+    if (e.created_at > g.lastSeen) g.lastSeen = e.created_at;
+    problemMap.set(key, g);
+  }
+  const problemGroups = [...problemMap.values()].sort(
+    (a, b) => b.times - a.times || b.lastSeen.localeCompare(a.lastSeen)
+  );
+  const problemColumns: SortableColumn[] = [
+    { key: "problem", label: "Problem", kind: "text" },
+    { key: "model", label: "Model", kind: "text" },
+    { key: "times", label: "Times", kind: "number", align: "right" },
+    { key: "lastSeen", label: "Last seen", kind: "date" },
+    { key: "meaning", label: "What it means", kind: "text" },
+    { key: "todo", label: "What to do", kind: "text" },
+  ];
+  const problemRows: SortableRow[] = problemGroups.map((g, i) => ({
+    id: `${g.cls}-${g.model}-${i}`,
+    sort: {
+      problem: PROBLEM_CLASS_LABEL[g.cls],
+      model: g.model,
+      times: g.times,
+      lastSeen: g.lastSeen,
+      meaning: PROBLEM_CLASS_INFO[g.cls].meaning,
+      todo: PROBLEM_CLASS_INFO[g.cls].todo,
+    },
+    cells: [
+      <span key="p">{PROBLEM_CLASS_LABEL[g.cls]}</span>,
+      <span key="m">{g.model}</span>,
+      <span key="t" className="fleet-numcell">{g.times}</span>,
+      <span key="l">{fmtDateTime(g.lastSeen)}</span>,
+      <span key="i" className="fleet-why">{PROBLEM_CLASS_INFO[g.cls].meaning}</span>,
+      <span key="d" className="fleet-why">{PROBLEM_CLASS_INFO[g.cls].todo}</span>,
+    ],
+  }));
+
+  // ---------------- settings table ----------------
+  const settingRows: { key: string; label: string; now: unknown; does: string; changeWhen: string }[] = [
+    {
+      key: "fleet_daily_cap_usd",
+      label: "Daily spending limit (whole fleet)",
+      now: fleetCap,
+      does: "The most the whole fleet may spend in one UTC day before new plays stop.",
+      changeWhen: "Raise it when you want more coverage and accept the cost; lower it to protect spend.",
+    },
+    ...AI_RATE_SETTING_KEYS.map((key: AiRateSettingKey) => ({
+      key,
+      label: RATE_SETTING_META[key].label,
+      now: rateSettingDisplayValue(key, settingsByKey.get(key)),
+      does: RATE_SETTING_META[key].does,
+      changeWhen: RATE_SETTING_META[key].changeWhen,
+    })),
+    {
+      key: "per_model_caps",
+      label: "Per-model daily caps",
+      now: null,
+      does: "Each model can have its own daily USD cap, enforced by the runners.",
+      changeWhen: "Edit per model via the model name (Details) in the table above.",
+    },
+  ];
+  const settingColumns: SortableColumn[] = [
+    { key: "setting", label: "Setting", kind: "text" },
+    { key: "now", label: "Now", kind: "number", align: "right" },
+    { key: "does", label: "What it does", kind: "text" },
+    { key: "when", label: "Change it when", kind: "text" },
+  ];
+  const settingTableRows: SortableRow[] = settingRows.map((s) => {
+    const numeric = typeof s.now === "number" ? s.now : typeof s.now === "string" ? num(s.now) : null;
+    const nowLabel =
+      s.key === "fleet_daily_cap_usd"
+        ? fmtUsd(num(s.now))
+        : s.key === "ai_rpm_overrides"
+        ? JSON.stringify(s.now ?? {})
+        : s.key === "per_model_caps"
+        ? "per model"
+        : s.now === undefined || s.now === null
+        ? "—"
+        : String(s.now);
+    return {
+      id: s.key,
+      sort: {
+        setting: s.label.toLowerCase(),
+        now: numeric,
+        does: s.does,
+        when: s.changeWhen,
+      },
+      cells: [
+        <span key="s" className="fleet-settingcell">
+          {s.label}
+          <span className="fleet-modelid">{s.key}</span>
+        </span>,
+        <span key="n" className="fleet-numcell">{nowLabel}</span>,
+        <span key="d" className="fleet-why">{s.does}</span>,
+        <span key="w" className="fleet-why">{s.changeWhen}</span>,
+      ],
     };
-    const buckets = new Map<string, FleetRow[]>();
-    for (const r of fleetSorted) {
-      const k = keyOf(r);
-      const arr = buckets.get(k) ?? [];
-      arr.push(r);
-      buckets.set(k, arr);
-    }
-    const keys = [...buckets.keys()].sort(
-      (a, b) => order.indexOf(a) - order.indexOf(b)
-    );
-    return keys.map((key) => {
-      const rows = buckets.get(key) ?? [];
-      const union = new Set<string>();
-      let running = 0;
-      let okPlays = 0;
-      for (const r of rows) {
-        if (r.state.state === "running") running++;
-        okPlays += r.ok_plays;
-        for (const ev of coveredByPlayer.get(r.ai_player_id) ?? []) {
-          union.add(ev);
-        }
-      }
-      return {
-        key,
-        label: labelOf(key),
-        rows,
-        running,
-        okPlays,
-        coveredEvents: union.size,
-      };
-    });
-  })();
-
-  const costTrend: CostTrendRow[] =
-    tab === "analytics" ? await fetchCostTrend(pool, { days: 30 }) : [];
-
-  // Per-day max cost for sparkline scaling.
-  const maxDayCost = costTrend.reduce((max, row) => {
-    const c = toNumber(row.cost);
-    return c > max ? c : max;
-  }, 0);
-
-  // Group by model for per-model sparkline + cap progress.
-  const trendByModel = new Map<
-    string,
-    { model_name: string; model_id: string; rows: CostTrendRow[]; totalCost: number; daily_cost_cap_usd: number | null }
-  >();
-  for (const row of costTrend) {
-    let entry = trendByModel.get(row.ai_player_id);
-    if (!entry) {
-      entry = {
-        model_name: row.model_name,
-        model_id: row.model_id,
-        rows: [],
-        totalCost: 0,
-        daily_cost_cap_usd: row.daily_cost_cap_usd
-          ? toNumber(row.daily_cost_cap_usd)
-          : null,
-      };
-      trendByModel.set(row.ai_player_id, entry);
-    }
-    entry.rows.push(row);
-    entry.totalCost += toNumber(row.cost);
-  }
-
-  // Build a complete 30-day date range so sparkline gaps are visible.
-  const trendDays: string[] = [];
-  if (tab === "analytics") {
-    const today = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today);
-      d.setUTCDate(d.getUTCDate() - i);
-      trendDays.push(d.toISOString().slice(0, 10));
-    }
-  }
-  // Index each model's rows by day for O(1) lookup.
-  const trendByModelWithGaps = new Map<
-    string,
-    { model_name: string; model_id: string; days: { day: string; cost: number; tokens: number }[]; totalCost: number; daily_cost_cap_usd: number | null }
-  >();
-  for (const [playerId, entry] of trendByModel.entries()) {
-    const byDay = new Map<string, CostTrendRow>();
-    for (const row of entry.rows) byDay.set(row.day, row);
-    const days = trendDays.map((day) => {
-      const row = byDay.get(day);
-      return {
-        day,
-        cost: row ? toNumber(row.cost) : 0,
-        tokens: row ? row.tokens : 0,
-      };
-    });
-    trendByModelWithGaps.set(playerId, {
-      model_name: entry.model_name,
-      model_id: entry.model_id,
-      days,
-      totalCost: entry.totalCost,
-      daily_cost_cap_usd: entry.daily_cost_cap_usd,
-    });
-  }
-
-  const leaderboardRaw: LeaderboardRow[] =
-    tab === "compare" ? await fetchLeaderboard(pool) : [];
-
-  // Client-side sort of the leaderboard (data set is small).
-  const leaderboard = [...leaderboardRaw].sort((a, b) => {
-    const dir = cDir === "asc" ? 1 : -1;
-    const get = (row: LeaderboardRow): number | string => {
-      switch (cSort) {
-        case "model_name":
-          return row.model_name;
-        case "total_answers":
-          return row.total_answers;
-        case "avg_round_accuracy":
-          return row.avg_round_accuracy ?? -1;
-        case "avg_location_accuracy":
-          return row.avg_location_accuracy ?? -1;
-        case "avg_year_accuracy":
-          return row.avg_year_accuracy ?? -1;
-        case "error_rate":
-          return row.error_rate;
-        case "total_cost":
-          return toNumber(row.total_cost);
-        case "cost_per_call":
-          return row.cost_per_call ?? -1;
-        case "cost_per_accuracy_point":
-          return row.cost_per_accuracy_point ?? -1;
-        default:
-          return row.avg_round_accuracy ?? -1;
-      }
-    };
-    const av = get(a);
-    const bv = get(b);
-    if (typeof av === "string" && typeof bv === "string")
-      return dir * av.localeCompare(bv);
-    return dir * ((av as number) - (bv as number));
   });
 
-  const errorRows: ErrorRow[] =
-    tab === "debug"
-      ? await fetchErrorBuckets(pool, { type: errType, limit: 50 })
-      : [];
+  // Rate-settings form defaults (all 14 keys must submit a valid value).
+  const rateInputDefault = (key: AiRateSettingKey): string => {
+    const v = rateSettingDisplayValue(key, settingsByKey.get(key));
+    return typeof v === "object" && v !== null ? JSON.stringify(v) : String(v);
+  };
 
-  // Shared RecordDrawer state (?drawer=<id>, closed by stripping the param).
-  const drawerId = getParam(searchParams, "drawer");
-  const drawerCloseHref = makeLink({ drawer: undefined });
-  const modelDrawerRow =
-    tab === "models" && drawerId
-      ? fleet.find((r) => r.ai_player_id === drawerId) ?? null
-      : null;
-  const compareDrawerRow =
-    tab === "compare" && drawerId
-      ? leaderboard.find((r) => r.ai_player_id === drawerId) ?? null
-      : null;
-
-  const pageTitle =
-    tab === "models"
-      ? "Models"
-      : tab === "analytics"
-      ? "Analytics"
-      : tab === "compare"
-      ? "Compare"
-      : tab === "debug"
-      ? "Debug"
-      : "Overview";
-
-  const modelDrawerFields: DrawerField[] | undefined = modelDrawerRow
+  // ---------------- drawer ----------------
+  const drawerModel = drawerId ? modelViews.find((m) => m.playerId === drawerId) : undefined;
+  const drawerFields: DrawerField[] = drawerModel
     ? [
-        { label: "Model ID", value: modelDrawerRow.model_id, mono: true },
+        { label: "Model id", value: drawerModel.modelId, mono: true },
+        { label: "Status", value: FLEET_MODEL_STATUS_LABEL[drawerModel.status] },
+        { label: "Why", value: drawerModel.whyText },
+        { label: "Price", value: drawerModel.price === "unknown" ? "Unknown" : drawerModel.price === "free" ? "Free" : "Paid" },
+        { label: "Events played", value: `${drawerModel.eventsPlayed} / ${eligibleTotal}` },
+        { label: "Cost today (UTC)", value: fmtUsd(drawerModel.spendTodayUsd) },
+        { label: "Cost last 7 days", value: fmtUsd(drawerModel.cost7dUsd) },
+        { label: "Calls today", value: String(drawerModel.callsToday) },
+        { label: "Last success", value: fmtRelative(drawerModel.lastSuccessAt, nowMs) },
         {
-          label: "State",
-          value: (
-            <span className="flex items-center gap-2">
-              <FleetBadge
-                state={modelDrawerRow.state.state}
-                failing={modelDrawerRow.failing}
-              />
-              {modelDrawerRow.state.reason}
-              {modelDrawerRow.state.unverified && (
-                <span className="ops-chip ops-chip-muted">unverified</span>
-              )}
-            </span>
-          ),
-        },
-        {
-          label: "Track / Price",
-          value: `${TRACK_LABEL[modelDrawerRow.track]} · ${PRICE_LABEL[modelDrawerRow.price]}`,
-        },
-        {
-          label: "Modes",
-          value: `${modelDrawerRow.is_active_practice ? "Practice on" : "Practice off"} · ${modelDrawerRow.is_active_daily ? "Daily on" : "Daily off"}`,
-        },
-        {
-          label: "OK plays / Failed",
-          value: `${modelDrawerRow.ok_plays.toLocaleString()} / ${modelDrawerRow.failed_plays.toLocaleString()}`,
-        },
-        {
-          label: "Events covered",
-          value: `${modelDrawerRow.coveredN.toLocaleString()} (${modelDrawerRow.coveredPct.toFixed(1)}%)`,
-        },
-        { label: "Cost (total)", value: formatCost(modelDrawerRow.totalCost) },
-        {
-          label: "Daily cap (USD)",
-          value: modelDrawerRow.daily_cost_cap_usd ?? "No cap",
-        },
-        {
-          label: "Last successful play",
-          value: formatDateTime(modelDrawerRow.last_ok_at),
+          label: "Daily cost cap",
+          value: drawerModel.dailyCapUsd !== null ? fmtUsd(drawerModel.dailyCapUsd) : "No cap",
         },
       ]
-    : undefined;
-
-  const compareDrawerFields: DrawerField[] | undefined = compareDrawerRow
-    ? [
-        { label: "Model ID", value: compareDrawerRow.model_id, mono: true },
-        {
-          label: "Answers",
-          value: (compareDrawerRow.total_answers ?? 0).toLocaleString(),
-        },
-        {
-          label: "Error rate",
-          value: `${(compareDrawerRow.error_rate * 100).toFixed(1)}%`,
-        },
-        {
-          label: "Cost / call",
-          value:
-            compareDrawerRow.cost_per_call != null
-              ? formatCost(toNumber(compareDrawerRow.cost_per_call))
-              : "—",
-        },
-        {
-          label: "Cost / accuracy point",
-          value:
-            compareDrawerRow.cost_per_accuracy_point != null
-              ? formatCost(toNumber(compareDrawerRow.cost_per_accuracy_point))
-              : "—",
-        },
-        {
-          label: "Total cost",
-          value: formatCost(toNumber(compareDrawerRow.total_cost)),
-        },
-      ]
-    : undefined;
+    : [];
 
   return (
-    <div className="ops-page">
-      <header className="ops-pagehead">
-        <div>
-          <h1 className="ops-h1">{pageTitle}</h1>
-        </div>
+    <div className="fleet-page">
+      <header className="fleet-head">
+        <h1>AI fleet</h1>
+        <p className="fleet-subtitle">
+          Which AI players run, what they cost, and what needs you.
+        </p>
       </header>
 
-        {tab === "overview" && (
-          <>
-            <section className="ops-panel" style={{ marginBottom: 16 }}>
-              <div className="ops-toolbar">
-                <h2 className="ops-panel-title">Alerts</h2>
-              </div>
-              <div className="ops-panel-pad">
-                {openAlerts.length === 0 ? (
-                  <p className="ops-empty" style={{ padding: "8px 0" }}>
-                    No open alerts
-                  </p>
-                ) : (
-                  openAlerts.map((a) => (
-                    <div
-                      key={a.id}
-                      style={{
-                        border: `1px solid ${
-                          a.severity === "critical"
-                            ? "var(--ops-bad)"
-                            : a.severity === "warning"
-                            ? "var(--ops-warn)"
-                            : "var(--ops-line)"
-                        }`,
-                        borderRadius: 2,
-                        padding: "8px 10px",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div
-                        className="ops-minirow"
-                        style={{ borderBottom: "none", padding: 0 }}
-                      >
-                        <span className="ops-minirow-main">
-                          <span
-                            className={`ops-chip ${
-                              a.severity === "critical"
-                                ? "ops-chip-bad"
-                                : a.severity === "warning"
-                                ? "ops-chip-warn"
-                                : "ops-chip-muted"
-                            }`}
-                          >
-                            {a.severity}
-                          </span>
-                          <span className="ops-chip">{a.kind}</span>
-                          <span
-                            className="ops-truncate"
-                            title={a.message}
-                            style={
-                              a.severity === "critical"
-                                ? { color: "var(--ops-bad)", fontWeight: 600 }
-                                : undefined
-                            }
-                          >
-                            {a.message}
-                          </span>
-                        </span>
-                        <span className="ops-minirow-side">
-                          <form action={resolveFleetAlert.bind(null, a.id)}>
-                            <button type="submit" className="ops-btn">
-                              Mark resolved
-                            </button>
-                          </form>
-                        </span>
-                      </div>
-                      <p className="ops-panel-sub" style={{ marginTop: 4 }}>
-                        first seen {formatDateTime(a.created_at)} · last seen{" "}
-                        {formatRelativeTime(a.last_seen_at)} · occurrences{" "}
-                        {a.occurrences}
-                      </p>
-                    </div>
-                  ))
-                )}
-
-                <h3
-                  className="ops-panel-title"
-                  style={{ marginTop: 12, marginBottom: 4 }}
-                >
-                  Recent runs
-                </h3>
-                {recentRuns.length === 0 ? (
-                  <p className="ops-empty" style={{ padding: "8px 0" }}>
-                    No runs recorded yet.
-                  </p>
-                ) : (
-                  <table className="ops-table">
-                    <thead>
-                      <tr>
-                        <th>Started</th>
-                        <th>Kind</th>
-                        <th>Status</th>
-                        <th className="num">OK</th>
-                        <th className="num">Failed</th>
-                        <th>Failures by cause</th>
-                        <th>Halt reason</th>
-                        <th>Run</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentRuns.map((r) => (
-                        <tr key={r.id}>
-                          <td>{formatDateTime(r.started_at)}</td>
-                          <td>{r.kind}</td>
-                          <td>
-                            <span
-                              className={`ops-chip ${
-                                r.status === "ok"
-                                  ? "ops-chip-ok"
-                                  : r.status === "partial"
-                                  ? "ops-chip-warn"
-                                  : r.status === "halted" ||
-                                    r.status === "error"
-                                  ? "ops-chip-bad"
-                                  : "ops-chip-muted"
-                              }`}
-                            >
-                              {r.status}
-                            </span>
-                          </td>
-                          <td className="num">{r.plays_ok}</td>
-                          <td className="num">{r.plays_failed}</td>
-                          <td>
-                            {r.plays_failed === 0
-                              ? "—"
-                              : FAILURE_CAUSES.map(
-                                  (c) => [c, r[`failed_${c}`]] as const
-                                )
-                                  .filter(([, n]) => n > 0)
-                                  .map(([c, n]) => `${c}:${n}`)
-                                  .join(" · ")}
-                          </td>
-                          <td>{r.halt_reason ?? "—"}</td>
-                          <td>
-                            {r.github_run_url ? (
-                              <a
-                                href={r.github_run_url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                run
-                              </a>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </section>
-
-            <div className="ops-grid-2col" style={{ marginBottom: 16 }}>
-              <section className="ops-panel">
-                <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Fleet status</h2>
-                  <Link href={makeLink({ tab: "models" })} className="ops-btn">
-                    Models
-                  </Link>
-                </div>
-                <div className="ops-panel-pad">
-                  <div className="ops-kpi-value">
-                    {runningCount.toLocaleString()} running
-                  </div>
-                  <p className="ops-panel-sub">
-                    {pausedCount.toLocaleString()} paused ·{" "}
-                    {blockedCount.toLocaleString()} blocked
-                    {failingCount > 0 &&
-                      ` · ${failingCount.toLocaleString()} failing`}
-                  </p>
-                  <p className="ops-panel-sub" style={{ marginTop: 8 }}>
-                    Last successful play: {formatRelativeTime(lastOkAt)}
-                  </p>
-                </div>
-              </section>
-
-              <section className="ops-panel">
-                <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Coverage</h2>
-                  <Link href="/admin/dashboard/events" className="ops-btn">
-                    Events
-                  </Link>
-                </div>
-                <div className="ops-panel-pad">
-                  <div className="ops-kpi-label">Events covered</div>
-                  <div className="ops-kpi-value">
-                    {(coverage?.covered_total ?? 0).toLocaleString()} /{" "}
-                    {eligibleTotal.toLocaleString()} (
-                    {coveragePct(
-                      coverage?.covered_total ?? 0,
-                      eligibleTotal
-                    ).toFixed(1)}
-                    %)
-                  </div>
-                  <div
-                    className="h-2 overflow-hidden rounded"
-                    style={{ background: "var(--ops-canvas)", margin: "8px 0" }}
-                  >
-                    <div
-                      className="h-full rounded"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          coveragePct(
-                            coverage?.covered_total ?? 0,
-                            eligibleTotal
-                          )
-                        )}%`,
-                        background: "var(--ops-accent)",
-                      }}
-                    />
-                  </div>
-                  <p className="ops-panel-sub">
-                    Vision {(coverage?.covered_vision ?? 0).toLocaleString()} ·
-                    Text-only {(coverage?.covered_text ?? 0).toLocaleString()} ·
-                    Unknown{" "}
-                    {(coverage?.covered_unknown ?? 0).toLocaleString()}{" "}
-                    (overlapping, not additive)
-                  </p>
-                  <p className="ops-panel-sub">
-                    Models per event — 0:{" "}
-                    {(coverage?.depth_0 ?? 0).toLocaleString()} · 1:{" "}
-                    {(coverage?.depth_1 ?? 0).toLocaleString()} · 2:{" "}
-                    {(coverage?.depth_2 ?? 0).toLocaleString()} · 3+:{" "}
-                    {(coverage?.depth_3plus ?? 0).toLocaleString()}
-                  </p>
-                  <div className="ops-minirow" style={{ marginTop: 8 }}>
-                    <span className="ops-minirow-main">
-                      Practice flag: {practiceFlaggedCount.toLocaleString()}{" "}
-                      models flagged — no scheduler reads this flag; Practice
-                      runs only by manual batch
-                    </span>
-                  </div>
-                  {practiceFlaggedCount === 0 && (
-                    <p
-                      className="ops-panel-sub"
-                      style={{ color: "var(--ops-bad)", fontWeight: 600 }}
-                    >
-                      No model has the Practice flag set — manual batches would
-                      have nothing flagged.
-                    </p>
-                  )}
-                  <p className="ops-footnote">
-                    Verified in the runner: Daily mode replays only
-                    today&apos;s daily-challenge events
-                    (daily-autoplay.ts → daily_challenges.event_ids, UTC+14
-                    date); Practice is the catalogue-wide mode (manual batch
-                    only).
-                  </p>
-                </div>
-              </section>
-            </div>
-
-            <div className="ops-grid-2col" style={{ marginBottom: 16 }}>
-              <section className="ops-panel">
-                <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Health (24h)</h2>
-                  <Link href={makeLink({ tab: "debug" })} className="ops-btn">
-                    Debug
-                  </Link>
-                </div>
-                <div className="ops-panel-pad">
-                  <div className="ops-kpi-value">
-                    {ok24h.toLocaleString()} OK /{" "}
-                    {failed24h.toLocaleString()} failed
-                  </div>
-                  <p className="ops-panel-sub">
-                    {okRate24h.toFixed(1)}% of {plays24h.toLocaleString()}{" "}
-                    plays OK
-                  </p>
-                  {failed24h > 0 && (
-                    <p className="ops-panel-sub" style={{ marginTop: 4 }}>
-                      Failed by cause —{" "}
-                      {FAILURE_CAUSES.filter((c) => (cause24h[c] ?? 0) > 0)
-                        .map((c) => `${c}: ${cause24h[c]}`)
-                        .join(" · ")}
-                    </p>
-                  )}
-                  {auth24h > 0 && (
-                    <p
-                      className="ops-panel-sub"
-                      style={{
-                        color: "var(--ops-bad)",
-                        fontWeight: 600,
-                        marginTop: 8,
-                      }}
-                    >
-                      Provider key rejected (401) — fleet-wide, not a model
-                      fault
-                    </p>
-                  )}
-                </div>
-              </section>
-
-              <section className="ops-panel">
-                <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Cost</h2>
-                  <Link
-                    href={makeLink({ tab: "analytics" })}
-                    className="ops-btn"
-                  >
-                    Analytics
-                  </Link>
-                </div>
-                <div className="ops-panel-pad">
-                  <div className="ops-minirow">
-                    <span className="ops-minirow-main">Today</span>
-                    <span className="ops-minirow-side">
-                      {formatCost(costToday)}
-                    </span>
-                  </div>
-                  <div className="ops-minirow">
-                    <span className="ops-minirow-main">Last 7 days</span>
-                    <span className="ops-minirow-side">
-                      {formatCost(costWeek)}
-                    </span>
-                  </div>
-                  <div className="ops-minirow">
-                    <span className="ops-minirow-main">Total</span>
-                    <span className="ops-minirow-side">
-                      {formatCost(costTotal)}
-                    </span>
-                  </div>
-                  <div className="ops-minirow">
-                    <span className="ops-minirow-main">Per OK play</span>
-                    <span className="ops-minirow-side">
-                      {costPerOkPlay !== null
-                        ? formatCost(costPerOkPlay)
-                        : "—"}
-                    </span>
-                  </div>
-                  {fleetDailyCap !== null && (
-                    <div className="ops-minirow">
-                      <span className="ops-minirow-main">Fleet cap today</span>
-                      <span
-                        className="ops-minirow-side"
-                        style={
-                          costToday >= fleetDailyCap
-                            ? { color: "var(--ops-bad)", fontWeight: 600 }
-                            : undefined
-                        }
-                      >
-                        ${costToday.toFixed(2)} / ${fleetDailyCap.toFixed(2)} (
-                        {Math.round((costToday / fleetDailyCap) * 100)}%)
-                      </span>
-                    </div>
-                  )}
-                  <div className="ops-minirow">
-                    <span className="ops-minirow-main">Set fleet cap</span>
-                    <span className="ops-minirow-side">
-                      <form
-                        action={setFleetDailyCap}
-                        className="flex items-center gap-2"
-                      >
-                        <input
-                          type="number"
-                          name="cap"
-                          step="0.01"
-                          min="0.01"
-                          max="1000"
-                          defaultValue={fleetDailyCap ?? ""}
-                          placeholder="USD"
-                          className="ops-input"
-                          style={{ width: 96, textAlign: "right" }}
-                          title="Fleet daily cap (USD) — enforced by the Daily run"
-                        />
-                        <button type="submit" className="ops-btn">
-                          Save
-                        </button>
-                      </form>
-                    </span>
-                  </div>
-                </div>
-              </section>
-            </div>
-
-            <section className="ops-panel" style={{ marginBottom: 16 }}>
-              <div className="ops-toolbar">
-                <h2 className="ops-panel-title">Rate budget</h2>
-              </div>
-              <div className="ops-panel-pad">
-                <form
-                  action={updateRateSettings}
-                  className="flex flex-wrap items-end gap-2"
-                >
-                  {AI_RATE_SETTING_KEYS.map((key) => {
-                    const raw = rateSettingsByKey.get(key);
-                    return (
-                      <label
-                        key={key}
-                        className="ops-kpi-label"
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 2,
-                        }}
-                      >
-                        {key}
-                        {key === "ai_rpm_overrides" ? (
-                          <input
-                            type="text"
-                            name={key}
-                            defaultValue={
-                              raw === undefined ? "" : JSON.stringify(raw)
-                            }
-                            placeholder='{"slug": rpm}'
-                            className="ops-input ops-mono"
-                            style={{ width: 280 }}
-                            title="JSON object: model slug -> requests per minute"
-                          />
-                        ) : (
-                          <input
-                            type="number"
-                            name={key}
-                            step="any"
-                            min="0"
-                            defaultValue={
-                              raw === undefined || raw === null
-                                ? ""
-                                : String(raw)
-                            }
-                            className="ops-input"
-                            style={{ width: 110, textAlign: "right" }}
-                          />
-                        )}
-                      </label>
-                    );
-                  })}
-                  <button type="submit" className="ops-btn">
-                    Save
-                  </button>
-                </form>
-                <p className="ops-footnote">
-                  ai_fleet_settings — request pacing for the AI fleet runner
-                  (rpm/rpd budgets, run caps, 429 backoff). Every value must be
-                  a number &gt; 0; ai_rpm_overrides is a JSON object of model
-                  slug to requests/min.
-                </p>
-              </div>
-            </section>
-
-            <div className="ops-grid-2col">
-              <section className="ops-panel">
-                <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Needs attention</h2>
-                  <Link href={makeLink({ tab: "models" })} className="ops-btn">
-                    Models
-                  </Link>
-                </div>
-                <div className="ops-panel-pad">
-                  {needsAttention.length === 0 ? (
-                    <div className="ops-minirow">
-                      <span className="ops-minirow-main">
-                        <span className="ops-dot ops-dot-ok" />
-                        No models need attention
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      {needsAttention.slice(0, 8).map((row) => (
-                        <div key={row.ai_player_id} className="ops-minirow">
-                          <span className="ops-minirow-main">
-                            <span
-                              className={`ops-dot ${
-                                row.failing ? "ops-dot-bad" : "ops-dot-warn"
-                              }`}
-                            />
-                            <span className="ops-truncate" title={row.model_id}>
-                              {row.name}
-                            </span>
-                            <FleetBadge
-                              state={row.state.state}
-                              failing={row.failing}
-                            />
-                          </span>
-                          <span className="ops-minirow-side">
-                            <span>
-                              {row.failing
-                                ? `OK-rate ${(100 * (row.failingRate ?? 0)).toFixed(0)}% (7d)`
-                                : row.state.reason}
-                            </span>
-                            <span>{formatRelativeTime(row.last_ok_at)}</span>
-                          </span>
-                        </div>
-                      ))}
-                      {needsAttention.length > 8 && (
-                        <div className="ops-minirow">
-                          <span className="ops-minirow-main">
-                            <span style={{ color: "var(--ops-mute)" }}>
-                              + {needsAttention.length - 8} more
-                            </span>
-                          </span>
-                          <span className="ops-minirow-side">
-                            <Link
-                              href={makeLink({ tab: "models" })}
-                              className="ops-btn"
-                            >
-                              Models
-                            </Link>
-                          </span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </section>
-
-              <div className="ops-stack">
-                <section className="ops-panel">
-                  <div className="ops-toolbar">
-                    <h2 className="ops-panel-title">Next scheduled changes</h2>
-                    <Link href="/admin/dashboard/schedules" className="ops-btn">
-                      Schedules
-                    </Link>
-                  </div>
-                  <div className="ops-panel-pad">
-                    {pendingScheduled.length === 0 ? (
-                      <p className="ops-empty" style={{ padding: "8px 0" }}>
-                        No pending changes.
-                      </p>
-                    ) : (
-                      pendingScheduled.map((r) => (
-                        <div key={r.id} className="ops-minirow">
-                          <span className="ops-minirow-main">
-                            <span className="ops-truncate">
-                              {r.player_name ?? r.ai_player_id}
-                            </span>
-                          </span>
-                          <span className="ops-minirow-side">
-                            <span>
-                              {r.mode} {r.target_value ? "enable" : "disable"}
-                            </span>
-                            <span>{formatDateTime(r.apply_at)}</span>
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </section>
-
-                <section className="ops-panel">
-                  <div className="ops-toolbar">
-                    <h2 className="ops-panel-title">Recent errors</h2>
-                    <Link href={makeLink({ tab: "debug" })} className="ops-btn">
-                      Debug
-                    </Link>
-                  </div>
-                  <div className="ops-panel-pad">
-                    {recentErrors.length === 0 ? (
-                      <p className="ops-empty" style={{ padding: "8px 0" }}>
-                        No recent errors.
-                      </p>
-                    ) : (
-                      recentErrors.map((row) => (
-                        <div key={row.id} className="ops-minirow">
-                          <span className="ops-minirow-main">
-                            <span className="ops-chip ops-chip-bad">
-                              {row.cause ?? "other"}
-                            </span>
-                            <span className="ops-truncate" title={row.error}>
-                              {row.model_name}
-                            </span>
-                          </span>
-                          <span className="ops-minirow-side">
-                            <span>{row.created_at_relative}</span>
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </section>
-              </div>
-            </div>
-
-            <section className="ops-panel" style={{ marginTop: 16 }}>
-              <div className="ops-toolbar">
-                <h2 className="ops-panel-title">Fleet coverage &amp; reliability</h2>
-                <Link href={makeLink({ tab: "models" })} className="ops-btn">
-                  Models
-                </Link>
-              </div>
-              <div className="ops-panel-pad">
-                {fleetReliability.length === 0 ? (
-                  <p className="ops-empty" style={{ padding: "8px 0" }}>
-                    No reliability rows.
-                  </p>
-                ) : (
-                  <table className="ops-table">
-                    <thead>
-                      <tr>
-                        <th>Model</th>
-                        <th>Tier</th>
-                        <th>Role</th>
-                        <th className="num">Coverage</th>
-                        <th className="num">OK</th>
-                        <th className="num">Error</th>
-                        <th className="num">Parse fail</th>
-                        <th className="num">429s</th>
-                        <th className="num">p50</th>
-                        <th className="num">p95</th>
-                        <th>Last success</th>
-                        <th>Availability</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fleetReliability.map((row) => (
-                        <tr key={row.ai_player_id}>
-                          <td data-label="Model" title={row.model_id}>
-                            <span className="ops-truncate">{row.name}</span>
-                          </td>
-                          <td data-label="Tier">{row.tier ?? "—"}</td>
-                          <td data-label="Role">
-                            <span
-                              className={`ops-chip ${
-                                row.role === "play"
-                                  ? "ops-chip-ok"
-                                  : row.role === "audit"
-                                  ? "ops-chip-muted"
-                                  : "ops-chip-warn"
-                              }`}
-                            >
-                              {row.role}
-                            </span>
-                          </td>
-                          <td className="num" data-label="Coverage">
-                            {row.coverage_pct === null
-                              ? "—"
-                              : `${toNumber(row.coverage_pct).toFixed(1)}%`}
-                          </td>
-                          <td className="num" data-label="OK">
-                            {row.plays_ok.toLocaleString()}
-                          </td>
-                          <td className="num" data-label="Error">
-                            {row.plays_error.toLocaleString()}
-                          </td>
-                          <td className="num" data-label="Parse fail">
-                            {row.parse_failure_rate === null
-                              ? "—"
-                              : `${(
-                                  toNumber(row.parse_failure_rate) * 100
-                                ).toFixed(1)}%`}
-                          </td>
-                          <td className="num" data-label="429s">
-                            {row.n429}
-                          </td>
-                          <td className="num" data-label="p50">
-                            {row.p50_duration_ms === null
-                              ? "—"
-                              : `${Math.round(
-                                  toNumber(row.p50_duration_ms)
-                                ).toLocaleString()}ms`}
-                          </td>
-                          <td className="num" data-label="p95">
-                            {row.p95_duration_ms === null
-                              ? "—"
-                              : `${Math.round(
-                                  toNumber(row.p95_duration_ms)
-                                ).toLocaleString()}ms`}
-                          </td>
-                          <td
-                            data-label="Last success"
-                            style={{ color: "var(--ops-mute)" }}
-                          >
-                            {formatRelativeTime(row.last_success_at)}
-                          </td>
-                          <td
-                            data-label="Availability"
-                            style={{ color: "var(--ops-mute)" }}
-                          >
-                            {row.availabilityReason}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </section>
-
-            <div className="ops-grid-2col" style={{ marginTop: 16 }}>
-              <section className="ops-panel">
-                <div className="ops-toolbar">
-                  <h2 className="ops-panel-title">Event AI difficulty</h2>
-                  <Link href="/admin/dashboard/events" className="ops-btn">
-                    Events
-                  </Link>
-                </div>
-                <div className="ops-panel-pad">
-                  {eventDifficulty.length === 0 ? (
-                    <p className="ops-empty" style={{ padding: "8px 0" }}>
-                      No difficulty data.
-                    </p>
-                  ) : (
-                    <table className="ops-table">
-                      <thead>
-                        <tr>
-                          <th>Event</th>
-                          <th className="num">Models</th>
-                          <th className="num">Avg km</th>
-                          <th className="num">Avg |yr diff|</th>
-                          <th className="num">Difficulty</th>
-                          <th className="num">Authenticity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {eventDifficulty.map((row) => (
-                          <tr key={row.event_id}>
-                            <td
-                              data-label="Event"
-                              title={row.title ?? row.event_id}
-                            >
-                              <span className="ops-truncate">
-                                {row.title ?? row.event_id}
-                              </span>
-                            </td>
-                            <td className="num" data-label="Models">
-                              {row.n_models}
-                            </td>
-                            <td className="num" data-label="Avg km">
-                              {row.avg_distance_km === null
-                                ? "—"
-                                : Math.round(
-                                    toNumber(row.avg_distance_km)
-                                  ).toLocaleString()}
-                            </td>
-                            <td className="num" data-label="Avg |yr diff|">
-                              {row.avg_abs_year_diff === null
-                                ? "—"
-                                : toNumber(row.avg_abs_year_diff).toFixed(1)}
-                            </td>
-                            <td className="num" data-label="Difficulty">
-                              {row.avg_difficulty_score === null
-                                ? "—"
-                                : toNumber(row.avg_difficulty_score).toFixed(1)}
-                            </td>
-                            <td className="num" data-label="Authenticity">
-                              {row.avg_authenticity_score === null
-                                ? "—"
-                                : toNumber(row.avg_authenticity_score).toFixed(
-                                    1
-                                  )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </section>
-
-              <div className="ops-stack">
-                <section className="ops-panel">
-                  <div className="ops-toolbar">
-                    <h2 className="ops-panel-title">Events needing review</h2>
-                  </div>
-                  <div className="ops-panel-pad">
-                    {eventsNeedingReview.length === 0 ? (
-                      <p className="ops-empty" style={{ padding: "8px 0" }}>
-                        Nothing flagged.
-                      </p>
-                    ) : (
-                      eventsNeedingReview.map((row) => (
-                        <div key={row.event_id} className="ops-minirow">
-                          <span className="ops-minirow-main">
-                            <span
-                              className="ops-truncate"
-                              title={`${row.title}${
-                                row.event_year === null
-                                  ? ""
-                                  : ` (${row.event_year})`
-                              }`}
-                            >
-                              {row.title}
-                            </span>
-                          </span>
-                          <span className="ops-minirow-side">
-                            {row.incorrect_hint_reviews > 0 && (
-                              <span className="ops-chip ops-chip-bad">
-                                hints×{row.incorrect_hint_reviews}
-                              </span>
-                            )}
-                            {row.doubtful_or_fabricated_votes > 0 && (
-                              <span className="ops-chip ops-chip-bad">
-                                doubtful×{row.doubtful_or_fabricated_votes}
-                              </span>
-                            )}
-                            {row.year_disagreement && (
-                              <span className="ops-chip ops-chip-warn">
-                                year
-                              </span>
-                            )}
-                            {row.location_disagreement && (
-                              <span className="ops-chip ops-chip-warn">
-                                location
-                              </span>
-                            )}
-                            <span style={{ color: "var(--ops-mute)" }}>
-                              score {toNumber(row.review_score)}
-                            </span>
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </section>
-
-                <section className="ops-panel">
-                  <div className="ops-toolbar">
-                    <h2 className="ops-panel-title">Deferred plays</h2>
-                  </div>
-                  <div className="ops-panel-pad">
-                    {deferredPlays.length === 0 ? (
-                      <p className="ops-empty" style={{ padding: "8px 0" }}>
-                        No deferred plays.
-                      </p>
-                    ) : (
-                      <table className="ops-table">
-                        <thead>
-                          <tr>
-                            <th>Model</th>
-                            <th>Event</th>
-                            <th>Mode</th>
-                            <th className="num">429s</th>
-                            <th className="num">Tries</th>
-                            <th>Retry after</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {deferredPlays.map((row) => (
-                            <tr key={row.id}>
-                              <td data-label="Model">
-                                <span className="ops-truncate">
-                                  {row.player_name ?? row.ai_player_id}
-                                </span>
-                              </td>
-                              <td
-                                data-label="Event"
-                                title={row.event_title ?? undefined}
-                              >
-                                <span className="ops-truncate">
-                                  {row.event_title ?? row.event_id}
-                                </span>
-                              </td>
-                              <td data-label="Mode">
-                                <span className="ops-chip ops-chip-muted">
-                                  {row.mode}
-                                </span>
-                              </td>
-                              <td className="num" data-label="429s">
-                                {row.n429}
-                              </td>
-                              <td className="num" data-label="Tries">
-                                {row.attempts}
-                              </td>
-                              <td
-                                data-label="Retry after"
-                                style={{ color: "var(--ops-mute)" }}
-                              >
-                                {formatDateTime(row.retry_after_at)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </section>
-              </div>
-            </div>
-
-            <details className="ops-panel" style={{ marginTop: 16 }}>
-              <summary
-                className="ops-panel-pad"
-                style={{ cursor: "pointer", color: "var(--ops-mute)" }}
-              >
-                Definitions
-              </summary>
-              <div
-                className="ops-panel-pad"
-                style={{ borderTop: "1px solid var(--ops-line)" }}
-              >
-                <ul className="ops-panel-sub" style={{ paddingLeft: 18, margin: 0 }}>
-                  <li>
-                    Eligible event: a validated event with at least one image, and
-                    not retired.
-                  </li>
-                  <li>
-                    Play: one ai_answer_bank row. OK = error IS NULL; failed =
-                    error IS NOT NULL. API calls (ai_answer_bank_calls) are not
-                    plays — they appear only on the Debug page.
-                  </li>
-                  <li>
-                    Failure cause (from error text): auth = contains 401, gone
-                    = contains 404, rate_limit = contains 429, bad_output =
-                    starts with &quot;Failed to parse&quot; or contains
-                    &quot;missing finalGuess&quot;, other = anything else.
-                  </li>
-                  <li>
-                    State: Paused = Enabled switch off. Blocked = Enabled on
-                    but no mode selected, or the catalog says the model is not
-                    available (reason shown), or only the Practice flag is on
-                    (Practice has no scheduler — manual run-batch only).
-                    Running = Enabled on with Daily on and not blocked.
-                    Failing = running model with ≥5 non-auth plays in 7 days
-                    and OK-rate under 50%.
-                  </li>
-                  <li>
-                    Track: Vision / Text-only from the OpenRouter catalog
-                    (is_vision); Unknown when the model has no catalog row
-                    (shown as &quot;unverified&quot;).
-                  </li>
-                  <li>
-                    Price: Free = catalog is_free or a model id ending in
-                    &quot;:free&quot;; Paid = catalog is_free false; Unknown =
-                    no catalog row.
-                  </li>
-                  <li>
-                    Coverage: an eligible event is covered when at least one
-                    model has an OK play on it. Depth = how many distinct
-                    models have an OK play (0 / 1 / 2 / 3+).
-                  </li>
-                </ul>
-              </div>
-            </details>
-
-            <div className="ops-links">
-              <Link href={makeLink({ tab: "models" })} className="ops-btn">
-                Full roster
-              </Link>
-              <Link href="/admin/dashboard/events" className="ops-btn">
-                All events
-              </Link>
-            </div>
-          </>
-        )}
-
-        {tab === "analytics" && (
-          <>
-        <section id="activity-results">
-          <h2 className="mb-4 text-lg font-semibold">Per-activity results</h2>
-
-          <div className="ops-panel-flush">
-            <table className="ops-table">
-              <thead>
-                <tr>
-                  <th>
-                    <SortHeader
-                      href={activitySortLink("model_name")}
-                      label="Model"
-                      column="model_name"
-                      sort={aSort}
-                      dir={aDir}
-                    />
-                  </th>
-                  <th>
-                    <SortHeader
-                      href={activitySortLink("event_title")}
-                      label="Event"
-                      column="event_title"
-                      sort={aSort}
-                      dir={aDir}
-                    />
-                  </th>
-                  <th>
-                    <span>Accuracy</span>
-                    <span className="flex gap-2 text-xs font-normal">
-                      <SortHeader
-                        href={activitySortLink("round_accuracy")}
-                        label="combo"
-                        column="round_accuracy"
-                        sort={aSort}
-                        dir={aDir}
-                      />
-                      <SortHeader
-                        href={activitySortLink("location_accuracy")}
-                        label="where"
-                        column="location_accuracy"
-                        sort={aSort}
-                        dir={aDir}
-                      />
-                      <SortHeader
-                        href={activitySortLink("year_accuracy")}
-                        label="when"
-                        column="year_accuracy"
-                        sort={aSort}
-                        dir={aDir}
-                      />
-                    </span>
-                  </th>
-                  <th className="num">
-                    <SortHeader
-                      href={activitySortLink("cost")}
-                      label="Cost"
-                      column="cost"
-                      sort={aSort}
-                      dir={aDir}
-                    />
-                  </th>
-                  <th className="ops-col-xl">
-                    <SortHeader
-                      href={activitySortLink("error")}
-                      label="Error"
-                      column="error"
-                      sort={aSort}
-                      dir={aDir}
-                    />
-                  </th>
-                  <th className="ops-col-xl">
-                    <SortHeader
-                      href={activitySortLink("created_at")}
-                      label="Created"
-                      column="created_at"
-                      sort={aSort}
-                      dir={aDir}
-                    />
-                  </th>
-                  <th>Results</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activityRows.map((row) => (
-                  <tr key={row.id}>
-                    <td data-label="Model" title={row.model_id}>
-                      <span className="ops-cellname">
-                        <span className="ops-chip ops-chip-muted">{row.mode}</span>
-                        <span className="ops-truncate">{row.model_name}</span>
-                      </span>
-                    </td>
-                    <td data-label="Event" title={row.event_title}>
-                      <span className="ops-truncate">{row.event_title}</span>
-                    </td>
-                    <td data-label="Accuracy">
-                      <span className="ops-num">
-                        {formatAccuracy(row.round_accuracy)} / {formatAccuracy(row.location_accuracy)} / {formatAccuracy(row.year_accuracy)}
-                      </span>
-                    </td>
-                    <td className="num" data-label="Cost">
-                      {formatCost(toNumber(row.cost))}
-                    </td>
-                    <td className="ops-col-xl" data-label="Error" title={row.error || undefined}>
-                      <span className="ops-truncate ops-mono" style={{ color: "var(--ops-mute)" }}>
-                        {shortError(row.error)}
-                      </span>
-                    </td>
-                    <td className="ops-col-xl" data-label="Created" style={{ color: "var(--ops-mute)" }}>
-                      {formatDateTime(row.created_at)}
-                    </td>
-                    <td data-label="Results">
-                      <Link href={detailLink(row.id)} className="ops-btn">
-                        View results
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-                {activityRows.length === 0 && (
-                  <tr>
-                    <td colSpan={7}>
-                      No activity results found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="ops-pagination">
-              <div>
-                Page {page} of {totalPages} ({totalCount.toLocaleString()} rows)
-              </div>
-              <div className="flex items-center gap-2">
-                {page > 1 ? (
-                  <Link href={pageLink(page - 1)} className="ops-btn">
-                    Previous
-                  </Link>
-                ) : (
-                  <span className="ops-btn" style={{ opacity: 0.5 }}>
-                    Previous
-                  </span>
-                )}
-                {page < totalPages ? (
-                  <Link href={pageLink(page + 1)} className="ops-btn">
-                    Next
-                  </Link>
-                ) : (
-                  <span className="ops-btn" style={{ opacity: 0.5 }}>
-                    Next
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          <p className="ops-footnote">
-            * Daily/Practice mode is inferred: a row is labeled Daily only when
-            its event_id appears in daily_challenges.event_ids for its creation
-            date; otherwise it is labeled Practice by elimination. This is a
-            heuristic, not a stored fact.
+      {/* A. Summary cards */}
+      <div className="fleet-cards">
+        <SummaryCard title="Events played (verified)">
+          <p className="fleet-big">{fmtPct(eventsPct)}</p>
+          <Bar pct={eventsPct} label="Events with at least one counted AI play" />
+          <p className="fleet-note">
+            {eventStats.events_with_play.toLocaleString()} of {eligibleTotal.toLocaleString()}{" "}
+            events have at least one counted AI play. Failed attempts are not
+            counted. A counted play is a stored, scored result
+            (ai_answer_bank.error IS NULL) on an event the work queue targets
+            (validated, not retired, has an image and coordinates).
           </p>
-        </section>
-          </>
-        )}
+        </SummaryCard>
 
-        {tab === "models" && (
-          <section>
-            <div className="ops-toolbar" style={{ border: "1px solid var(--ops-line)", borderRadius: 4, marginBottom: 16 }}>
-              <span>
-                {fleetFiltered.length} models
-              </span>
-              <div className="flex items-center gap-3">
+        <SummaryCard title="Events judged true / false">
+          {auditedEvents === 0 ? (
+            <p className="fleet-note">
+              Not available yet — the auditors have not judged any events. The
+              verdicts come from ai_event_audits.is_real_event.
+            </p>
+          ) : (
+            <>
+              <p className="fleet-big">
+                {fmtPct((auditTrue / auditedEvents) * 100)} true ·{" "}
+                {fmtPct((auditFalse / auditedEvents) * 100)} false
+              </p>
+              <div
+                className="fleet-stackbar"
+                role="img"
+                aria-label={`Audited events: ${auditTrue} judged true, ${auditUnsure} unsure, ${auditFalse} judged false`}
+              >
+                <div className="fleet-stack-true" style={{ width: `${(auditTrue / auditedEvents) * 100}%` }} />
+                <div className="fleet-stack-unsure" style={{ width: `${(auditUnsure / auditedEvents) * 100}%` }} />
+                <div className="fleet-stack-false" style={{ width: `${(auditFalse / auditedEvents) * 100}%` }} />
+              </div>
+              <p className="fleet-note">
+                Of the {auditedEvents.toLocaleString()} audited events (
+                {fmtPct(auditedPct)} of all).{" "}
+                {fmtPct((auditUnsure / auditedEvents) * 100)} unsure. The rest
+                are not audited yet.
+              </p>
+            </>
+          )}
+        </SummaryCard>
+
+        <SummaryCard title="Models in the roster">
+          <p className="fleet-big">{totalModels}</p>
+          <p className="fleet-note">
+            {visionCount} can see images (play) · {textCount} text-only (review
+            only){unknownCatalog > 0 ? ` · ${unknownCatalog} unknown` : ""}
+          </p>
+          <p className="fleet-note">
+            {askedToday} were asked something today · {offCount} are off
+          </p>
+        </SummaryCard>
+
+        <SummaryCard title="Active players, by mode">
+          <p className="fleet-big">
+            Daily {dailyOnCount} · Practice {practiceOnCount}
+          </p>
+          <p className="fleet-note">
+            Models switched on for each mode. Free vision models play both
+            modes even when the switches show off.
+          </p>
+        </SummaryCard>
+
+        <SummaryCard title="Spend today">
+          <p className="fleet-big">
+            {fmtUsd(fleetSpendToday)}
+            {fleetCap !== null ? ` of ${fmtUsd(fleetCap)}` : ""}
+          </p>
+          <Bar pct={spendPct} label="Fleet spend today vs daily cap" />
+          <p className="fleet-note">
+            {fmtPct(spendPct)} of the daily limit (UTC) · last 7 days:{" "}
+            {fmtUsd(spend7d)}
+          </p>
+        </SummaryCard>
+
+        <SummaryCard title="Coverage">
+          <p className="fleet-big">
+            {avgModelsPerEvent.toFixed(1)}{" "}
+            <span className="fleet-note-inline">
+              models per event · {eligibleModels} eligible
+            </span>
+          </p>
+          <Bar
+            pct={eligibleModels > 0 ? (avgModelsPerEvent / eligibleModels) * 100 : 0}
+            label="Average models per event vs eligible models"
+          />
+          <p className="fleet-note">
+            Total counted plays ÷ total events, out of the {eligibleModels}{" "}
+            models eligible to play.
+          </p>
+        </SummaryCard>
+      </div>
+
+      {/* B. What to do */}
+      <section className="fleet-section">
+        <h2>What to do</h2>
+        {recommendations.length === 0 ? (
+          <p className="fleet-note">Nothing needs you right now.</p>
+        ) : (
+          <ul className="fleet-recs">
+            {recommendations.map((rec, i) => (
+              <li key={i} className={`fleet-rec fleet-rec-${rec.severity}`}>
+                <div className="fleet-rec-head">
+                  <span className={`ops-chip ${rec.severity === "critical" ? "ops-chip-bad" : rec.severity === "warning" ? "ops-chip-warn" : "ops-chip-info"}`}>
+                    {rec.severity}
+                  </span>
+                  <strong>{rec.title}</strong>
+                  {rec.alertId && <DismissAlertButton alertId={rec.alertId} />}
+                </div>
+                <p className="fleet-note">{rec.text}</p>
+                {rec.todo && <p className="fleet-todo">To do: {rec.todo}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* C. Models table */}
+      <section className="fleet-section">
+        <h2>Every model, and why it is or is not playing</h2>
+        <FleetModelsTable
+          columns={modelColumns}
+          rows={modelRows}
+          footer={modelFooter}
+        />
+        {(unattributedToday > 0 || unattributed7d > 0) && (
+          <p className="fleet-note">
+            Unattributed (players no longer on the live roster):{" "}
+            {fmtUsd(unattributedToday)} today · {fmtUsd(unattributed7d)} last 7
+            days.
+          </p>
+        )}
+      </section>
+
+      {/* D. Recent runs */}
+      <section className="fleet-section">
+        <h2>Recent runs</h2>
+        <SortableTable
+          columns={runColumns}
+          rows={runRows}
+          emptyText="No fleet runs recorded yet."
+        />
+        <p className="fleet-note">
+          Audit runs do not write run records; per-run model lists and cost are
+          not recorded (shown as &quot;-&quot;).
+        </p>
+      </section>
+
+      {/* E. Problems, in plain words */}
+      <section className="fleet-section">
+        <h2>Problems, in plain words</h2>
+        <SortableTable
+          columns={problemColumns}
+          rows={problemRows}
+          emptyText="No errors in the last 7 days."
+        />
+        <p className="fleet-note">
+          Grouped from ai_answer_bank.error over the last 7 days.
+        </p>
+      </section>
+
+      {/* F. Speed and spending limits */}
+      <CollapsibleSection title="Speed and spending limits">
+        <SortableTable columns={settingColumns} rows={settingTableRows} />
+        <div className="fleet-forms">
+          <form action={setFleetDailyCap} className="fleet-form">
+            <h3>Daily spending limit (whole fleet)</h3>
+            <label className="fleet-field">
+              <span>USD per day</span>
+              <input
+                type="number"
+                name="cap"
+                step="0.01"
+                min="0.01"
+                max="1000"
+                defaultValue={fleetCap ?? 2}
+                required
+                className="ops-input"
+              />
+            </label>
+            <button type="submit" className="ops-btn ops-btn-primary">
+              Save daily cap
+            </button>
+          </form>
+          <form action={updateRateSettings} className="fleet-form">
+            <h3>Speed and volume limits</h3>
+            <div className="fleet-settings-grid">
+              {AI_RATE_SETTING_KEYS.map((key) => (
+                <label key={key} className="fleet-field">
+                  <span title={key}>{RATE_SETTING_META[key].label}</span>
+                  <input
+                    type={key === "ai_rpm_overrides" ? "text" : "number"}
+                    name={key}
+                    step={key === "ai_rpm_overrides" ? undefined : "any"}
+                    min={key === "ai_rpm_overrides" ? undefined : "0"}
+                    defaultValue={rateInputDefault(key)}
+                    required
+                    className="ops-input"
+                  />
+                </label>
+              ))}
+            </div>
+            <button type="submit" className="ops-btn ops-btn-primary">
+              Save speed limits
+            </button>
+          </form>
+          <p className="fleet-note">
+            Per-model daily caps are edited per model: open a model name in the
+            table above → Details.
+          </p>
+        </div>
+      </CollapsibleSection>
+
+      {drawerModel && (
+        <RecordDrawer
+          open={true}
+          closeHref="/admin/dashboard"
+          title={drawerModel.name}
+          subtitle={drawerModel.modelId}
+          fields={drawerFields}
+          actions={
+            <div className="fleet-drawer-actions">
+              <ModelControls
+                playerId={drawerModel.playerId}
+                modelId={drawerModel.modelId}
+                isActive={drawerModel.isActive}
+                isPractice={drawerModel.practiceOn}
+                isDaily={drawerModel.dailyOn}
+              />
+              <form action={updateDailyCostCap} className="fleet-form">
+                <label className="fleet-field">
+                  <span>Daily cost cap (USD)</span>
+                  <input
+                    type="number"
+                    name="cap"
+                    step="0.000001"
+                    min="0"
+                    defaultValue={drawerModel.dailyCapUsd ?? ""}
+                    placeholder="No cap"
+                    className="ops-input"
+                  />
+                </label>
+                <input type="hidden" name="playerId" value={drawerModel.playerId} />
+                <button type="submit" className="ops-btn">
+                  Save cap
+                </button>
+              </form>
+              <details className="fleet-schedule">
+                <summary className="ops-btn">Schedule a mode change…</summary>
                 <form
-                  method="get"
-                  className="flex items-center gap-2 text-sm"
-                  action="/admin/dashboard"
+                  action={scheduleAiPlayerModeChange}
+                  className="ops-panel ops-panel-pad fleet-form"
                 >
-                  <input type="hidden" name="tab" value="models" />
-                  <label htmlFor="m_group" className="ops-kpi-label">
-                    Group by
-                  </label>
-                  <select
-                    id="m_group"
-                    name="m_group"
-                    defaultValue={mGroup}
-                    className="ops-input"
-                  >
-                    <option value="track_price">Track + Price</option>
-                    <option value="track">Track</option>
-                    <option value="price">Price</option>
-                    <option value="none">None</option>
+                  <input type="hidden" name="playerId" value={drawerModel.playerId} />
+                  <select name="mode" className="ops-input" defaultValue="daily">
+                    <option value="daily">Daily</option>
+                    <option value="practice">Practice</option>
                   </select>
-                  <label htmlFor="cap_filter" className="ops-kpi-label">
-                    Cost cap
-                  </label>
-                  <select
-                    id="cap_filter"
-                    name="cap_filter"
-                    defaultValue={capFilter ?? ""}
-                    className="ops-input"
-                  >
-                    <option value="">All</option>
-                    <option value="capped">Capped only</option>
-                    <option value="uncapped">Uncapped only</option>
+                  <select name="targetValue" className="ops-input" defaultValue="enable">
+                    <option value="enable">Enable</option>
+                    <option value="disable">Disable</option>
                   </select>
+                  <input
+                    type="datetime-local"
+                    name="applyAt"
+                    required
+                    className="ops-input"
+                  />
+                  <p className="fleet-note">
+                    Time is read as UTC. Applied by the daily cron on its first
+                    run after this time.
+                  </p>
                   <button type="submit" className="ops-btn">
-                    Apply
+                    Schedule change
                   </button>
                 </form>
-                <Link
-                  href={makeLink({ tab: "models", addModel: "1" })}
-                  className="ops-btn ops-btn-primary"
-                >
-                  + Add model
-                </Link>
-              </div>
+              </details>
             </div>
-
-            <div className="ops-panel-flush">
-              <table className="ops-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <SortHeader
-                        href={modelSortLink("name")}
-                        label="Model"
-                        column="name"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th>
-                      <SortHeader
-                        href={modelSortLink("state")}
-                        label="State"
-                        column="state"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th>
-                      <SortHeader
-                        href={modelSortLink("track")}
-                        label="Track"
-                        column="track"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th>
-                      <SortHeader
-                        href={modelSortLink("price")}
-                        label="Price"
-                        column="price"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={modelSortLink("ok_plays")}
-                        label="OK plays"
-                        column="ok_plays"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={modelSortLink("failed")}
-                        label="Failed"
-                        column="failed"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={modelSortLink("covered")}
-                        label="Events covered"
-                        column="covered"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num ops-col-xl">
-                      <SortHeader
-                        href={modelSortLink("avg_year")}
-                        label="Avg year err"
-                        column="avg_year"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num ops-col-xl">
-                      <SortHeader
-                        href={modelSortLink("avg_km")}
-                        label="Avg km err"
-                        column="avg_km"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={modelSortLink("cost_total")}
-                        label="Cost total"
-                        column="cost_total"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="num ops-col-xl">
-                      <SortHeader
-                        href={modelSortLink("cost_per_ok")}
-                        label="Cost/OK play"
-                        column="cost_per_ok"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th className="ops-col-xl">
-                      <SortHeader
-                        href={modelSortLink("last_ok")}
-                        label="Last successful"
-                        column="last_ok"
-                        sort={mSort}
-                        dir={mDir}
-                      />
-                    </th>
-                    <th>Controls</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fleetGroups.flatMap((g) => [
-                    ...(g.label !== null
-                      ? [
-                          <tr key={`group-${g.key}`}>
-                            <td
-                              colSpan={13}
-                              style={{
-                                background: "var(--ops-canvas)",
-                                color: "var(--ops-mute)",
-                                fontWeight: 600,
-                              }}
-                            >
-                              {g.label} — {g.rows.length} models ·{" "}
-                              {g.running} running ·{" "}
-                              {g.okPlays.toLocaleString()} OK plays ·{" "}
-                              {g.coveredEvents.toLocaleString()} events
-                              covered
-                            </td>
-                          </tr>,
-                        ]
-                      : []),
-                    ...g.rows.map((row) => {
-                      const dotCls = row.failing
-                        ? "ops-dot-bad"
-                        : row.state.state === "running"
-                        ? "ops-dot-ok"
-                        : row.state.state === "blocked"
-                        ? "ops-dot-warn"
-                        : "ops-dot-off";
-                      return (
-                        <tr
-                          key={row.ai_player_id}
-                          data-status={fleetStateTier(
-                            row.state.state,
-                            row.failing
-                          )}
-                        >
-                          <td data-label="Model" title={row.model_id}>
-                            <Link
-                              href={makeLink({ drawer: row.ai_player_id })}
-                              className="ops-celllink"
-                              title="Open record"
-                            >
-                              <span className="ops-cellname">
-                                <span className={`ops-dot ${dotCls}`} />
-                                <span className="ops-truncate">{row.name}</span>
-                              </span>
-                            </Link>
-                          </td>
-                          <td data-label="State">
-                            <span className="flex items-center gap-1" style={{ flexWrap: "wrap" }}>
-                              <FleetBadge
-                                state={row.state.state}
-                                failing={row.failing}
-                              />
-                              <span style={{ color: "var(--ops-mute)" }}>
-                                {row.failing
-                                  ? `OK-rate ${(100 * (row.failingRate ?? 0)).toFixed(0)}% (7d)`
-                                  : row.state.reason}
-                              </span>
-                              {row.state.unverified && (
-                                <span className="ops-chip ops-chip-muted">
-                                  unverified
-                                </span>
-                              )}
-                            </span>
-                          </td>
-                          <td data-label="Track">
-                            {TRACK_LABEL[row.track]}
-                          </td>
-                          <td data-label="Price">
-                            {PRICE_LABEL[row.price]}
-                          </td>
-                          <td className="num" data-label="OK plays">
-                            {row.ok_plays.toLocaleString()}
-                          </td>
-                          <td className="num" data-label="Failed">
-                            {row.failed_plays.toLocaleString()}
-                          </td>
-                          <td className="num" data-label="Events covered">
-                            {row.coveredN.toLocaleString()} (
-                            {row.coveredPct.toFixed(1)}%)
-                          </td>
-                          <td
-                            className="num ops-col-xl"
-                            data-label="Avg year err"
-                          >
-                            {row.avg_year_diff !== null
-                              ? toNumber(row.avg_year_diff).toFixed(1)
-                              : "—"}
-                          </td>
-                          <td
-                            className="num ops-col-xl"
-                            data-label="Avg km err"
-                          >
-                            {row.avg_distance_km !== null
-                              ? toNumber(row.avg_distance_km).toFixed(0)
-                              : "—"}
-                          </td>
-                          <td className="num" data-label="Cost total">
-                            {formatCost(row.totalCost)}
-                          </td>
-                          <td
-                            className="num ops-col-xl"
-                            data-label="Cost/OK play"
-                          >
-                            {row.costPerOk !== null
-                              ? formatCost(row.costPerOk)
-                              : "—"}
-                          </td>
-                          <td
-                            className="ops-col-xl"
-                            data-label="Last successful"
-                            style={{ color: "var(--ops-mute)" }}
-                          >
-                            {formatRelativeTime(row.last_ok_at)}
-                          </td>
-                          <td data-label="Controls">
-                            <div className="flex flex-col gap-2">
-                              <ModelControls
-                                playerId={row.ai_player_id}
-                                modelId={row.model_id}
-                                isActive={row.is_active}
-                                isPractice={row.is_active_practice}
-                                isDaily={row.is_active_daily}
-                              />
-                              <div className="flex flex-wrap items-center gap-2">
-                                <form
-                                  action={updateDailyCostCap}
-                                  className="flex items-center gap-2"
-                                >
-                                  <input
-                                    type="hidden"
-                                    name="playerId"
-                                    value={row.ai_player_id}
-                                  />
-                                  <input
-                                    type="number"
-                                    name="cap"
-                                    step="0.000001"
-                                    min="0"
-                                    defaultValue={
-                                      row.daily_cost_cap_usd ?? ""
-                                    }
-                                    placeholder="No cap"
-                                    className="ops-input"
-                                    style={{ width: 96, textAlign: "right" }}
-                                    title="Daily cost cap (USD) — enforced by the Daily run"
-                                  />
-                                  <button type="submit" className="ops-btn">
-                                    Save
-                                  </button>
-                                </form>
-                                <span
-                                  className="text-xs"
-                                  style={{ color: "var(--ops-mute)" }}
-                                  title="Spend today (UTC); cap enforced by the Daily run"
-                                >
-                                  today{" "}
-                                  {formatCost(
-                                    spendToday.byPlayer.get(row.ai_player_id) ??
-                                      0
-                                  )}{" "}
-                                  · enforced by Daily
-                                </span>
-                                <details className="text-xs">
-                                  <summary
-                                    className="cursor-pointer"
-                                    style={{ color: "var(--ops-mute)" }}
-                                  >
-                                    Schedule…
-                                  </summary>
-                                  <form
-                                    action={scheduleAiPlayerModeChange}
-                                    className="ops-panel ops-panel-pad mt-2 flex w-56 flex-col gap-2"
-                                  >
-                                    <input
-                                      type="hidden"
-                                      name="playerId"
-                                      value={row.ai_player_id}
-                                    />
-                                    <select name="mode" className="ops-input">
-                                      <option value="practice">Practice</option>
-                                      <option value="daily">Daily</option>
-                                    </select>
-                                    <select
-                                      name="targetValue"
-                                      className="ops-input"
-                                    >
-                                      <option value="enable">Enable</option>
-                                      <option value="disable">Disable</option>
-                                    </select>
-                                    <input
-                                      type="datetime-local"
-                                      name="applyAt"
-                                      required
-                                      className="ops-input"
-                                    />
-                                    <p
-                                      className="text-xs"
-                                      style={{ color: "var(--ops-mute)" }}
-                                    >
-                                      Time is read as UTC. Changes are applied
-                                      by the daily 00:00 UTC cron, on its first
-                                      run after this time.
-                                    </p>
-                                    <button type="submit" className="ops-btn">
-                                      Schedule change
-                                    </button>
-                                  </form>
-                                </details>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    }),
-                  ])}
-                  {fleetFiltered.length === 0 && (
-                    <tr>
-                      <td colSpan={13}>No models found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {tab === "analytics" && (
-          <section>
-            <h2 className="mb-4 text-lg font-semibold">Cost &amp; usage trend (30 days)</h2>
-
-            {costTrend.length === 0 ? (
-              <p className="ops-panel ops-panel-pad ops-empty">
-                No call data in the last 30 days.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {Array.from(trendByModelWithGaps.entries()).map(([playerId, entry]) => (
-                  <div key={playerId} className="ops-panel ops-panel-pad">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div>
-                        <span className="font-semibold">{entry.model_name}</span>
-                        <span className="ops-mono ml-2" style={{ color: "var(--ops-mute)" }}>
-                          {entry.model_id}
-                        </span>
-                      </div>
-                      <div className="ops-num" style={{ color: "var(--ops-mute)", fontSize: 13 }}>
-                        30d cost: {formatCost(entry.totalCost)}
-                      </div>
-                    </div>
-
-                    {entry.daily_cost_cap_usd !== null &&
-                      entry.daily_cost_cap_usd > 0 && (
-                        <div className="mb-3">
-                          <div className="mb-1 flex justify-between text-xs" style={{ color: "var(--ops-mute)" }}>
-                            <span>Avg daily cost vs cap</span>
-                            <span>
-                              {formatCost(entry.totalCost / 30)} /{" "}
-                              {formatCost(entry.daily_cost_cap_usd)} per day
-                            </span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded" style={{ background: "var(--ops-canvas)" }}>
-                            <div
-                              className="h-full rounded"
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  (entry.totalCost / 30 / entry.daily_cost_cap_usd) *
-                                    100
-                                )}%`,
-                                background: "var(--ops-accent)",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                    <div className="flex items-end gap-px" style={{ height: "40px" }}>
-                      {entry.days.map((d) => {
-                        const widthPct =
-                          maxDayCost > 0 ? (d.cost / maxDayCost) * 100 : 0;
-                        return (
-                          <div
-                            key={d.day}
-                            title={`${d.day}: ${formatCost(d.cost)} · ${d.tokens} tokens`}
-                            className="flex-1 rounded-t"
-                            style={{
-                              height: `${Math.max(2, widthPct)}%`,
-                              background: "var(--ops-accent)",
-                              opacity: d.cost > 0 ? 1 : 0.15,
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <div className="mt-1 flex justify-between text-xs" style={{ color: "var(--ops-mute)" }}>
-                      <span>{entry.days[0]?.day}</span>
-                      <span>{entry.days[entry.days.length - 1]?.day}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {tab === "compare" && (
-          <section>
-            <h2 className="mb-4 text-lg font-semibold">Model leaderboard</h2>
-
-            <div className="ops-panel-flush">
-              <table className="ops-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <SortHeader
-                        href={compareSortLink("model_name")}
-                        label="Model"
-                        column="model_name"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={compareSortLink("total_answers")}
-                        label="Answers"
-                        column="total_answers"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={compareSortLink("avg_round_accuracy")}
-                        label="Combo"
-                        column="avg_round_accuracy"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={compareSortLink("avg_location_accuracy")}
-                        label="Where"
-                        column="avg_location_accuracy"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={compareSortLink("avg_year_accuracy")}
-                        label="When"
-                        column="avg_year_accuracy"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={compareSortLink("error_rate")}
-                        label="Error %"
-                        column="error_rate"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="num">
-                      <SortHeader
-                        href={compareSortLink("total_cost")}
-                        label="Total Cost"
-                        column="total_cost"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((row, idx) => (
-                    <tr key={row.ai_player_id}>
-                      <td data-label="Model" title={row.model_id}>
-                        <Link
-                          href={makeLink({ drawer: row.ai_player_id })}
-                          className="ops-celllink"
-                          title="Open record"
-                        >
-                          <span className="ops-cellname">
-                            <span className="ops-rank">{idx + 1}</span>
-                            <span className="ops-truncate">{row.model_name}</span>
-                          </span>
-                        </Link>
-                      </td>
-                      <td className="num" data-label="Answers">
-                        {(row.total_answers ?? 0).toLocaleString()}
-                      </td>
-                      <td
-                        className="num"
-                        data-label="Combo"
-                        style={{
-                          fontWeight: 600,
-                          color: row.avg_round_accuracy != null
-                            ? getAccuracyColor(toNumber(row.avg_round_accuracy))
-                            : undefined,
-                        }}
-                      >
-                        {row.avg_round_accuracy != null
-                          ? `${toNumber(row.avg_round_accuracy).toFixed(1)}%`
-                          : "—"}
-                      </td>
-                      <td
-                        className="num"
-                        data-label="Where"
-                        style={{
-                          color: row.avg_location_accuracy != null
-                            ? getAccuracyColor(toNumber(row.avg_location_accuracy))
-                            : undefined,
-                        }}
-                      >
-                        {row.avg_location_accuracy != null
-                          ? `${toNumber(row.avg_location_accuracy).toFixed(1)}%`
-                          : "—"}
-                      </td>
-                      <td
-                        className="num"
-                        data-label="When"
-                        style={{
-                          color: row.avg_year_accuracy != null
-                            ? getAccuracyColor(toNumber(row.avg_year_accuracy))
-                            : undefined,
-                        }}
-                      >
-                        {row.avg_year_accuracy != null
-                          ? `${toNumber(row.avg_year_accuracy).toFixed(1)}%`
-                          : "—"}
-                      </td>
-                      <td className="num" data-label="Error %">
-                        {(row.error_rate * 100).toFixed(1)}%
-                      </td>
-                      <td className="num" data-label="Total Cost">
-                        {formatCost(toNumber(row.total_cost))}
-                      </td>
-                    </tr>
-                  ))}
-                  {leaderboard.length === 0 && (
-                    <tr>
-                      <td colSpan={7}>
-                        No model data available.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {tab === "debug" && (
-          <section>
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold">Error inspector</h2>
-              <div className="flex gap-1">
-                {([
-                  { key: null, label: "All" },
-                  { key: "rate_limit", label: "Rate limit" },
-                  { key: "not_found", label: "404" },
-                  { key: "parse", label: "Parse" },
-                  { key: "other", label: "Other" },
-                ] as { key: ErrorBucket | null; label: string }[]).map(
-                  (opt) => (
-                    <Link
-                      key={opt.label}
-                      href={makeLink({
-                        tab: "debug",
-                        errType: opt.key ?? undefined,
-                      })}
-                      className={`ops-btn ${
-                        errType === opt.key ? "ops-btn-primary" : ""
-                      }`}
-                    >
-                      {opt.label}
-                    </Link>
-                  )
-                )}
-              </div>
-            </div>
-
-            <div className="ops-panel-flush">
-              <table className="ops-table">
-                <thead>
-                  <tr>
-                    <th>Model</th>
-                    <th>Event</th>
-                    <th>Error</th>
-                    <th>Created</th>
-                    <th>API calls</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {errorRows.map((row) => (
-                    <tr key={row.id}>
-                      <td data-label="Model" title={row.model_id}>
-                        <span className="ops-truncate">{row.model_name}</span>
-                      </td>
-                      <td data-label="Event" title={row.event_title}>
-                        <span className="ops-truncate">{row.event_title}</span>
-                      </td>
-                      <td data-label="Error" title={row.error}>
-                        <span
-                          className="ops-truncate ops-mono"
-                          style={{ color: "var(--ops-mute)" }}
-                        >
-                          {row.error}
-                        </span>
-                      </td>
-                      <td data-label="Created" style={{ color: "var(--ops-mute)" }}>
-                        {formatDateTime(row.created_at)}
-                      </td>
-                      <td data-label="API calls">
-                        <Link
-                          href={makeLink({ tab: "debug", calls: row.id })}
-                          className="ops-btn"
-                        >
-                          View API calls
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                  {errorRows.length === 0 && (
-                    <tr>
-                      <td colSpan={5}>
-                        No error rows found for this filter.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-      <ResultsModal />
-      <AddModelModal />
-      <CallDebugModal />
-
-      {tab === "models" && (
-        <RecordDrawer
-          open={modelDrawerRow != null}
-          closeHref={drawerCloseHref}
-          title={modelDrawerRow?.name ?? ""}
-          subtitle={modelDrawerRow?.model_id}
-          fields={modelDrawerFields}
-          actions={
-            modelDrawerRow ? (
-              <ModelControls
-                playerId={modelDrawerRow.ai_player_id}
-                modelId={modelDrawerRow.model_id}
-                isActive={modelDrawerRow.is_active}
-                isPractice={modelDrawerRow.is_active_practice}
-                isDaily={modelDrawerRow.is_active_daily}
-              />
-            ) : undefined
           }
-        />
-      )}
-
-      {tab === "compare" && (
-        <RecordDrawer
-          open={compareDrawerRow != null}
-          closeHref={drawerCloseHref}
-          title={compareDrawerRow?.model_name ?? ""}
-          subtitle={compareDrawerRow?.model_id}
-          fields={compareDrawerFields}
         />
       )}
     </div>
   );
 }
-
-
