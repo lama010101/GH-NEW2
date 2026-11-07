@@ -111,14 +111,6 @@
   font-size: var(--font-sm);
 }
 
-.apkLink {
-  display: block;
-  box-sizing: border-box;
-  text-align: center;
-  text-decoration: none;
-  background: var(--gh-orange);
-}
-
 .saveFeedbackSuccess {
   margin-top: 6px;
   font-size: var(--font-xs);

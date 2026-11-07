@@ -24,6 +24,7 @@ export type RuleName =
   | "PRIVATE_KEY_BLOCK"
   | "HEX64_SECRET"
   | "GENERIC_ASSIGNMENT"
+  | "GITHUB_TOKEN"
   | "FORBIDDEN_FILE";
 
 export const ALL_RULES: readonly RuleName[] = [
@@ -37,6 +38,7 @@ export const ALL_RULES: readonly RuleName[] = [
   "PRIVATE_KEY_BLOCK",
   "HEX64_SECRET",
   "GENERIC_ASSIGNMENT",
+  "GITHUB_TOKEN",
   "FORBIDDEN_FILE",
 ];
 
@@ -76,6 +78,10 @@ const REGEX_RULES: ReadonlyArray<{ rule: RuleName; re: RegExp }> = [
   { rule: "OPENROUTER_KEY", re: /\bsk-or-v1-[0-9a-fA-F]{16,}\b/g },
   { rule: "GOOGLE_OAUTH_SECRET", re: /\bGOCSPX-[A-Za-z0-9_-]{10,}\b/g },
   { rule: "PRIVATE_KEY_BLOCK", re: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/ },
+  {
+    rule: "GITHUB_TOKEN",
+    re: /\bgh[pousr]_[A-Za-z0-9]{36,}\b|\bgithub_pat_[A-Za-z0-9_]{22,}\b/g,
+  },
 ];
 
 const RE_HEX64 = /\b[0-9a-fA-F]{64}\b/;
@@ -115,9 +121,25 @@ export function isEnvOrCodeValue(value: string): boolean {
 }
 
 // A NAME containing a sensitive keyword, then '=' or ':', then a value that is
-// either double-quoted, single-quoted or a bare non-whitespace run.
+// either double-quoted, single-quoted or a bare non-whitespace run. A
+// backslash ends a bare value: in JSON/shell strings '\"' is the escape of
+// the closing quote, not part of the value (SEC-HARDEN-BUNDLE-1029-002).
 const RE_ASSIGNMENT =
-  /\b([A-Za-z0-9_.$-]*(?:SECRET|TOKEN|PASSWORD|PRIVATE_KEY|API_KEY)[A-Za-z0-9_.$-]*)\s*[:=]\s*(?:"([^"]*)"|'([^']*)'|([^\s"';,]+))/gi;
+  /\b([A-Za-z0-9_.$-]*(?:SECRET|TOKEN|PASSWORD|PRIVATE_KEY|API_KEY)[A-Za-z0-9_.$-]*)\s*[:=]\s*(?:"([^"]*)"|'([^']*)'|([^\s"';,\\]+))/gi;
+
+// SEC-HARDEN-BUNDLE-1029-002 — a value that is a PURE variable reference
+// ($VAR, ${VAR}, %VAR%) names a variable rather than holding a literal
+// secret. The identifier must be in uppercase env-var form: a lowercase or
+// digit-leading run after '$' (e.g. a crypt-style hash) is a value, not a
+// reference, and stays flagged. This is the only reading under which both
+// "$VAR is not flagged" and "$abc123… is still flagged" hold.
+const RE_PURE_VAR_REF =
+  /^\$\{?[A-Z_][A-Z0-9_]*\}?\\?$|^%[A-Z_][A-Z0-9_]*%$/;
+
+/** True when a candidate value is only a variable reference, not a secret. */
+export function isPureVariableRef(raw: string): boolean {
+  return RE_PURE_VAR_REF.test(raw);
+}
 
 const PLACEHOLDER_MARKERS = ["<", "${"];
 const PLACEHOLDER_WORDS = [
@@ -127,6 +149,7 @@ const PLACEHOLDER_WORDS = [
   "example",
   "redacted",
   "changeme",
+  "replace",
 ];
 
 /** True when a candidate value is a placeholder rather than a real secret. */
@@ -201,7 +224,11 @@ export function scanLine(path: string, line: number, text: string): Finding[] {
     // original contract: >=20 chars and not a placeholder.
     const quoted = m[2] ?? m[3];
     if (quoted !== undefined) {
-      if (quoted.length >= 20 && !isPlaceholderValue(quoted)) {
+      if (
+        quoted.length >= 20 &&
+        !isPlaceholderValue(quoted) &&
+        !isPureVariableRef(quoted)
+      ) {
         push("GENERIC_ASSIGNMENT");
       }
       continue;
@@ -212,6 +239,7 @@ export function scanLine(path: string, line: number, text: string): Finding[] {
     if (
       unquoted.length >= 20 &&
       !isPlaceholderValue(unquoted) &&
+      !isPureVariableRef(unquoted) &&
       !isEnvOrCodeValue(unquoted)
     ) {
       push("GENERIC_ASSIGNMENT");
