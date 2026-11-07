@@ -88,6 +88,11 @@ export function plainEligibilityReason(reason: string): string {
   }
 }
 
+/** D1: free+vision models play daily AND practice regardless of admin flags. */
+export function isFreeVisionAlwaysOn(reason: string): boolean {
+  return reason === "free_vision";
+}
+
 function formatUsd(value: number): string {
   if (!Number.isFinite(value)) return "$0";
   if (value > 0 && value < 0.01) return `$${value.toFixed(4)}`;

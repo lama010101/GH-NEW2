@@ -6,11 +6,17 @@ import {
   classifyProblem,
   compareSortValues,
   describeRun,
+  isFreeVisionAlwaysOn,
   sortRows,
   type BuildRecommendationsInput,
   type ClassifyModelStatusInput,
   type RecommendationModelInput,
 } from "./fleetOverview";
+import {
+  classifyPlayer,
+  type CatalogModel,
+  type FleetPlayer,
+} from "@/core/aiEligibility";
 
 // ADM-BUILD-FLEETDASH-1107-120 — unit tests for the fleet-overview pure logic.
 
@@ -454,5 +460,76 @@ describe("sort comparator", () => {
     expect(compareSortValues(2, 10, "number")).toBeLessThan(0);
     expect(compareSortValues("2026-01-01", "2026-01-02", "date")).toBeLessThan(0);
     expect(compareSortValues("a", "B", "text")).toBeLessThan(0);
+  });
+});
+
+describe("isFreeVisionAlwaysOn derivation", () => {
+  const catalog = (over: Partial<CatalogModel>): CatalogModel => ({
+    id: "vendor/model",
+    isFree: true,
+    isVision: true,
+    contextLength: null,
+    maxCompletion: null,
+    promptPrice: 0,
+    completionPrice: 0,
+    ...over,
+  });
+  const player = (over: Partial<FleetPlayer>): FleetPlayer => ({
+    id: "p1",
+    model_id: "vendor/model",
+    is_active: true,
+    is_active_daily: false,
+    is_active_practice: false,
+    deleted_at: null,
+    ...over,
+  });
+
+  it("true only for the free_vision eligibility reason", () => {
+    expect(isFreeVisionAlwaysOn("free_vision")).toBe(true);
+    for (const r of [
+      "paid_vision",
+      "free_text_audit",
+      "paid_text_audit",
+      "admin_deactivated",
+      "no_mode_flags",
+      "dead_slug",
+      "budget",
+      "deleted",
+      "text_only_inactive_paid",
+      "",
+    ]) {
+      expect(isFreeVisionAlwaysOn(r)).toBe(false);
+    }
+  });
+
+  it("classifyPlayer yields free_vision (both modes) for free+vision regardless of flags", () => {
+    const v = classifyPlayer(
+      player({ is_active_daily: false, is_active_practice: false }),
+      catalog({}),
+      { action: "proceed" }
+    );
+    expect(v.reason).toBe("free_vision");
+    expect(v.modes).toEqual(["daily", "practice"]);
+    expect(isFreeVisionAlwaysOn(v.reason)).toBe(true);
+  });
+
+  it("paid vision with flags off is NOT always-on", () => {
+    const v = classifyPlayer(
+      player({ is_active_daily: false, is_active_practice: false }),
+      catalog({ isFree: false, promptPrice: 1e-5, completionPrice: 1e-5 }),
+      { action: "proceed" }
+    );
+    expect(v.reason).not.toBe("free_vision");
+    expect(isFreeVisionAlwaysOn(v.reason)).toBe(false);
+  });
+
+  it("free text-only model is an auditor, NOT always-on", () => {
+    const v = classifyPlayer(
+      player({}),
+      catalog({ isVision: false }),
+      { action: "proceed" }
+    );
+    expect(v.reason).toBe("free_text_audit");
+    expect(isFreeVisionAlwaysOn(v.reason)).toBe(false);
   });
 });

@@ -38,6 +38,7 @@ import {
   classifyProblem,
   describeRun,
   FLEET_MODEL_STATUS_LABEL,
+  isFreeVisionAlwaysOn,
   PROBLEM_CLASS_INFO,
   PROBLEM_CLASS_LABEL,
   type FleetModelStatus,
@@ -47,6 +48,7 @@ import { SortableTable, type SortableColumn, type SortableRow } from "./Sortable
 import { FleetModelsTable, type FleetModelTableRow } from "./FleetModelsTable";
 import { CollapsibleSection, DismissAlertButton, ModeToggle } from "./FleetControls";
 import { ModelControls } from "./models/ModelControls";
+import { AddModelModal } from "./models/AddModelModal";
 import { RecordDrawer, type DrawerField } from "./components/RecordDrawer";
 
 export const dynamic = "force-dynamic";
@@ -231,6 +233,7 @@ export default async function AiFleetPage({
     practiceOn: boolean;
     role: string;
     isActive: boolean;
+    freeVisionAlwaysOn: boolean;
   };
 
   const modelViews: ModelView[] = roster.map((row) => {
@@ -272,6 +275,7 @@ export default async function AiFleetPage({
     const rateLimited =
       d?.last_deferred_at != null &&
       Date.parse(d.last_deferred_at) >= nowMs - RATE_LIMIT_RECENT_MS;
+    const freeVisionAlwaysOn = isFreeVisionAlwaysOn(verdict.reason);
     const statusRes = classifyModelStatus({
       nowMs,
       catalogAvailable: catalogModel !== null,
@@ -280,7 +284,7 @@ export default async function AiFleetPage({
       isVision: catalogModel?.isVision === true,
       isActiveDaily: row.is_active_daily === true,
       isActivePractice: row.is_active_practice === true,
-      freeVisionAlwaysOn: verdict.reason === "free_vision",
+      freeVisionAlwaysOn,
       spendTodayUsd,
       dailyCapUsd: cap,
       fleetSpendTodayUsd: fleetSpendToday,
@@ -315,6 +319,7 @@ export default async function AiFleetPage({
       practiceOn: row.is_active_practice === true,
       role: verdict.role,
       isActive: row.is_active === true,
+      freeVisionAlwaysOn,
     };
   });
 
@@ -434,8 +439,20 @@ export default async function AiFleetPage({
           <span className="fleet-modelid">{m.modelId}</span>
         </span>,
         <span key="p">{m.price === "unknown" ? "Unknown" : m.price === "free" ? "Free" : "Paid"}</span>,
-        <ModeToggle key="d" playerId={m.playerId} mode="daily" on={m.dailyOn} label="Daily" />,
-        <ModeToggle key="pr" playerId={m.playerId} mode="practice" on={m.practiceOn} label="Practice" />,
+        m.freeVisionAlwaysOn ? (
+          <span key="d" className="fleet-alwayson" title="Free vision model — plays Daily and Practice regardless of the switches">
+            Always on (free vision model)
+          </span>
+        ) : (
+          <ModeToggle key="d" playerId={m.playerId} mode="daily" on={m.dailyOn} label="Daily" />
+        ),
+        m.freeVisionAlwaysOn ? (
+          <span key="pr" className="fleet-alwayson" title="Free vision model — plays Daily and Practice regardless of the switches">
+            Always on (free vision model)
+          </span>
+        ) : (
+          <ModeToggle key="pr" playerId={m.playerId} mode="practice" on={m.practiceOn} label="Practice" />
+        ),
         <span key="s" className={STATUS_CHIP_CLASS[m.status]}>
           {FLEET_MODEL_STATUS_LABEL[m.status]}
         </span>,
@@ -790,7 +807,20 @@ export default async function AiFleetPage({
 
       {/* C. Models table */}
       <section className="fleet-section">
-        <h2>Every model, and why it is or is not playing</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <h2>Every model, and why it is or is not playing</h2>
+          <Link href="/admin/dashboard?addModel=1" className="ops-btn ops-btn-primary">
+            + Add model
+          </Link>
+        </div>
         <FleetModelsTable
           columns={modelColumns}
           rows={modelRows}
@@ -899,6 +929,7 @@ export default async function AiFleetPage({
                 isActive={drawerModel.isActive}
                 isPractice={drawerModel.practiceOn}
                 isDaily={drawerModel.dailyOn}
+                alwaysOnFreeVision={drawerModel.freeVisionAlwaysOn}
               />
               <form action={updateDailyCostCap} className="fleet-form">
                 <label className="fleet-field">
@@ -952,6 +983,8 @@ export default async function AiFleetPage({
           }
         />
       )}
+
+      <AddModelModal />
     </div>
   );
 }

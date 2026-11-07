@@ -34,12 +34,14 @@ export function ModelControls({
   isActive,
   isPractice,
   isDaily,
+  alwaysOnFreeVision = false,
 }: {
   playerId: string;
   modelId: string;
   isActive: boolean;
   isPractice: boolean;
   isDaily: boolean;
+  alwaysOnFreeVision?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [testing, setTesting] = useState(false);
@@ -97,32 +99,43 @@ export function ModelControls({
           <span className="text-xs text-gh-text-sec">Enabled</span>
           <Toggle on={isActive} onClick={handleEnabled} />
         </span>
-        <label
-          className="flex items-center gap-1 text-xs text-gh-text-sec"
-          style={{ opacity: isActive ? 1 : 0.4 }}
-          title={isActive ? "Practice mode flag" : "Disabled while Enabled is off"}
-        >
-          <input
-            type="checkbox"
-            checked={isActive && isPractice}
-            disabled={!isActive || isPending}
-            onChange={(e) => handleMode("practice", e.target.checked)}
-          />
-          Practice
-        </label>
-        <label
-          className="flex items-center gap-1 text-xs text-gh-text-sec"
-          style={{ opacity: isActive ? 1 : 0.4 }}
-          title={isActive ? "Daily mode flag" : "Disabled while Enabled is off"}
-        >
-          <input
-            type="checkbox"
-            checked={isActive && isDaily}
-            disabled={!isActive || isPending}
-            onChange={(e) => handleMode("daily", e.target.checked)}
-          />
-          Daily
-        </label>
+        {alwaysOnFreeVision ? (
+          <span
+            className="flex items-center gap-1 text-xs text-gh-text-sec"
+            title="Free vision model — plays Daily and Practice regardless of the switches"
+          >
+            Always on (free vision model)
+          </span>
+        ) : (
+          <>
+            <label
+              className="flex items-center gap-1 text-xs text-gh-text-sec"
+              style={{ opacity: isActive ? 1 : 0.4 }}
+              title={isActive ? "Practice mode flag" : "Disabled while Enabled is off"}
+            >
+              <input
+                type="checkbox"
+                checked={isActive && isPractice}
+                disabled={!isActive || isPending}
+                onChange={(e) => handleMode("practice", e.target.checked)}
+              />
+              Practice
+            </label>
+            <label
+              className="flex items-center gap-1 text-xs text-gh-text-sec"
+              style={{ opacity: isActive ? 1 : 0.4 }}
+              title={isActive ? "Daily mode flag" : "Disabled while Enabled is off"}
+            >
+              <input
+                type="checkbox"
+                checked={isActive && isDaily}
+                disabled={!isActive || isPending}
+                onChange={(e) => handleMode("daily", e.target.checked)}
+              />
+              Daily
+            </label>
+          </>
+        )}
         <button
           onClick={handleTest}
           disabled={testing}
