@@ -102,9 +102,9 @@ export function ModelControls({
         {alwaysOnFreeVision ? (
           <span
             className="flex items-center gap-1 text-xs text-gh-text-sec"
-            title="Free vision model — plays Daily and Practice regardless of the switches"
+            title="Free vision model: Daily & Practice are always on. This switch only controls Rush invites."
           >
-            Always on (free vision model)
+            Free vision model: Daily & Practice are always on. This switch only controls Rush invites.
           </span>
         ) : (
           <>
