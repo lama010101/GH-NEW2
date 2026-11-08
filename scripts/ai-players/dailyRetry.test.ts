@@ -19,6 +19,12 @@ const mocks = vi.hoisted(() => ({
   poolEnd: vi.fn(async () => ({})),
   players: [] as Player[],
   eventIds: ["evt-1"],
+  candidates: [] as Array<{ event_id: string; coverage: number }>,
+  // High rpm so the D3 token-bucket pacing is instant in tests.
+  settingsRows: [
+    { key: "ai_rpm_free", value: 600000 },
+    { key: "ai_rpm_paid", value: 600000 },
+  ],
   preflight: {
     keep: [] as Player[],
     skipped: [] as unknown[],
@@ -63,6 +69,21 @@ vi.mock("./rosterPreflight", () => ({
 }));
 
 vi.mock("dotenv", () => ({ config: () => ({ parsed: {} }), default: { config: () => ({}) } }));
+
+// AIP-BUILD-FLEETFINAL-1103-060: roster is classified via the DB catalog
+// (openrouter_models), not preflightRoster — mark every test player
+// free+vision+available so classifyPlayer keeps it as a player.
+function catalogRows() {
+  return mocks.players.map((p) => ({
+    model_id: p.model_id,
+    is_free: true,
+    is_vision: true,
+    availability_status: "available",
+    context_length: null,
+    price_prompt_usd: 0,
+    price_completion_usd: 0,
+  }));
+}
 
 const PLAYER: Player = {
   id: "p-1",
@@ -114,7 +135,16 @@ async function runAutoplay(scripted: WorkerResult[]): Promise<void> {
   mocks.poolQuery.mockReset();
   mocks.poolQuery.mockImplementation(async (sql: string) => {
     if (sql.includes("FROM ai_players")) return { rows: mocks.players };
+    if (sql.includes("FROM openrouter_models")) return { rows: catalogRows() };
+    if (sql.includes("SELECT key, value FROM ai_fleet_settings")) return { rows: mocks.settingsRows };
+    if (sql.includes("FROM ai_fleet_settings")) return { rows: mocks.settingsRows };
+    if (sql.includes("date_trunc")) return { rows: [] }; // D3 usage query
+    if (sql.includes("ai_answer_bank_calls")) return { rows: [] }; // USD spend
+    if (sql.includes("ai_play_deferrals")) return { rows: [] };
     if (sql.includes("FROM ai_answer_bank")) return { rows: [] };
+    if (sql.includes("FROM events")) return { rows: mocks.candidates };
+    if (sql.includes("INSERT INTO ai_fleet_runs")) return { rows: [{ id: "run-1" }] };
+    if (sql.includes("ai_fleet_runs") || sql.includes("ai_fleet_alerts")) return { rows: [] };
     throw new Error(`unexpected query: ${sql}`);
   });
   await import("./daily-autoplay");
@@ -185,7 +215,7 @@ describe("daily-autoplay v3 retry (AIP-FIX-DAILY-RETRY-PARSEERRORS-1022-A04)", (
     expect(errs()).toContain("[ERROR] p-1 evt-1");
     expect(logs()).toContain("Failed after sweep: 1");
     expect(exitSpy).toHaveBeenCalledWith(1);
-  }, 30000);
+  }, 30 * 1000);
 
   it("(d) does NOT retry a non-matching error (OpenRouter 404 removed model)", async () => {
     await runAutoplay([
@@ -243,10 +273,12 @@ describe("daily-autoplay sweep (AIP-FIX-DAILY-429SWEEP-1024-001)", () => {
   });
 
   it("(e) accounting: an item recovered in the sweep moves failed -> succeeded (final failed 0, no exit(1))", async () => {
+    // AIP-BUILD-FLEETFINAL-1103-060 (D3): a real 429 exits 75 + defers now —
+    // the sweep fixture uses a non-429 transient (HTTP 500) instead.
     await runAutoplay([
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
       { code: 0 },
     ]);
     expect(mocks.spawnCalls).toHaveLength(4);
@@ -255,21 +287,21 @@ describe("daily-autoplay sweep (AIP-FIX-DAILY-429SWEEP-1024-001)", () => {
     expect(logs()).toContain("Failed: 0");
     expect(logs()).toContain("Failed after sweep: 0");
     expect(exitSpy).not.toHaveBeenCalled();
-  }, 30000);
+  }, 30 * 1000);
 
   it("(f) a still-transient failure in the sweep leaves final failed > 0 and exit(1)", async () => {
     await runAutoplay([
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
-      { code: 1, stderr: "OpenRouter request failed: 429" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
+      { code: 1, stderr: "OpenRouter request failed: 500" },
     ]);
     expect(mocks.spawnCalls).toHaveLength(6);
     expect(logs()).toContain("[SWEEP] 1 transient failures");
     expect(logs()).toContain("Recovered in sweep: 0");
     expect(logs()).toContain("Failed after sweep: 1");
     expect(exitSpy).toHaveBeenCalledWith(1);
-  }, 30000);
+  }, 30 * 1000);
 });

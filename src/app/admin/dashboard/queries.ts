@@ -1,153 +1,400 @@
-// Query helpers for the admin dashboard Analytics / Compare / Debug tabs.
-// Task: DASH-QUERIES-009
+// Query helpers for the rebuilt AI fleet dashboard
+// (ADM-BUILD-FLEETDASH-1107-120).
 //
 // All queries use the service-role pg pool (getDbPool), consistent with the
-// existing page.tsx queries. No Supabase client is used.
+// existing admin pages. SELECT-only. The cost expression is IDENTICAL to
+// the one the Daily runner enforces against (src/server/aiSpend.ts):
+//   COALESCE(SUM((c.response_payload->'usage'->>'cost')::numeric)
+//     FILTER (WHERE c.response_payload IS NOT NULL), 0)
+// over ai_answer_bank_calls joined to ai_answer_bank for the player id.
+// NOTE: audit calls (audit-run.ts) do NOT write ai_answer_bank_calls, so
+// auditor spend is not part of these numbers (reported gap).
 
 import type { Pool } from "pg";
-import { fetchSpendTodayByPlayer } from "@/server/aiSpend";
 
 // ---------------------------------------------------------------------------
-// Analytics — time-bucketed cost/token trend per model
+// Roster — live ai_players + catalog + reliability view
 // ---------------------------------------------------------------------------
 
-export type CostTrendRow = {
-  day: string;
+export type FleetRosterRow = {
   ai_player_id: string;
-  model_name: string;
+  name: string;
+  provider: string;
   model_id: string;
-  cost: string | number;
-  tokens: number;
+  is_active: boolean;
+  is_active_daily: boolean;
+  is_active_practice: boolean;
   daily_cost_cap_usd: string | number | null;
+  is_free: boolean | null;
+  is_vision: boolean | null;
+  availability_status: string | null;
+  context_length: number | null;
+  /** numeric columns come back as string|number from pg. */
+  price_prompt_usd: string | number | null;
+  price_completion_usd: string | number | null;
+  has_catalog_row: boolean;
+  plays_ok: number;
+  plays_error: number;
+  n429: number;
+  events_played: number;
+  coverage_pct: string | number | null;
+  last_success_at: string | null;
 };
 
-export async function fetchCostTrend(
-  pool: Pool,
-  opts: { days?: number } = {}
-): Promise<CostTrendRow[]> {
-  const days = opts.days ?? 30;
-  const { rows } = await pool.query<CostTrendRow>(
+export async function fetchFleetRoster(pool: Pool): Promise<FleetRosterRow[]> {
+  const { rows } = await pool.query<FleetRosterRow>(
     `
-    SELECT
-      date_trunc('day', c.created_at)::date::text AS day,
-      ab.ai_player_id,
-      p.name AS model_name,
-      p.model_id,
-      COALESCE(
-        SUM((c.response_payload->'usage'->>'cost')::numeric)
-          FILTER (WHERE c.response_payload IS NOT NULL),
-        0
-      ) AS cost,
-      COALESCE(
-        SUM(
-          COALESCE((c.response_payload->'usage'->>'prompt_tokens')::int, 0) +
-          COALESCE((c.response_payload->'usage'->>'completion_tokens')::int, 0)
-        ) FILTER (WHERE c.response_payload IS NOT NULL),
-        0
-      )::int AS tokens,
-      p.daily_cost_cap_usd
-    FROM ai_answer_bank ab
-    JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
-    JOIN ai_players p ON p.id = ab.ai_player_id
-    WHERE c.created_at >= now() - ($1::int || ' days')::interval
-    GROUP BY 1, 2, 3, 4, 7
-    ORDER BY 1 ASC, 3 ASC
-    `,
-    [days]
-  );
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Compare — model leaderboard with aggregated accuracy / cost
-// ---------------------------------------------------------------------------
-
-export type LeaderboardRow = {
-  ai_player_id: string;
-  model_name: string;
-  model_id: string;
-  total_answers: number;
-  avg_round_accuracy: number | null;
-  avg_location_accuracy: number | null;
-  avg_year_accuracy: number | null;
-  error_rate: number;
-  total_cost: string | number;
-  cost_per_call: number | null;
-  cost_per_accuracy_point: number | null;
-};
-
-export async function fetchLeaderboard(pool: Pool): Promise<LeaderboardRow[]> {
-  const { rows } = await pool.query<LeaderboardRow>(
-    `
-    WITH model_stats AS (
-      SELECT
-        ab.ai_player_id,
-        COUNT(*)::int AS total_answers,
-        AVG(ab.round_accuracy) AS avg_round_accuracy,
-        AVG(ab.location_accuracy) AS avg_location_accuracy,
-        AVG(ab.year_accuracy) AS avg_year_accuracy,
-        COUNT(*) FILTER (WHERE ab.error IS NOT NULL)::float / NULLIF(COUNT(*), 0) AS error_rate
-      FROM ai_answer_bank ab
-      GROUP BY ab.ai_player_id
-    ),
-    model_costs AS (
-      SELECT
-        ab.ai_player_id,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-            FILTER (WHERE c.response_payload IS NOT NULL),
-          0
-        ) AS total_cost,
-        COUNT(*)::int AS total_calls
-      FROM ai_answer_bank ab
-      JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
-      GROUP BY ab.ai_player_id
-    )
     SELECT
       p.id AS ai_player_id,
-      p.name AS model_name,
+      p.name,
+      p.provider,
       p.model_id,
-      ms.total_answers,
-      ms.avg_round_accuracy,
-      ms.avg_location_accuracy,
-      ms.avg_year_accuracy,
-      COALESCE(ms.error_rate, 0) AS error_rate,
-      COALESCE(mc.total_cost, 0) AS total_cost,
-      CASE WHEN mc.total_calls > 0
-        THEN (COALESCE(mc.total_cost, 0) / mc.total_calls)::numeric
-        ELSE NULL
-      END AS cost_per_call,
-      CASE WHEN ms.avg_round_accuracy IS NOT NULL AND ms.avg_round_accuracy > 0
-        THEN (COALESCE(mc.total_cost, 0) / ms.avg_round_accuracy)::numeric
-        ELSE NULL
-      END AS cost_per_accuracy_point
+      p.is_active,
+      p.is_active_daily,
+      p.is_active_practice,
+      p.daily_cost_cap_usd,
+      om.is_free,
+      om.is_vision,
+      om.availability_status,
+      om.context_length,
+      om.price_prompt_usd,
+      om.price_completion_usd,
+      (om.model_id IS NOT NULL) AS has_catalog_row,
+      COALESCE(r.plays_ok, 0) AS plays_ok,
+      COALESCE(r.plays_error, 0) AS plays_error,
+      COALESCE(r.n429, 0) AS n429,
+      COALESCE(r.events_played, 0) AS events_played,
+      r.coverage_pct,
+      r.last_success_at::text AS last_success_at
     FROM ai_players p
-    LEFT JOIN model_stats ms ON ms.ai_player_id = p.id
-    LEFT JOIN model_costs mc ON mc.ai_player_id = p.id
-    ORDER BY ms.avg_round_accuracy DESC NULLS LAST
+    LEFT JOIN openrouter_models om ON om.model_id = p.model_id
+    LEFT JOIN ai_model_reliability r ON r.ai_player_id = p.id
+    WHERE p.deleted_at IS NULL
+    ORDER BY p.name
     `
   );
   return rows;
 }
 
 // ---------------------------------------------------------------------------
-// Debug — error-bucketed rows from ai_answer_bank
+// Per-model usage — calls + cost today (UTC) and last 7 UTC days, plus the
+// last call timestamp today (used to say WHEN a model hit its own cap).
+// Covers ALL players (incl. soft-deleted) so unattributed spend can be shown.
 // ---------------------------------------------------------------------------
 
-export type ErrorBucket = "rate_limit" | "not_found" | "parse" | "other";
+export type ModelUsageRow = {
+  ai_player_id: string | null;
+  calls_today: number;
+  cost_today: string | number;
+  cost_7d: string | number;
+  last_call_today: string | null;
+};
 
-export type ErrorRow = {
-  id: string;
+export async function fetchModelUsage(
+  pool: Pool,
+  utcDate: string
+): Promise<ModelUsageRow[]> {
+  const { rows } = await pool.query<ModelUsageRow>(
+    `
+    SELECT
+      ab.ai_player_id,
+      COUNT(*) FILTER (
+        WHERE c.created_at >= $1::date
+          AND c.created_at < ($1::date + interval '1 day')
+      )::int AS calls_today,
+      COALESCE(
+        SUM((c.response_payload->'usage'->>'cost')::numeric)
+          FILTER (
+            WHERE c.response_payload IS NOT NULL
+              AND c.created_at >= $1::date
+              AND c.created_at < ($1::date + interval '1 day')
+          ),
+        0
+      ) AS cost_today,
+      COALESCE(
+        SUM((c.response_payload->'usage'->>'cost')::numeric)
+          FILTER (
+            WHERE c.response_payload IS NOT NULL
+              AND c.created_at >= ($1::date - interval '6 days')
+              AND c.created_at < ($1::date + interval '1 day')
+          ),
+        0
+      ) AS cost_7d,
+      MAX(c.created_at) FILTER (
+        WHERE c.created_at >= $1::date
+          AND c.created_at < ($1::date + interval '1 day')
+      )::text AS last_call_today
+    FROM ai_answer_bank_calls c
+    JOIN ai_answer_bank ab ON ab.id = c.ai_answer_bank_id
+    GROUP BY ab.ai_player_id
+    `,
+    [utcDate]
+  );
+  return rows;
+}
+
+/** Fleet spend over the last 7 UTC calendar days (incl. today). */
+export async function fetchFleetSpend7d(pool: Pool): Promise<number> {
+  const { rows } = await pool.query<{ cost: string | number }>(
+    `
+    SELECT COALESCE(
+      SUM((c.response_payload->'usage'->>'cost')::numeric)
+        FILTER (WHERE c.response_payload IS NOT NULL),
+      0
+    ) AS cost
+    FROM ai_answer_bank_calls c
+    WHERE c.created_at >= (date_trunc('day', now() AT TIME ZONE 'UTC') - interval '6 days')
+      AND c.created_at < (date_trunc('day', now() AT TIME ZONE 'UTC') + interval '1 day')
+    `
+  );
+  const raw = rows[0]?.cost;
+  const n = typeof raw === "string" ? parseFloat(raw) : Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Deferral stats per player — 429 pressure for status + recommendations
+// ---------------------------------------------------------------------------
+
+export type DeferralStatRow = {
+  ai_player_id: string;
+  open_deferrals: number;
+  last_deferred_at: string | null;
+  /** Distinct UTC days with a deferral in the last 3 days (rate-limit streak). */
+  defer_days_3d: number;
+};
+
+export async function fetchDeferralStats(pool: Pool): Promise<DeferralStatRow[]> {
+  const { rows } = await pool.query<DeferralStatRow>(
+    `
+    SELECT
+      ai_player_id,
+      COUNT(*) FILTER (WHERE resolved_at IS NULL)::int AS open_deferrals,
+      MAX(last_deferred_at)::text AS last_deferred_at,
+      COUNT(DISTINCT last_deferred_at::date) FILTER (
+        WHERE last_deferred_at >= now() - interval '3 days'
+      )::int AS defer_days_3d
+    FROM ai_play_deferrals
+    GROUP BY ai_player_id
+    `
+  );
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Eligible events + coverage — the population the work queue targets
+// (same WHERE clause as COVERAGE_CANDIDATES_SQL in daily-autoplay.ts and
+// the ai_model_reliability 'playable' definition):
+//   events.status='validated' AND retired_at IS NULL AND has an images row
+//   AND has a locations row with latitude/longitude.
+// A counted play = ai_answer_bank row with error IS NULL (a stored, scored
+// result) on an eligible event.
+// ---------------------------------------------------------------------------
+
+export type EligibleEventStats = {
+  eligible_total: number;
+  /** Distinct (event_id, ai_player_id) OK pairs on eligible events. */
+  ok_pairs: number;
+  /** Distinct eligible events with >= 1 OK play. */
+  events_with_play: number;
+};
+
+export async function fetchEligibleEventStats(
+  pool: Pool
+): Promise<EligibleEventStats> {
+  const { rows } = await pool.query<EligibleEventStats>(
+    `
+    WITH eligible AS (
+      SELECT e.id
+      FROM events e
+      WHERE e.status = 'validated'
+        AND e.retired_at IS NULL
+        AND EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id)
+        AND EXISTS (
+          SELECT 1 FROM locations l
+          WHERE l.event_id = e.id
+            AND l.latitude IS NOT NULL
+            AND l.longitude IS NOT NULL
+        )
+    ),
+    ok_pairs AS (
+      SELECT DISTINCT ab.event_id, ab.ai_player_id
+      FROM ai_answer_bank ab
+      JOIN eligible el ON el.id = ab.event_id
+      WHERE ab.error IS NULL
+    )
+    SELECT
+      (SELECT COUNT(*) FROM eligible)::int AS eligible_total,
+      (SELECT COUNT(*) FROM ok_pairs)::int AS ok_pairs,
+      (SELECT COUNT(DISTINCT event_id) FROM ok_pairs)::int AS events_with_play
+    `
+  );
+  return (
+    rows[0] ?? { eligible_total: 0, ok_pairs: 0, events_with_play: 0 }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Event-audit verdicts — ai_event_audits.is_real_event votes per event
+// ---------------------------------------------------------------------------
+
+export type AuditVoteRow = {
+  event_id: string;
+  is_real_event: string | null;
+  n: number;
+};
+
+export async function fetchAuditVotes(pool: Pool): Promise<AuditVoteRow[]> {
+  const { rows } = await pool.query<AuditVoteRow>(
+    `
+    SELECT event_id, is_real_event, COUNT(*)::int AS n
+    FROM ai_event_audits
+    GROUP BY event_id, is_real_event
+    `
+  );
+  return rows;
+}
+
+/** Completed Practice plays in the last 7 days (play_mode='practice', OK). */
+export async function fetchPracticePlays7d(pool: Pool): Promise<number> {
+  const { rows } = await pool.query<{ n: number }>(
+    `
+    SELECT COUNT(*)::int AS n
+    FROM ai_answer_bank
+    WHERE play_mode = 'practice'
+      AND error IS NULL
+      AND created_at >= now() - interval '7 days'
+    `
+  );
+  return rows[0]?.n ?? 0;
+}
+
+// ---------------------------------------------------------------------------
+// Recent errors — ai_answer_bank.error rows, last 7 days (Problems section)
+// ---------------------------------------------------------------------------
+
+export type RecentErrorRow = {
   model_name: string;
-  model_id: string;
-  event_title: string;
   error: string;
   created_at: string;
 };
 
+export async function fetchRecentErrorRows(
+  pool: Pool,
+  opts: { days?: number; limit?: number } = {}
+): Promise<RecentErrorRow[]> {
+  const days = opts.days ?? 7;
+  const limit = opts.limit ?? 3000;
+  const { rows } = await pool.query<RecentErrorRow>(
+    `
+    SELECT
+      p.name AS model_name,
+      ab.error,
+      ab.created_at::text AS created_at
+    FROM ai_answer_bank ab
+    JOIN ai_players p ON p.id = ab.ai_player_id
+    WHERE ab.error IS NOT NULL
+      AND ab.created_at >= now() - ($1::int || ' days')::interval
+    ORDER BY ab.created_at DESC
+    LIMIT $2
+    `,
+    [days, limit]
+  );
+  return rows;
+}
+
 // ---------------------------------------------------------------------------
-// Events — per-event aggregate list + unified leaderboard drilldown
-// Task: AIP-BUILD-EVENTLEADERBOARD-001
+// Fleet runs + alerts + settings (kept from the previous dashboard)
+// ---------------------------------------------------------------------------
+
+export type FleetAlertRow = {
+  id: string;
+  kind: string;
+  severity: "critical" | "warning" | "info";
+  message: string;
+  model_id: string | null;
+  run_id: string | null;
+  created_at: string;
+  last_seen_at: string;
+  occurrences: number;
+};
+
+export async function fetchOpenFleetAlerts(pool: Pool): Promise<FleetAlertRow[]> {
+  const { rows } = await pool.query<FleetAlertRow>(
+    `
+    SELECT
+      id, kind, severity, message, model_id, run_id,
+      created_at::text AS created_at,
+      last_seen_at::text AS last_seen_at,
+      occurrences
+    FROM ai_fleet_alerts
+    WHERE resolved_at IS NULL
+    ORDER BY created_at DESC
+    `
+  );
+  return rows;
+}
+
+export type FleetRunRow = {
+  id: string;
+  kind: string;
+  status: "running" | "ok" | "partial" | "halted" | "error";
+  halt_reason: string | null;
+  started_at: string;
+  finished_at: string | null;
+  plays_attempted: number;
+  plays_ok: number;
+  plays_failed: number;
+  failed_auth: number;
+  failed_gone: number;
+  failed_rate_limit: number;
+  failed_bad_output: number;
+  failed_other: number;
+  plays_skipped_budget: number;
+  github_run_url: string | null;
+};
+
+export async function fetchRecentFleetRuns(
+  pool: Pool,
+  limit: number = 15
+): Promise<FleetRunRow[]> {
+  const { rows } = await pool.query<FleetRunRow>(
+    `
+    SELECT
+      id, kind, status, halt_reason,
+      started_at::text AS started_at,
+      finished_at::text AS finished_at,
+      plays_attempted, plays_ok, plays_failed,
+      failed_auth, failed_gone, failed_rate_limit,
+      failed_bad_output, failed_other, plays_skipped_budget,
+      github_run_url
+    FROM ai_fleet_runs
+    ORDER BY started_at DESC
+    LIMIT $1
+    `,
+    [limit]
+  );
+  return rows;
+}
+
+export type RateSettingRow = {
+  key: string;
+  value: unknown;
+  updated_at: string | null;
+};
+
+export async function fetchRateSettings(pool: Pool): Promise<RateSettingRow[]> {
+  const { rows } = await pool.query<RateSettingRow>(
+    `
+    SELECT key, value, updated_at::text AS updated_at
+    FROM ai_fleet_settings
+    ORDER BY key
+    `
+  );
+  return rows;
+}
+// ---------------------------------------------------------------------------
+// Sub-page queries — unchanged, kept for events/schedules/trash/users pages
 // ---------------------------------------------------------------------------
 
 export type EventListRow = {
@@ -421,160 +668,6 @@ export async function fetchEventModeBreakdown(
   return rows;
 }
 
-export async function fetchErrorBuckets(
-  pool: Pool,
-  opts: { type?: ErrorBucket | null; limit?: number } = {}
-): Promise<ErrorRow[]> {
-  const limit = opts.limit ?? 50;
-  const type = opts.type ?? null;
-
-  let typeFilter = "";
-  if (type === "rate_limit") {
-    typeFilter =
-      "AND (ab.error ILIKE '%429%' OR ab.error ILIKE '%rate limit%' OR ab.error ILIKE '%rate-limit%' OR ab.error ILIKE '%too many requests%')";
-  } else if (type === "not_found") {
-    typeFilter =
-      "AND (ab.error ILIKE '%404%' OR ab.error ILIKE '%no endpoints found%')";
-  } else if (type === "parse") {
-    typeFilter =
-      "AND (ab.error ILIKE '%parse%' OR ab.error ILIKE '%json%' OR ab.error ILIKE '%missing finalguess%')";
-  } else if (type === "other") {
-    typeFilter =
-      "AND ab.error IS NOT NULL AND NOT (ab.error ILIKE '%429%' OR ab.error ILIKE '%rate limit%' OR ab.error ILIKE '%rate-limit%' OR ab.error ILIKE '%too many requests%' OR ab.error ILIKE '%404%' OR ab.error ILIKE '%no endpoints found%' OR ab.error ILIKE '%parse%' OR ab.error ILIKE '%json%' OR ab.error ILIKE '%missing finalguess%')";
-  } else {
-    typeFilter = "AND ab.error IS NOT NULL";
-  }
-
-  const { rows } = await pool.query<ErrorRow>(
-    `
-    SELECT
-      ab.id,
-      p.name AS model_name,
-      p.model_id,
-      e.title AS event_title,
-      ab.error,
-      ab.created_at::text AS created_at
-    FROM ai_answer_bank ab
-    JOIN ai_players p ON p.id = ab.ai_player_id
-    JOIN events e ON e.id = ab.event_id
-    WHERE 1=1 ${typeFilter}
-    ORDER BY ab.created_at DESC
-    LIMIT $1
-    `,
-    [limit]
-  );
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Overview — recent activity, recent errors, cost week
-// Task: AIP-BUILD-PRODASHBOARD-OVERVIEWKPI-001
-// (call-based roster health removed by ADMIN-BUILD-FLEETTRUTH-1101-031 —
-//  play-level truth comes from admin_fleet_model_stats instead)
-// ---------------------------------------------------------------------------
-
-export type RecentActivityRow = {
-  id: string;
-  model_name: string;
-  model_id: string;
-  mode: string;
-  round_accuracy: number | null;
-  cost: string | number;
-  created_at: string;
-};
-
-export async function fetchRecentActivity(
-  pool: Pool,
-  limit: number = 10
-): Promise<RecentActivityRow[]> {
-  const { rows } = await pool.query<RecentActivityRow>(
-    `
-    WITH activity_costs AS (
-      SELECT
-        c.ai_answer_bank_id,
-        COALESCE(
-          SUM((c.response_payload->'usage'->>'cost')::numeric)
-            FILTER (WHERE c.response_payload IS NOT NULL),
-          0
-        ) AS cost
-      FROM ai_answer_bank_calls c
-      GROUP BY c.ai_answer_bank_id
-    )
-    SELECT
-      ab.id,
-      p.name AS model_name,
-      p.model_id,
-      CASE WHEN dc.date IS NOT NULL THEN 'Daily' ELSE 'Practice' END AS mode,
-      ab.round_accuracy,
-      COALESCE(ac.cost, 0) AS cost,
-      ab.created_at::text AS created_at
-    FROM ai_answer_bank ab
-    JOIN ai_players p ON p.id = ab.ai_player_id
-    LEFT JOIN activity_costs ac ON ac.ai_answer_bank_id = ab.id
-    LEFT JOIN daily_challenges dc
-      ON dc.date = ab.created_at::date AND ab.event_id = ANY(dc.event_ids)
-    ORDER BY ab.created_at DESC
-    LIMIT $1
-    `,
-    [limit]
-  );
-  return rows;
-}
-
-export type RecentErrorRow = {
-  id: string;
-  model_name: string;
-  model_id: string;
-  error: string;
-  created_at: string;
-};
-
-// Raw error text only — the failure cause is classified once, in
-// fleetMetrics.classifyFailure (ADMIN-BUILD-FLEETTRUTH-1101-031).
-export async function fetchRecentErrors(
-  pool: Pool,
-  limit: number = 5
-): Promise<RecentErrorRow[]> {
-  const { rows } = await pool.query<RecentErrorRow>(
-    `
-    SELECT
-      ab.id,
-      p.name AS model_name,
-      p.model_id,
-      ab.error,
-      ab.created_at::text AS created_at
-    FROM ai_answer_bank ab
-    JOIN ai_players p ON p.id = ab.ai_player_id
-    WHERE ab.error IS NOT NULL
-    ORDER BY ab.created_at DESC
-    LIMIT $1
-    `,
-    [limit]
-  );
-  return rows;
-}
-
-// AIP-BUILD-BUDGET-1103-004: "Cost this week" = last 7 UTC calendar days
-// (incl. today) computed through the same shared spend function the Daily
-// runner enforces against — dashboard and enforcement can never disagree.
-// (Replaces the previous rolling '7 days' window.)
-export async function fetchCostWeek(pool: Pool): Promise<number> {
-  const today = new Date();
-  const dayStarts = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setUTCDate(d.getUTCDate() - i);
-    return d.toISOString().slice(0, 10);
-  });
-  const parts = await Promise.all(
-    dayStarts.map((utcDate) => fetchSpendTodayByPlayer(pool, utcDate))
-  );
-  return parts.reduce((sum, p) => sum + p.total, 0);
-}
-
-// ---------------------------------------------------------------------------
-// Scheduled AI-player mode changes (AIP-BUILD-PRODASHBOARD-FULLUIX-002)
-// ---------------------------------------------------------------------------
-
 export type ScheduledChangeRow = {
   id: string;
   ai_player_id: string;
@@ -701,94 +794,6 @@ export async function fetchTrashedPlayers(pool: Pool): Promise<TrashedPlayerRow[
     WHERE deleted_at IS NOT NULL
     ORDER BY deleted_at DESC
     `
-  );
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Overview — open fleet alerts + recent fleet runs
-// (AIP-BUILD-FLEETHALT-1102-043; tables from migration
-//  20261102140000_ai_fleet_runs_alerts.sql)
-// ---------------------------------------------------------------------------
-
-export type FleetAlertRow = {
-  id: string;
-  kind: string;
-  severity: "critical" | "warning" | "info";
-  message: string;
-  model_id: string | null;
-  run_id: string | null;
-  created_at: string;
-  last_seen_at: string;
-  occurrences: number;
-};
-
-export async function fetchOpenFleetAlerts(pool: Pool): Promise<FleetAlertRow[]> {
-  const { rows } = await pool.query<FleetAlertRow>(
-    `
-    SELECT
-      id,
-      kind,
-      severity,
-      message,
-      model_id,
-      run_id,
-      created_at::text AS created_at,
-      last_seen_at::text AS last_seen_at,
-      occurrences
-    FROM ai_fleet_alerts
-    WHERE resolved_at IS NULL
-    ORDER BY created_at DESC
-    `
-  );
-  return rows;
-}
-
-export type FleetRunRow = {
-  id: string;
-  kind: string;
-  status: "running" | "ok" | "partial" | "halted" | "error";
-  halt_reason: string | null;
-  started_at: string;
-  finished_at: string | null;
-  plays_attempted: number;
-  plays_ok: number;
-  plays_failed: number;
-  failed_auth: number;
-  failed_gone: number;
-  failed_rate_limit: number;
-  failed_bad_output: number;
-  failed_other: number;
-  github_run_url: string | null;
-};
-
-export async function fetchRecentFleetRuns(
-  pool: Pool,
-  limit: number = 7
-): Promise<FleetRunRow[]> {
-  const { rows } = await pool.query<FleetRunRow>(
-    `
-    SELECT
-      id,
-      kind,
-      status,
-      halt_reason,
-      started_at::text AS started_at,
-      finished_at::text AS finished_at,
-      plays_attempted,
-      plays_ok,
-      plays_failed,
-      failed_auth,
-      failed_gone,
-      failed_rate_limit,
-      failed_bad_output,
-      failed_other,
-      github_run_url
-    FROM ai_fleet_runs
-    ORDER BY started_at DESC
-    LIMIT $1
-    `,
-    [limit]
   );
   return rows;
 }

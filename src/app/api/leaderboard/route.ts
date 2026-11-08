@@ -3,6 +3,7 @@ import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { dbPool } from "@/server/db";
 import { resolvePlayerIdentities, type PlayerIdentity } from "@/core/playerIdentity";
+import { AI_PLAYER_LIVE_SQL, AI_PLAYER_DAILY_SQL } from "@/core/aiPlayerPredicates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -153,7 +154,7 @@ async function loadOverallRanked(sort: string): Promise<RawRankedRow[]> {
         COUNT(*)::int AS rounds_played,
         0::int AS rounds_won
       FROM ai_answer_bank a
-      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active = true
+      JOIN ai_players ap ON ap.id = a.ai_player_id AND ${AI_PLAYER_LIVE_SQL}
       WHERE a.error IS NULL
       GROUP BY a.ai_player_id
     ),
@@ -205,7 +206,7 @@ async function loadDailyTodayRanked(date: string, sort: string): Promise<RawRank
         MAX(a.created_at) AS completed_at,
         MAX(a.round_accuracy)::numeric(5,2) AS best_accuracy
       FROM ai_answer_bank a
-      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active_daily = true AND ap.is_active = true AND ap.deleted_at IS NULL
+      JOIN ai_players ap ON ap.id = a.ai_player_id AND ${AI_PLAYER_DAILY_SQL}
       JOIN daily_challenges dc ON dc.date = $1 AND a.event_id = ANY(dc.event_ids)
       WHERE a.error IS NULL
       GROUP BY a.ai_player_id
@@ -257,7 +258,7 @@ async function loadDailyAlltimeRanked(sort: string): Promise<RawRankedRow[]> {
         ROUND(AVG(a.round_accuracy)::numeric, 2) AS avg_accuracy,
         COALESCE(SUM(a.round_xp), 0)::int AS total_xp
       FROM ai_answer_bank a
-      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active = true
+      JOIN ai_players ap ON ap.id = a.ai_player_id AND ${AI_PLAYER_LIVE_SQL}
       WHERE a.error IS NULL
       GROUP BY a.ai_player_id
     ),

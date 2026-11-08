@@ -5,6 +5,11 @@ import { evaluateRound } from "@/core/rules";
 import type { EventRecord, EventHint, Location } from "@/core/types";
 import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 import { AI_PLAYER_TIMER_MS as DAILY_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS } from "@/core/aiPlayers";
+import { classifyOutcome, parseRetryAfterMs } from "@/core/aiRateBudget";
+import { RATE_LIMIT_DEFERRED_MARKER } from "@/core/aiFailureCauses";
+import { parseHintReviews, type HintReviewRow } from "@/core/aiHintReview";
+import { sumUsage, type UsageTotals } from "@/core/aiUsage";
+import { assertPracticeHintsOff } from "@/core/aiWorkQueue";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -52,6 +57,8 @@ type FinalGuess = {
   latitude: number;
   longitude: number;
   year: number;
+  /** Model self-rated confidence 0-1; null when absent/invalid (E2). */
+  confidence: number | null;
 };
 
 type TurnResult =
@@ -92,6 +99,8 @@ function parseArgs(): {
   modelId: string;
   provider: string;
   playerName: string;
+  mode: string;
+  noHints: boolean;
 } {
   const args = process.argv.slice(2);
   const flags = new Map<string, string>();
@@ -111,6 +120,8 @@ function parseArgs(): {
     modelId: flags.get("model") ?? DEFAULT_MODEL_ID,
     provider: flags.get("provider") ?? DEFAULT_PROVIDER,
     playerName: flags.get("player-name") ?? DEFAULT_AI_PLAYER_NAME,
+    mode: flags.get("mode") ?? "daily",
+    noHints: flags.has("no-hints"),
   };
 }
 
@@ -118,20 +129,32 @@ const parsedArgs = parseArgs();
 const MODEL_ID = parsedArgs.modelId;
 const PROVIDER = parsedArgs.provider;
 const AI_PLAYER_NAME = parsedArgs.playerName;
+// E2/D2: --mode=practice forces hints OFF; --no-hints also forces hints OFF.
+// The raw string is validated inside main() before any write can run.
+const MODE: "daily" | "practice" = parsedArgs.mode === "practice" ? "practice" : "daily";
+const HINTS_OFF = MODE === "practice" || parsedArgs.noHints;
 
 async function main(): Promise<void> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
     console.error("OPENROUTER_API_KEY is missing. Set it in the environment or .env.local and rerun.");
     process.exit(1);
+    return;
   }
 
   const eventId = parsedArgs.eventId;
   if (!eventId) {
     console.error(
-      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] [--timer-sec=<seconds>] <event-id>"
+      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] [--timer-sec=<seconds>] [--mode=daily|practice] [--no-hints] <event-id>"
     );
     process.exit(1);
+    return;
+  }
+
+  if (parsedArgs.mode !== "daily" && parsedArgs.mode !== "practice") {
+    console.error(`Invalid --mode=${parsedArgs.mode} (expected daily|practice)`);
+    process.exit(1);
+    return;
   }
 
   const pool = getDbPool();
@@ -146,6 +169,7 @@ async function main(): Promise<void> {
     title: string | null;
     country: string | null;
     continent: string | null;
+    description: string | null;
   }>(
     `SELECT
       e.id AS event_id,
@@ -155,6 +179,7 @@ async function main(): Promise<void> {
       l.display_name AS location_name,
       i.url AS image_url,
       e.title,
+      e.description,
       l.country,
       l.continent
      FROM events e
@@ -164,6 +189,7 @@ async function main(): Promise<void> {
        AND e.status = 'validated'
        AND l.latitude IS NOT NULL
        AND l.longitude IS NOT NULL
+     ORDER BY i.display_order ASC NULLS LAST, i.created_at ASC, i.id ASC
      LIMIT 1`,
     [eventId]
   );
@@ -171,12 +197,14 @@ async function main(): Promise<void> {
   if (eventResult.rows.length === 0) {
     console.error(`No validated event found with id ${eventId}`);
     process.exit(1);
+    return;
   }
 
   const row = eventResult.rows[0];
   if (!row.image_url) {
     console.error(`Event ${eventId} has no image_url`);
     process.exit(1);
+    return;
   }
 
   const hintsResult = await pool.query<{
@@ -220,7 +248,7 @@ async function main(): Promise<void> {
   const eventRecord: EventRecord = {
     id: row.event_id,
     title: row.title ?? "",
-    description: "",
+    description: row.description ?? "",
     year: row.event_year,
     location,
     region: row.continent ?? row.country ?? "",
@@ -244,7 +272,12 @@ async function main(): Promise<void> {
     error: string | null;
   }> = [];
 
-  const turn1Messages = buildTurn1Messages(row.image_url, hints);
+  // D6: usage/cost columns on eval_facts and ai_answer_bank are the SUM across
+  // every call made so far (guess turn, optional hint turn, review turn).
+  const usageSoFar = (): UsageTotals => sumUsage(calls.map((c) => c.response_payload));
+  const latencySoFarMs = (): number => calls.reduce((acc, c) => acc + c.duration_ms, 0);
+
+  const turn1Messages = buildTurn1Messages(row.image_url, hints, HINTS_OFF);
   const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls, Math.max(DEADLINE_MS - (Date.now() - turnStart), 1));
   // Manifest provenance: record the max_tokens of the attempt that produced
   // this content (a retry means MAX_TOKENS_RETRY), not a fixed first-attempt budget.
@@ -269,6 +302,13 @@ async function main(): Promise<void> {
       timedOut = true;
       console.log(`Timer deadline hit during turn 1 call: ${turn1.error}`);
     } else {
+    // E1: a 429 defers the play — the eval_fact keeps the original error text
+    // while the bank row carries the RATE_LIMIT_DEFERRED marker (which must not
+    // contain "429": admin_fleet_model_stats classifies with ILIKE '%429%'),
+    // then exit 75 for the supervisor. Never retried in-worker.
+    const deferredText = isRateLimitErrorText(turn1.error)
+      ? buildRateLimitDeferredText(turn1.error, turn1.rawResponse)
+      : null;
     const evaluationId = await writeErrorEvalFact(pool, {
       eventId: row.event_id,
       aiPlayerId: await ensureAiPlayer(pool),
@@ -287,21 +327,31 @@ async function main(): Promise<void> {
       authenticityError: null,
       finalGuess: null,
       error: `OpenRouter turn 1 failed: ${turn1.error}`,
+      usageTotals: usageSoFar(),
     });
     // AIP-FIX-TRUNCATION-REASONINGBUDGET-1010-002: still-truncated responses are
     // recorded in eval_facts (above) but write no ai_answer_bank row.
     if (!turn1.error.startsWith("TRUNCATED_LENGTH:")) {
-      await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 1 failed: ${turn1.error}`);
+      await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText ?? `OpenRouter turn 1 failed: ${turn1.error}`);
+    }
+    if (deferredText !== null) {
+      console.error(deferredText);
+      process.exit(75);
+      return;
     }
     console.error(`OpenRouter turn 1 failed: ${turn1.error}`);
     process.exit(1);
+    return;
     }
   }
 
   const turn1Parse = timedOut
     ? ({ kind: "hints", hintRequests: [] } as TurnResult)
-    : parseTurn1Response(turn1.content);
+    : parseTurn1Response(turn1.content, HINTS_OFF);
   if (turn1Parse.kind === "error") {
+    const deferredText = isRateLimitErrorText(turn1Parse.error)
+      ? buildRateLimitDeferredText(turn1Parse.error, turn1.rawResponse)
+      : null;
     const evaluationId = await writeErrorEvalFact(pool, {
       eventId: row.event_id,
       aiPlayerId: await ensureAiPlayer(pool),
@@ -320,10 +370,17 @@ async function main(): Promise<void> {
       authenticityError: null,
       finalGuess: null,
       error: turn1Parse.error,
+      usageTotals: usageSoFar(),
     });
-    await writeErrorResult(pool, evaluationId, row.event_id, calls, turn1Parse.error);
+    await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText ?? turn1Parse.error);
+    if (deferredText !== null) {
+      console.error(deferredText);
+      process.exit(75);
+      return;
+    }
     console.error(turn1Parse.error);
     process.exit(1);
+    return;
   }
 
   if (turn1Parse.kind === "guess") {
@@ -332,7 +389,10 @@ async function main(): Promise<void> {
     timeToGuessMs = Date.now() - turnStart;
   } else {
     const elapsedAfterTurn1 = Date.now() - turnStart;
-    if (elapsedAfterTurn1 >= DEADLINE_MS) {
+    if (elapsedAfterTurn1 >= DEADLINE_MS || HINTS_OFF) {
+      // HINTS_OFF: kind 'hints' can only come from the synthetic timedOut
+      // result above — parseTurn1Response never yields it and suppliedHints
+      // stays [] (D2 practice = hints OFF).
       timedOut = true;
       console.log(`Timeout after turn 1 at ${elapsedAfterTurn1}ms`);
     } else {
@@ -364,6 +424,9 @@ async function main(): Promise<void> {
           timedOut = true;
           console.log(`Timer deadline hit during turn 2 call: ${turn2.error}`);
         } else {
+        const deferredText = isRateLimitErrorText(turn2.error)
+          ? buildRateLimitDeferredText(turn2.error, turn2.rawResponse)
+          : null;
         const evaluationId = await writeErrorEvalFact(pool, {
           eventId: row.event_id,
           aiPlayerId: await ensureAiPlayer(pool),
@@ -382,20 +445,30 @@ async function main(): Promise<void> {
           authenticityError: null,
           finalGuess: null,
           error: `OpenRouter turn 2 failed: ${turn2.error}`,
+          usageTotals: usageSoFar(),
         });
         // AIP-FIX-TRUNCATION-REASONINGBUDGET-1010-002: still-truncated responses are
         // recorded in eval_facts (above) but write no ai_answer_bank row.
         if (!turn2.error.startsWith("TRUNCATED_LENGTH:")) {
-          await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 2 failed: ${turn2.error}`);
+          await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText ?? `OpenRouter turn 2 failed: ${turn2.error}`);
+        }
+        if (deferredText !== null) {
+          console.error(deferredText);
+          process.exit(75);
+          return;
         }
         console.error(`OpenRouter turn 2 failed: ${turn2.error}`);
         process.exit(1);
+        return;
         }
       }
 
       if (!timedOut) {
       const turn2Parse = parseFinalGuessResponse(turn2.content);
       if (turn2Parse.kind === "error") {
+        const deferredText = isRateLimitErrorText(turn2Parse.error)
+          ? buildRateLimitDeferredText(turn2Parse.error, turn2.rawResponse)
+          : null;
         const evaluationId = await writeErrorEvalFact(pool, {
           eventId: row.event_id,
           aiPlayerId: await ensureAiPlayer(pool),
@@ -414,13 +487,23 @@ async function main(): Promise<void> {
           authenticityError: null,
           finalGuess: null,
           error: turn2Parse.error,
+          usageTotals: usageSoFar(),
         });
-        await writeErrorResult(pool, evaluationId, row.event_id, calls, turn2Parse.error);
+        await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText ?? turn2Parse.error);
+        if (deferredText !== null) {
+          console.error(deferredText);
+          process.exit(75);
+          return;
+        }
         console.error(turn2Parse.error);
         process.exit(1);
+        return;
       }
       if (turn2Parse.kind !== "guess") {
         const err = "Unexpected turn 2 response kind";
+        const deferredText = isRateLimitErrorText(err)
+          ? buildRateLimitDeferredText(err, turn2.rawResponse)
+          : null;
         const evaluationId = await writeErrorEvalFact(pool, {
           eventId: row.event_id,
           aiPlayerId: await ensureAiPlayer(pool),
@@ -439,10 +522,17 @@ async function main(): Promise<void> {
           authenticityError: null,
           finalGuess: null,
           error: err,
+          usageTotals: usageSoFar(),
         });
-        await writeErrorResult(pool, evaluationId, row.event_id, calls, err);
+        await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText ?? err);
+        if (deferredText !== null) {
+          console.error(deferredText);
+          process.exit(75);
+          return;
+        }
         console.error(err, turn2Parse.kind);
         process.exit(1);
+        return;
       }
 
       finalGuess = turn2Parse.finalGuess;
@@ -460,15 +550,54 @@ async function main(): Promise<void> {
     }
   }
 
-  const critiqueMessages = buildCritiqueMessages(row.image_url, trueAnswer, row.title ?? "", row.location_name ?? "");
+  const critiqueMessages = buildCritiqueMessages(
+    row.image_url,
+    trueAnswer,
+    row.title ?? "",
+    row.location_name ?? "",
+    row.description ?? null,
+    hints
+  );
   const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls, CRITIQUE_TIMEOUT_MS);
-  await resolveManifest(pool, {
+  const critiqueManifestId = await resolveManifest(pool, {
     provider: PROVIDER,
     model_id: MODEL_ID,
     messages: critiqueMessages,
     temperature: 0.2,
     max_tokens: critique.maxTokensUsed,
   });
+
+  // E1: a 429 on the review turn defers the whole play — same eval_fact + bank
+  // error row (marker text), exit 75. The bank row keeps the UNIQUE slot so a
+  // later retry overwrites it cleanly. Never retried in-worker.
+  if (critique.error && isRateLimitErrorText(critique.error)) {
+    const deferredText = buildRateLimitDeferredText(critique.error, critique.rawResponse);
+    const evaluationId = await writeErrorEvalFact(pool, {
+      eventId: row.event_id,
+      aiPlayerId: await ensureAiPlayer(pool),
+      manifestId: critiqueManifestId,
+      groundTruthVersionId,
+      stimulusId,
+      callResult: critique,
+      suppliedHints,
+      imageQualityScore: null,
+      imageQualityNotes: null,
+      critiqueError: `OpenRouter turn 3 failed: ${critique.error}`,
+      difficultyScore: null,
+      difficultyNotes: null,
+      authenticityScore: null,
+      authenticityNotes: null,
+      authenticityError: null,
+      finalGuess: null,
+      error: `OpenRouter turn 3 failed: ${critique.error}`,
+      usageTotals: usageSoFar(),
+    });
+    await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText);
+    console.error(deferredText);
+    process.exit(75);
+    return;
+  }
+
   const critiqueParse = critique.error
     ? { imageQualityScore: null as number | null, imageQualityNotes: null as string | null, difficultyScore: null as number | null, difficultyNotes: null as string | null, authenticityScore: null as number | null, authenticityNotes: null as string | null, error: `OpenRouter turn 3 failed: ${critique.error}` }
     : parseCritiqueResponse(critique.content);
@@ -495,6 +624,23 @@ async function main(): Promise<void> {
     if (critiqueParse.authenticityError) {
       authenticityError = critiqueParse.authenticityError;
       console.warn(`Authenticity/difficulty error: ${critiqueParse.authenticityError}`);
+    }
+  }
+
+  // D5/E2: per-hint reviews are parsed off the RAW review text by
+  // src/core/aiHintReview.ts. Parse problems append a note to critiqueError —
+  // a hint-review failure never fails the play.
+  let hintReviewRows: HintReviewRow[] = [];
+  if (!critique.error && hints.length > 0) {
+    try {
+      hintReviewRows = parseHintReviews(critique.content, hints);
+      if (hintReviewRows.length === 0) {
+        const note = "hint review parse: no valid hintReviews entries in review response";
+        critiqueError = critiqueError === null ? note : `${critiqueError}; ${note}`;
+      }
+    } catch (hintReviewErr) {
+      const note = `hint review parse failed: ${hintReviewErr instanceof Error ? hintReviewErr.message : String(hintReviewErr)}`;
+      critiqueError = critiqueError === null ? note : `${critiqueError}; ${note}`;
     }
   }
 
@@ -530,6 +676,16 @@ async function main(): Promise<void> {
       authenticityNotes,
       authenticityError,
       error: null,
+      usageTotals: usageSoFar(),
+    });
+
+    // D2 code-side guard: a practice row must carry hints_off, no hints and
+    // zero penalties (a no-op for daily rows).
+    assertPracticeHintsOff({
+      play_mode: MODE,
+      hints_off: HINTS_OFF,
+      hints_requested: [],
+      hint_penalty_applied: { whenPenaltyRate: 0, wherePenaltyRate: 0, validHintCount: 0 },
     });
 
     const answerBankId = await writeResult(pool, {
@@ -546,8 +702,12 @@ async function main(): Promise<void> {
       imageQualityNotes,
       critiqueError,
       rawLlmResponse: finalCall.rawResponse,
+      confidence: null,
+      usageTotals: usageSoFar(),
+      latencyMs: latencySoFarMs(),
     });
     await writeCalls(pool, answerBankId, calls);
+    await insertHintReviews(pool, row.event_id, aiPlayerId, evaluationId, hintReviewRows);
 
     console.log("Stored timeout result for event", row.event_id, "ai_player", aiPlayerId, "time_to_guess_ms", timeoutMs);
     await pool.end();
@@ -611,6 +771,16 @@ async function main(): Promise<void> {
     authenticityNotes,
     authenticityError,
     error: null,
+    usageTotals: usageSoFar(),
+  });
+
+  // D2 code-side guard: a practice row must carry hints_off, no hints and
+  // zero penalties (a no-op for daily rows).
+  assertPracticeHintsOff({
+    play_mode: MODE,
+    hints_off: HINTS_OFF,
+    hints_requested: hintsRequestedPayload,
+    hint_penalty_applied: hintPenaltyAppliedPayload,
   });
 
   const answerBankId = await writeResult(pool, {
@@ -627,30 +797,50 @@ async function main(): Promise<void> {
     imageQualityNotes,
     critiqueError,
     rawLlmResponse: finalGuessResponsePayload,
+    confidence: finalGuess.confidence,
+    usageTotals: usageSoFar(),
+    latencyMs: latencySoFarMs(),
   });
   await writeCalls(pool, answerBankId, calls);
+  await insertHintReviews(pool, row.event_id, aiPlayerId, evaluationId, hintReviewRows);
 
   console.log("Stored v3 answer for event", row.event_id, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
   await pool.end();
   process.exit(0);
 }
 
-function buildTurn1Messages(imageUrl: string, hints: EventHint[]): unknown[] {
-  const availableHints = hints.map((h) => `tier ${h.tier} ${h.type}`).join("\n") || "none";
+export function buildTurn1Messages(imageUrl: string, hints: EventHint[], hintsOff: boolean): unknown[] {
+  const finalGuessShape =
+    `{"finalGuess": {"latitude": number, "longitude": number, "year": integer, "confidence": number 0-1 (optional)}, "reasoning": "your concise reasoning"}`;
 
-  const systemPrompt =
-    `You are a geospatial and historical reasoning assistant. You will be shown an image. ` +
-    `Your task is to determine where (latitude and longitude) and when (year) the depicted historical event occurred.\n\n` +
-    `You may either:\n` +
-    `1. Submit a final guess immediately, OR\n` +
-    `2. Request one or more hints by tier and type.\n\n` +
-    `Available hints for this event (tier and type only; content is hidden until requested):\n${availableHints}\n\n` +
-    `Respond with JSON only (no markdown). Use exactly one of the following shapes:\n\n` +
-    `Final guess:\n` +
-    `{"finalGuess": {"latitude": number, "longitude": number, "year": integer}, "reasoning": "your concise reasoning"}\n\n` +
-    `Request hints:\n` +
-    `{"hintRequests": [{"tier": integer, "type": "where" | "when"}]}\n\n` +
-    `If you request hints, you will receive the requested hint content and must then submit a final guess.`;
+  // E2/D2: hintsOff (practice) drops the hint menu entirely — no
+  // available-hints block, no hintRequests shape; the finalGuess JSON shape is
+  // the only acceptable reply.
+  let systemPrompt: string;
+  if (hintsOff) {
+    systemPrompt =
+      `You are a geospatial and historical reasoning assistant. You will be shown an image. ` +
+      `Your task is to determine where (latitude and longitude) and when (year) the depicted historical event occurred.\n\n` +
+      `Submit a final guess. Respond with JSON only (no markdown). Use exactly this shape:\n\n` +
+      `Final guess:\n` +
+      finalGuessShape;
+  } else {
+    const availableHints = hints.map((h) => `tier ${h.tier} ${h.type}`).join("\n") || "none";
+    systemPrompt =
+      `You are a geospatial and historical reasoning assistant. You will be shown an image. ` +
+      `Your task is to determine where (latitude and longitude) and when (year) the depicted historical event occurred.\n\n` +
+      `You may either:\n` +
+      `1. Submit a final guess immediately, OR\n` +
+      `2. Request one or more hints by tier and type.\n\n` +
+      `Available hints for this event (tier and type only; content is hidden until requested):\n${availableHints}\n\n` +
+      `Respond with JSON only (no markdown). Use exactly one of the following shapes:\n\n` +
+      `Final guess:\n` +
+      finalGuessShape +
+      `\n\n` +
+      `Request hints:\n` +
+      `{"hintRequests": [{"tier": integer, "type": "where" | "when"}]}\n\n` +
+      `If you request hints, you will receive the requested hint content and must then submit a final guess.`;
+  }
 
   return [
     { role: "system", content: systemPrompt },
@@ -658,7 +848,7 @@ function buildTurn1Messages(imageUrl: string, hints: EventHint[]): unknown[] {
       role: "user",
       content: [
         { type: "image_url", image_url: { url: imageUrl, detail: DETAIL_MODE } },
-        { type: "text", text: "What is your guess or hint request?" },
+        { type: "text", text: hintsOff ? "What is your guess?" : "What is your guess or hint request?" },
       ],
     },
   ];
@@ -674,7 +864,7 @@ function buildTurn2Messages(
   const userPrompt =
     `You requested the following hints. Their content is now revealed:\n${hintsText}\n\n` +
     `Now submit your final guess. Respond with JSON only:\n` +
-    `{"finalGuess": {"latitude": number, "longitude": number, "year": integer}, "reasoning": "your concise reasoning"}`;
+    `{"finalGuess": {"latitude": number, "longitude": number, "year": integer, "confidence": number 0-1 (optional)}, "reasoning": "your concise reasoning"}`;
 
   return [
     ...priorMessages,
@@ -683,12 +873,17 @@ function buildTurn2Messages(
   ];
 }
 
-function buildCritiqueMessages(
+export function buildCritiqueMessages(
   imageUrl: string,
   trueAnswer: { lat: number; lng: number; year: number; locationName: string | null },
   title: string,
-  locationName: string | null
+  locationName: string | null,
+  description: string | null,
+  allHints: SuppliedHint[]
 ): unknown[] {
+  // D4/D5: the former critique turn is the structured REVIEW turn — the only
+  // turn that sees the reveal and every hint of the event (with ids).
+  const hasHints = allHints.length > 0;
   const systemPrompt =
     `You are evaluating the provided historical image after the true answer has been revealed. ` +
     `Assess three things and return a single JSON object with exactly these keys:\n` +
@@ -697,14 +892,27 @@ function buildCritiqueMessages(
     `  - difficultyScore (integer 1-10): how hard the image would be for a skilled player to geolocate and date correctly before seeing the answer, considering visual ambiguity, common/generic subject matter, lack of identifying landmarks, etc.\n` +
     `  - difficultyNotes (string): brief explanation for the difficulty score.\n` +
     `  - authenticityScore (integer 1-10): how confident you are that the depicted event is a real historical event, as opposed to a staged photo, movie/TV still, reenactment, or AI-generated image.\n` +
-    `  - authenticityNotes (string): brief explanation for the authenticity score.\n\n` +
-    `Respond with JSON only (no markdown).`;
+    `  - authenticityNotes (string): brief explanation for the authenticity score.\n` +
+    (hasHints
+      ? `  - hintReviews (array): one entry per hint listed in the user prompt, each ` +
+        `{"hintId": string (the hint's id), "verdict": "correct" | "incorrect" | "unverifiable" | "partially_correct", ` +
+        `"confidence": number 0-1, "explanation": string, "suggestedCorrection": string | null} ` +
+        `judging whether the hint text is accurate given the image and the revealed truth.\n`
+      : "") +
+    `\nRespond with JSON only (no markdown).`;
 
   const locationText = locationName ? ` (${locationName})` : "";
+  const descriptionText = description ? ` Event description: "${description}".` : "";
+  const hintListText = hasHints
+    ? `\n\nThe event's hints (id — tier — type — content). Review each against the image and the revealed answer:\n` +
+      allHints.map((h) => `- id="${h.id}" (tier ${h.tier} ${h.type}): "${h.content}"`).join("\n")
+    : "";
   const userPrompt =
     `The correct answer is: latitude ${trueAnswer.lat}, longitude ${trueAnswer.lng}, year ${trueAnswer.year}${locationText}. ` +
-    `Event title: "${title || "unknown"}".\n\n` +
-    `Rate the image quality, guess difficulty, and authenticity of the depicted event. Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes.`;
+    `Event title: "${title || "unknown"}".${descriptionText}\n\n` +
+    `Rate the image quality, guess difficulty, and authenticity of the depicted event. Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes` +
+    (hasHints ? `, and hintReviews.` : `.`) +
+    hintListText;
 
   return [
     { role: "system", content: systemPrompt },
@@ -716,6 +924,57 @@ function buildCritiqueMessages(
       ],
     },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// E1/D3 429 deferral helpers — a 429 in ANY turn writes the usual error
+// eval_fact + bank error row (bank error text swapped for the
+// RATE_LIMIT_DEFERRED marker) and exits 75. Never retried in-worker.
+// ---------------------------------------------------------------------------
+
+/** Detects a rate-limit failure from the worker's own error text (E1). */
+export function isRateLimitErrorText(errorText: string | null | undefined): boolean {
+  if (typeof errorText !== "string" || errorText.length === 0) return false;
+  return (
+    errorText.includes(" 429 ") ||
+    errorText.includes(": 429") ||
+    errorText.includes('code":429') ||
+    errorText.includes('code":"429')
+  );
+}
+
+/** error.metadata.{provider_name,limit_source} from an OpenRouter error body. */
+function extractErrorMetadata(raw: unknown): { providerName: string | null; limitSource: string | null } {
+  if (typeof raw !== "object" || raw === null) return { providerName: null, limitSource: null };
+  const err = (raw as Record<string, unknown>).error;
+  if (typeof err !== "object" || err === null) return { providerName: null, limitSource: null };
+  const meta = (err as Record<string, unknown>).metadata;
+  if (typeof meta !== "object" || meta === null) return { providerName: null, limitSource: null };
+  const m = meta as Record<string, unknown>;
+  return {
+    providerName: typeof m.provider_name === "string" && m.provider_name.length > 0 ? m.provider_name : null,
+    limitSource: typeof m.limit_source === "string" && m.limit_source.length > 0 ? m.limit_source : null,
+  };
+}
+
+/**
+ * The bank-row error text / stderr line for a deferred play:
+ * `RATE_LIMIT_DEFERRED retry_after_ms=<int|unknown> <provider_name|unknown>/<limit_source|unknown>`
+ * CRITICAL: must never contain "429" — admin_fleet_model_stats classifies the
+ * bank error column with ILIKE '%429%'.
+ */
+export function buildRateLimitDeferredText(errorText: string, rawResponse: unknown): string {
+  const retryAfterMs = parseRetryAfterMs(errorText);
+  const meta = extractErrorMetadata(rawResponse);
+  return `${RATE_LIMIT_DEFERRED_MARKER} retry_after_ms=${retryAfterMs === null ? "unknown" : Math.round(retryAfterMs)} ${meta.providerName ?? "unknown"}/${meta.limitSource ?? "unknown"}`;
+}
+
+/** Retry-After header (seconds or HTTP-date) -> ms, via the shared parser. */
+function retryAfterMsFromHeaders(response: Response): number | null {
+  const value = response.headers.get("retry-after");
+  if (value === null) return null;
+  const parsed = parseRetryAfterMs(`Retry-After: ${value}`);
+  return parsed === null ? null : Math.round(parsed);
 }
 
 async function callOpenRouter(
@@ -810,7 +1069,13 @@ async function callOpenRouter(
     const durationMs = Date.now() - start;
 
     if (!response.ok) {
-      const errorMsg = `OpenRouter request failed: ${response.status} ${response.statusText} ${responseText}`;
+      let errorMsg = `OpenRouter request failed: ${response.status} ${response.statusText} ${responseText}`;
+      // E1: surface the Retry-After hint on a 429 so the supervisor can park
+      // the model for exactly that long (parsed at the deferral site).
+      if (response.status === 429) {
+        const retryAfterMs = retryAfterMsFromHeaders(response);
+        if (retryAfterMs !== null) errorMsg += ` retry_after_ms=${retryAfterMs}`;
+      }
       calls.push({
         turn_index: turnIndex,
         request_payload: requestBody,
@@ -843,7 +1108,17 @@ async function callOpenRouter(
         typeof topLevelError === "object"
           ? JSON.stringify(topLevelError)
           : String(topLevelError);
-      const errorMsg = `PROVIDER_ERROR: ${errDetail.slice(0, 500)}`;
+      let errorMsg = `PROVIDER_ERROR: ${errDetail.slice(0, 500)}`;
+      // E1: a HTTP-200 body can still carry error.code === 429 — same
+      // Retry-After propagation as a real 429 status.
+      const topLevelErrorCode =
+        typeof topLevelError === "object" && topLevelError !== null
+          ? (topLevelError as Record<string, unknown>).code
+          : undefined;
+      if (topLevelErrorCode === 429 || topLevelErrorCode === "429") {
+        const retryAfterMs = retryAfterMsFromHeaders(response);
+        if (retryAfterMs !== null) errorMsg += ` retry_after_ms=${retryAfterMs}`;
+      }
       calls.push({
         turn_index: turnIndex,
         request_payload: requestBody,
@@ -1006,7 +1281,7 @@ function extractAssistantContent(raw: unknown): string {
   return "";
 }
 
-function parseTurn1Response(text: string): TurnResult {
+export function parseTurn1Response(text: string, hintsOff: boolean): TurnResult {
   const cleaned = cleanJson(text);
   let parsed: unknown;
   try {
@@ -1029,6 +1304,11 @@ function parseTurn1Response(text: string): TurnResult {
   }
 
   if (obj.hintRequests) {
+    // D2/E2: a hintRequests reply while hints are disabled is a bad-output
+    // error — the model was never shown a hint menu.
+    if (hintsOff) {
+      return { kind: "error", error: "hints requested while hints disabled" };
+    }
     const requests = parseHintRequests(obj.hintRequests);
     if (requests.length > 0) {
       return { kind: "hints", hintRequests: requests };
@@ -1077,7 +1357,12 @@ function parseFinalGuess(value: unknown): FinalGuess | null {
   if (longitude < -180 || longitude > 180) return null;
   if (!Number.isInteger(year)) return null;
 
-  return { latitude, longitude, year };
+  // E2: optional self-rated confidence — a finite number in [0,1], else null.
+  const rawConfidence = toFiniteNumber(obj.confidence);
+  const confidence =
+    rawConfidence !== null && rawConfidence >= 0 && rawConfidence <= 1 ? rawConfidence : null;
+
+  return { latitude, longitude, year, confidence };
 }
 
 function parseHintRequests(value: unknown): HintRequest[] {
@@ -1246,7 +1531,7 @@ function sortKeys(value: unknown): unknown {
 
 async function ensureAiPlayer(pool: Awaited<ReturnType<typeof getDbPool>>): Promise<string> {
   const existing = await pool.query<{ id: string }>(
-    "SELECT id FROM ai_players WHERE model_id = $1 LIMIT 1",
+    "SELECT id FROM ai_players WHERE model_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1",
     [MODEL_ID]
   );
   if (existing.rows.length > 0) {
@@ -1293,10 +1578,23 @@ async function resolveManifest(
 
   const inserted = await pool.query<{ id: string }>(
     `INSERT INTO ai_model_execution_manifests (content_hash, provider, model_id, content)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (content_hash) DO NOTHING
+     RETURNING id`,
     [contentHash, request.provider, request.model_id, content]
   );
-  return inserted.rows[0].id;
+  if (inserted.rows.length > 0) {
+    return inserted.rows[0].id;
+  }
+
+  const winner = await pool.query<{ id: string }>(
+    "SELECT id FROM ai_model_execution_manifests WHERE content_hash = $1 LIMIT 1",
+    [contentHash]
+  );
+  if (winner.rows.length > 0) {
+    return winner.rows[0].id;
+  }
+  throw new Error(`resolveManifest: content_hash ${contentHash} has no row after ON CONFLICT`);
 }
 
 async function resolveGroundTruthVersion(
@@ -1415,6 +1713,8 @@ type EvalFactInput = {
   groundTruthVersionId: string;
   stimulusId: string;
   callResult: OpenRouterCallResult;
+  /** D6: token/cost sums across ALL calls of the play so far. */
+  usageTotals: UsageTotals;
   finalGuess: FinalGuess | null;
   suppliedHints: unknown[];
   imageQualityScore: number | null;
@@ -1466,11 +1766,11 @@ async function writeEvalFact(
       gameContext.time_budget_ms,
       input.callResult.requestStartedAt.toISOString(),
       input.callResult.responseReceivedAt.toISOString(),
-      input.callResult.usage.prompt_tokens,
-      input.callResult.usage.completion_tokens,
-      input.callResult.usage.reasoning_tokens,
-      input.callResult.usage.total_tokens,
-      input.callResult.usage.cost,
+      input.usageTotals.prompt_tokens,
+      input.usageTotals.completion_tokens,
+      input.usageTotals.reasoning_tokens,
+      input.usageTotals.total_tokens,
+      input.usageTotals.cost,
       input.callResult.reasoningAvailable,
       input.callResult.reasoning,
       input.finalGuess ? JSON.stringify(input.finalGuess) : null,
@@ -1516,6 +1816,12 @@ type ResultWriteInput = {
   imageQualityNotes: string | null;
   critiqueError: string | null;
   rawLlmResponse: unknown;
+  /** E2: model self-rated confidence from the final guess (null when absent). */
+  confidence: number | null;
+  /** D6: summed usage across all calls of the play. */
+  usageTotals: UsageTotals;
+  /** D6: sum of calls.duration_ms. */
+  latencyMs: number;
 };
 
 async function writeResult(
@@ -1529,8 +1835,11 @@ async function writeResult(
       round_accuracy, round_xp, raw_llm_response, error,
       reference_year, reasoning, hints_requested, hint_penalty_applied,
       time_to_guess_ms, image_quality_score, image_quality_notes, critique_error,
-      evaluation_id
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+      evaluation_id,
+      play_mode, hints_off, total_cost_usd, total_tokens, reasoning_tokens,
+      latency_ms, timer_ms, model_slug, confidence, error_class
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
+              $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
     ON CONFLICT (event_id, ai_player_id)
     DO UPDATE SET
       guess_lat = EXCLUDED.guess_lat,
@@ -1553,6 +1862,16 @@ async function writeResult(
       image_quality_notes = EXCLUDED.image_quality_notes,
       critique_error = EXCLUDED.critique_error,
       evaluation_id = EXCLUDED.evaluation_id,
+      play_mode = EXCLUDED.play_mode,
+      hints_off = EXCLUDED.hints_off,
+      total_cost_usd = EXCLUDED.total_cost_usd,
+      total_tokens = EXCLUDED.total_tokens,
+      reasoning_tokens = EXCLUDED.reasoning_tokens,
+      latency_ms = EXCLUDED.latency_ms,
+      timer_ms = EXCLUDED.timer_ms,
+      model_slug = EXCLUDED.model_slug,
+      confidence = EXCLUDED.confidence,
+      error_class = EXCLUDED.error_class,
       created_at = now()
     RETURNING id`,
     [
@@ -1578,6 +1897,16 @@ async function writeResult(
       input.imageQualityNotes,
       input.critiqueError,
       input.evaluationId,
+      MODE,
+      HINTS_OFF,
+      input.usageTotals.cost,
+      input.usageTotals.total_tokens,
+      input.usageTotals.reasoning_tokens,
+      input.latencyMs,
+      DEADLINE_MS,
+      MODEL_ID,
+      input.confidence,
+      null, // error_class — success rows carry no classification
     ]
   );
   return res.rows[0].id;
@@ -1618,13 +1947,20 @@ async function writeErrorResult(
   errorMsg: string
 ): Promise<void> {
   const aiPlayerId = await ensureAiPlayer(pool);
+  // D6: error rows carry the usage/cost/latency summed over the calls made so
+  // far, plus the classifyOutcome class of the bank-row error text.
+  const usageTotals = sumUsage(calls.map((c) => c.response_payload));
+  const latencyMs = calls.reduce((acc, c) => acc + c.duration_ms, 0);
   const res = await pool.query<{ id: string }>(
     `INSERT INTO ai_answer_bank (
       event_id, ai_player_id, raw_llm_response, error,
       reference_year, reasoning, hints_requested, hint_penalty_applied,
       time_to_guess_ms, image_quality_score, image_quality_notes, critique_error,
-      evaluation_id
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      evaluation_id,
+      play_mode, hints_off, total_cost_usd, total_tokens, reasoning_tokens,
+      latency_ms, timer_ms, model_slug, confidence, error_class
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+              $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
     ON CONFLICT (event_id, ai_player_id)
     DO UPDATE SET
       raw_llm_response = EXCLUDED.raw_llm_response,
@@ -1647,6 +1983,16 @@ async function writeErrorResult(
       image_quality_notes = EXCLUDED.image_quality_notes,
       critique_error = EXCLUDED.critique_error,
       evaluation_id = EXCLUDED.evaluation_id,
+      play_mode = EXCLUDED.play_mode,
+      hints_off = EXCLUDED.hints_off,
+      total_cost_usd = EXCLUDED.total_cost_usd,
+      total_tokens = EXCLUDED.total_tokens,
+      reasoning_tokens = EXCLUDED.reasoning_tokens,
+      latency_ms = EXCLUDED.latency_ms,
+      timer_ms = EXCLUDED.timer_ms,
+      model_slug = EXCLUDED.model_slug,
+      confidence = EXCLUDED.confidence,
+      error_class = EXCLUDED.error_class,
       created_at = now()
     RETURNING id`,
     [
@@ -1663,10 +2009,66 @@ async function writeErrorResult(
       null,
       null,
       evaluationId,
+      MODE,
+      HINTS_OFF,
+      usageTotals.cost,
+      usageTotals.total_tokens,
+      usageTotals.reasoning_tokens,
+      latencyMs,
+      DEADLINE_MS,
+      MODEL_ID,
+      null, // confidence — error rows carry no guess confidence
+      classifyOutcome(errorMsg),
     ]
   );
   await writeCalls(pool, res.rows[0].id, calls);
   console.log("Stored error row for event", eventId, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
+}
+
+/**
+ * D5: persist the parsed per-hint verdicts (one multi-row INSERT) AFTER the
+ * bank row + call rows exist. evaluation_id links to the eval_facts row.
+ * Hint review must never alter score/game state or the exit code — failures
+ * are logged and swallowed.
+ */
+async function insertHintReviews(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  eventId: string,
+  aiPlayerId: string,
+  evaluationId: string,
+  rows: readonly HintReviewRow[]
+): Promise<void> {
+  if (rows.length === 0) return;
+  try {
+    const COLUMN_COUNT = 9;
+    const values: unknown[] = [];
+    const tuples = rows.map((r) => {
+      values.push(
+        eventId,
+        aiPlayerId,
+        evaluationId,
+        r.hint_kind,
+        r.hint_text_hash,
+        r.verdict,
+        r.confidence,
+        r.explanation,
+        r.suggestedCorrection
+      );
+      const base = values.length - COLUMN_COUNT;
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+    });
+    await pool.query(
+      `INSERT INTO ai_hint_reviews (
+        event_id, ai_player_id, evaluation_id, hint_kind, hint_text_hash,
+        verdict, confidence, explanation, suggested_correction
+      ) VALUES ${tuples.join(", ")}
+      ON CONFLICT DO NOTHING`,
+      values
+    );
+    console.log("Stored", rows.length, "hint review(s) for event", eventId);
+  } catch (err) {
+    console.warn("ai_hint_reviews insert failed (non-fatal):", err instanceof Error ? err.message : String(err));
+  }
 }
 
 main().catch(async (error) => {

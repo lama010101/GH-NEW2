@@ -15,22 +15,9 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
 import NotificationPreferencesSection from '@/components/NotificationPreferencesSection'
+import GetAppCard from '@/components/GetAppCard'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
-
-const ANDROID_APK_URL = 'https://github.com/lama010101/GH-NEW2/releases/download/android-latest/back-to-the-past.apk'
-
-// Show the APK card only on Android browsers — never inside the Capacitor
-// app or an installed PWA. Pure helper; called only after mount.
-function shouldShowAndroidApkCard(): boolean {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
-  if (!/Android/i.test(navigator.userAgent)) return false
-  const capacitor = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
-  if (capacitor?.isNativePlatform?.()) return false
-  if (window.matchMedia?.('(display-mode: standalone)').matches) return false
-  if ((navigator as { standalone?: boolean }).standalone === true) return false
-  return true
-}
 
 type AvatarInfo = {
   name: string
@@ -78,12 +65,6 @@ export default function AccountPage() {
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => {
     return typeof window !== 'undefined' ? getDistanceUnitPreference() : 'km'
   })
-  const [showApkCard, setShowApkCard] = useState(false)
-
-  // Android-browser detection runs only after mount to avoid hydration mismatch.
-  useEffect(() => {
-    setShowApkCard(shouldShowAndroidApkCard())
-  }, [])
 
   // Persist sound/vibrate settings to localStorage (same keys as in-game settings)
   useEffect(() => {
@@ -379,28 +360,9 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* Android app (beta) — APK download, Android browsers only (not app/PWA) */}
-      {showApkCard && (
-        <div className={styles.settingsSection}>
-          <div className={styles.settingsCard}>
-            <div className={styles.settingsCardTitle}>{t('android_apk_title')}</div>
-            <div className={styles.fieldValue}>{t('android_apk_body')}</div>
-            <a
-              href={ANDROID_APK_URL}
-              download
-              className={`${styles.saveBtn} ${styles.apkLink}`}
-            >
-              {t('android_apk_button')}
-            </a>
-            <div className={styles.fieldValue}>
-              <div>{t('android_apk_step1')}</div>
-              <div>{t('android_apk_step2')}</div>
-              <div>{t('android_apk_step3')}</div>
-            </div>
-            <div className={styles.fieldValueItalic}>{t('android_apk_note')}</div>
-          </div>
-        </div>
-      )}
+      <div className={styles.settingsSection}>
+        <GetAppCard />
+      </div>
 
       {/* Notification preferences — per-type channel picker (API-backed) */}
       <div className={styles.settingsSection}>

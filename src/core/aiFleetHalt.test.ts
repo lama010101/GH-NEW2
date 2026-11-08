@@ -96,6 +96,37 @@ describe("shouldHaltFleet", () => {
     expect(d.authFailures).toBe(0);
   });
 
+  it("rate_limit_deferred never counts toward the halt (AIP-BUILD-FLEETFINAL-1103-060)", () => {
+    // D3: a deferred 429 is a scheduled retry, not a failure signal — it must
+    // not contribute to the fleet-halt decision even across many models.
+    const d = shouldHaltFleet(
+      [
+        ev("a/model", 1, "rate_limit_deferred"),
+        ev("b/model", 2, "rate_limit_deferred"),
+        ev("c/model", 3, "rate_limit_deferred"),
+        ev("d/model", 4, "rate_limit_deferred"),
+      ],
+      NOW
+    );
+    expect(d.halt).toBe(false);
+    expect(d.authFailures).toBe(0);
+    expect(d.distinctModels).toBe(0);
+  });
+
+  it("deferred events mixed with sub-threshold auth failures still do not halt", () => {
+    const d = shouldHaltFleet(
+      [
+        ev("a/model", 10, "auth"),
+        ev("b/model", 9, "rate_limit_deferred"),
+        ev("b/model", 8, "auth"),
+        ev("c/model", 7, "rate_limit_deferred"),
+      ],
+      NOW
+    );
+    expect(d.halt).toBe(false); // only 2 auth failures — deferrals don't pad
+    expect(d.authFailures).toBe(2);
+  });
+
   it("a cause produced by 403 ('other') never counts", () => {
     // 403 classifies as 'other' in aiFailureCauses — feeding 'other' here must
     // never halt, even across many models.
