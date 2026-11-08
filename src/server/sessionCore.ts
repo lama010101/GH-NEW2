@@ -29,7 +29,7 @@ import {
   SetCompeteYearRangeInput,
   StartCompeteSessionInput
 } from "@/core/types";
-import { MAX_ROUNDS, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
+import { MAX_ROUNDS, SYNC_ROUND_TIMER_DEFAULT_SEC, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
 import { calculateBadges, evaluateNearMisses, evaluateRound } from "@/core/rules";
 import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 import { resolvePlayerIdentities, type PlayerIdentity } from "@/core/playerIdentity";
@@ -1470,9 +1470,15 @@ function clampResultsAutoAdvanceSec(value: number | undefined): number {
 
 export async function createCompeteSession(input: CreateCompeteSessionInput): Promise<CompeteSessionSnapshot> {
   const mode = input.mode ?? "async";
-  // Default async per-round timer to OFF (0); sync retains the 120s default.
+  // Default async per-round timer to OFF (0); sync defaults to SYNC_ROUND_TIMER_DEFAULT_SEC (90s); other modes keep the clampRoundTimer fallback.
   const roundTimerSec = clampRoundTimer(
-    input.roundTimerSec === undefined && mode === "async" ? 0 : input.roundTimerSec
+    input.roundTimerSec !== undefined
+      ? input.roundTimerSec
+      : mode === "async"
+        ? 0
+        : mode === "sync"
+          ? SYNC_ROUND_TIMER_DEFAULT_SEC
+          : undefined
   );
   // All compete/practice/daily sessions are always MAX_ROUNDS (5) by product decision.
   const totalRounds = MAX_ROUNDS;
@@ -2420,8 +2426,15 @@ export async function setCompeteSubMode(input: SetCompeteSubModeInput): Promise<
   const deadlineDays = input.mode === "async" ? clampSessionDeadlineDays(input.sessionDeadlineDays) : null;
 
   await dbPool.query(
-    `UPDATE sessions SET mode = $2, session_deadline_days = $3 WHERE game_id = $1`,
-    [gameId, input.mode, deadlineDays]
+    `UPDATE sessions
+     SET mode = $2,
+         session_deadline_days = $3,
+         round_timer_sec = CASE
+           WHEN $4::text = 'sync' AND mode::text <> 'sync' AND round_timer_sec = 0 THEN $5::int
+           ELSE round_timer_sec
+         END
+     WHERE game_id = $1`,
+    [gameId, input.mode, deadlineDays, input.mode, SYNC_ROUND_TIMER_DEFAULT_SEC]
   );
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);

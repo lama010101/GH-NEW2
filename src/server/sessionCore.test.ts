@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { MockedFunction } from "vitest";
-import { type CompeteSessionSnapshot } from "@/core/types";
+import { MAX_ROUNDS, type CompeteSessionSnapshot } from "@/core/types";
 import { dbPool } from "@/server/db";
 import {
   getGameState,
@@ -17,9 +17,12 @@ import {
   recordPlayerLeft,
   submitGuess,
   advanceRound,
+  createCompeteSession,
+  setCompeteSubMode,
   type DbTransactionClient,
   type SessionRow,
 } from "./sessionCore";
+import { fetchRandomEventsForSession } from "@/server/events";
 import { sendPushToUser } from "@/server/pushSender";
 import { createSupabaseServerClient } from "@/core/supabaseServer";
 import { TransitionCause } from "@/core/transitionCause";
@@ -51,6 +54,14 @@ vi.mock("@/server/getGameState", async (importOriginal) => {
     ...original,
     getGameState: vi.fn(),
     deriveStateFromEventStream: vi.fn(),
+  };
+});
+
+vi.mock("@/server/events", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/server/events")>();
+  return {
+    ...original,
+    fetchRandomEventsForSession: vi.fn(),
   };
 });
 
@@ -1758,5 +1769,253 @@ describe("MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001 — left-player round advance", ()
 
     expect(insertedTypes).toContain("ROUND_STARTED");
     expect(insertedTypes).not.toContain("SESSION_COMPLETE");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MP-FIX-LIVETIMER90-1105-090 — Live (sync) lobby round timer defaults to 90s
+// The pg pool is mocked here: these tests prove the parameter VALUES bound by
+// createCompeteSession / setCompeteSubMode, not live SQL semantics.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TIMER_DEFAULT_HOST_ID = "timerhost-0000-0000-0000-000000000000";
+
+function createSessionInsertClient() {
+  const insertedSessionParams: unknown[][] = [];
+  const query = vi.fn(async (sql: string, params?: unknown[]) => {
+    if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") {
+      return { rows: [] };
+    }
+    if (sql.includes("SAVEPOINT")) {
+      return { rows: [] };
+    }
+    if (sql.includes("INSERT INTO sessions")) {
+      insertedSessionParams.push(params ?? []);
+      return { rows: [] };
+    }
+    if (sql.includes("FROM public.profiles")) {
+      return {
+        rows: [
+          {
+            display_name: "TimerHost",
+            avatar_url: "https://example.com/avatar.png",
+          },
+        ],
+      };
+    }
+    return { rows: [] };
+  });
+  const release = vi.fn();
+  const client = { query, release } as unknown as DbTransactionClient;
+  return { client, query, insertedSessionParams };
+}
+
+type PoolQueryMock = MockedFunction<
+  (sql: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }>
+>;
+
+function poolQueryMock(): PoolQueryMock {
+  return dbPool.query as unknown as PoolQueryMock;
+}
+
+function mockPoolRowsForSession(row: Record<string, unknown>) {
+  poolQueryMock().mockImplementation(async (sql: string) => {
+    if (sql.includes("FROM sessions")) {
+      return { rows: [row] };
+    }
+    return { rows: [] };
+  });
+}
+
+function makeTimerGameState(
+  mode: "practice" | "sync" | "async",
+  roundTimerSec: number,
+  playerId: string
+): ReconstructedGameState {
+  const state = createReconstructedGameState({
+    players: [
+      {
+        playerId,
+        displayName: "TimerHost",
+        joinedAt: new Date().toISOString(),
+        leftAt: null,
+        ready: false,
+        isHost: true,
+        avatarUrl: null,
+      },
+    ],
+  });
+  const session = state.session as unknown as Record<string, unknown>;
+  session.mode = mode;
+  session.roundTimerSec = roundTimerSec;
+  return state;
+}
+
+describe("MP-FIX-LIVETIMER90-1105-090 — sync round timer default 90s", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(deriveStateFromEventStream).mockReturnValue({
+      currentRound: 0,
+      currentPhase: "SESSION_CREATED",
+    });
+    vi.mocked(fetchRandomEventsForSession).mockResolvedValue(
+      Array.from({ length: MAX_ROUNDS }, (_, i) => ({
+        id: `timer-evt-${i}`,
+      })) as unknown as Awaited<ReturnType<typeof fetchRandomEventsForSession>>
+    );
+  });
+
+  it("createCompeteSession: sync + undefined roundTimerSec binds 90", async () => {
+    const { client, insertedSessionParams } = createSessionInsertClient();
+    mockPoolConnect(client);
+    mockPoolRowsForSession(
+      makeAsyncSessionRow({ mode: "sync", round_timer_sec: 90 })
+    );
+    vi.mocked(getGameState).mockResolvedValue(
+      makeTimerGameState("sync", 90, TIMER_DEFAULT_HOST_ID)
+    );
+
+    const snapshot = await createCompeteSession({
+      playerId: TIMER_DEFAULT_HOST_ID,
+      displayName: "TimerHost",
+      mode: "sync",
+    });
+
+    expect(insertedSessionParams).toHaveLength(1);
+    expect(insertedSessionParams[0][1]).toBe("sync");
+    expect(insertedSessionParams[0][2]).toBe(90);
+    expect(snapshot.config.roundTimerSec).toBe(90);
+  });
+
+  it("createCompeteSession: async + undefined roundTimerSec binds 0", async () => {
+    const { client, insertedSessionParams } = createSessionInsertClient();
+    mockPoolConnect(client);
+    mockPoolRowsForSession(
+      makeAsyncSessionRow({ mode: "async", round_timer_sec: 0 })
+    );
+    vi.mocked(getGameState).mockResolvedValue(
+      makeTimerGameState("async", 0, TIMER_DEFAULT_HOST_ID)
+    );
+
+    const snapshot = await createCompeteSession({
+      playerId: TIMER_DEFAULT_HOST_ID,
+      displayName: "TimerHost",
+      mode: "async",
+    });
+
+    expect(insertedSessionParams).toHaveLength(1);
+    expect(insertedSessionParams[0][1]).toBe("async");
+    expect(insertedSessionParams[0][2]).toBe(0);
+    expect(snapshot.config.roundTimerSec).toBe(0);
+  });
+
+  it("createCompeteSession: sync + explicit 120 binds 120", async () => {
+    const { client, insertedSessionParams } = createSessionInsertClient();
+    mockPoolConnect(client);
+    mockPoolRowsForSession(
+      makeAsyncSessionRow({ mode: "sync", round_timer_sec: 120 })
+    );
+    vi.mocked(getGameState).mockResolvedValue(
+      makeTimerGameState("sync", 120, TIMER_DEFAULT_HOST_ID)
+    );
+
+    const snapshot = await createCompeteSession({
+      playerId: TIMER_DEFAULT_HOST_ID,
+      displayName: "TimerHost",
+      mode: "sync",
+      roundTimerSec: 120,
+    });
+
+    expect(insertedSessionParams).toHaveLength(1);
+    expect(insertedSessionParams[0][1]).toBe("sync");
+    expect(insertedSessionParams[0][2]).toBe(120);
+    expect(snapshot.config.roundTimerSec).toBe(120);
+  });
+
+  it("createCompeteSession: practice + undefined roundTimerSec keeps baseline 120", async () => {
+    const { client, insertedSessionParams } = createSessionInsertClient();
+    mockPoolConnect(client);
+    mockPoolRowsForSession(
+      makeAsyncSessionRow({ mode: "practice", round_timer_sec: 120 })
+    );
+    vi.mocked(getGameState).mockResolvedValue(
+      makeTimerGameState("practice", 120, TIMER_DEFAULT_HOST_ID)
+    );
+
+    const snapshot = await createCompeteSession({
+      playerId: TIMER_DEFAULT_HOST_ID,
+      displayName: "TimerHost",
+      mode: "practice",
+    });
+
+    expect(insertedSessionParams).toHaveLength(1);
+    expect(insertedSessionParams[0][1]).toBe("practice");
+    expect(insertedSessionParams[0][2]).toBe(120);
+    expect(snapshot.config.roundTimerSec).toBe(120);
+  });
+
+  it("setCompeteSubMode: sync switch binds $4/$5 params [gameId, mode, deadlineDays, mode, 90]", async () => {
+    poolQueryMock().mockImplementation(async (sql: string) => {
+      if (sql.includes("is_host = true")) {
+        return { rows: [{ player_id: TIMER_DEFAULT_HOST_ID }] };
+      }
+      return { rows: [] };
+    });
+    vi.mocked(getGameState).mockResolvedValue(
+      makeTimerGameState("sync", 90, TIMER_DEFAULT_HOST_ID)
+    );
+
+    await setCompeteSubMode({
+      gameId: GAME_ID,
+      playerId: TIMER_DEFAULT_HOST_ID,
+      mode: "sync",
+      sessionDeadlineDays: 3,
+    });
+
+    const updateCall = poolQueryMock().mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("UPDATE sessions")
+    );
+    expect(updateCall).toBeDefined();
+    expect(updateCall?.[0]).toContain("$4::text");
+    expect(updateCall?.[0]).toContain("$5::int");
+    expect(updateCall?.[1]).toEqual([GAME_ID, "sync", null, "sync", 90]);
+  });
+
+  it("setCompeteSubMode: async switch binds deadlineDays and still sends 90 as $5", async () => {
+    poolQueryMock().mockImplementation(async (sql: string) => {
+      if (sql.includes("is_host = true")) {
+        return { rows: [{ player_id: TIMER_DEFAULT_HOST_ID }] };
+      }
+      if (sql.includes("FROM sessions")) {
+        return {
+          rows: [
+            makeAsyncSessionRow({
+              mode: "async",
+              round_timer_sec: 0,
+              session_deadline_days: 5,
+            }),
+          ],
+        };
+      }
+      return { rows: [] };
+    });
+    const gameState = makeTimerGameState("async", 0, TIMER_DEFAULT_HOST_ID);
+    (gameState.session as unknown as Record<string, unknown>).sessionDeadlineDays = 5;
+    vi.mocked(getGameState).mockResolvedValue(gameState);
+
+    await setCompeteSubMode({
+      gameId: GAME_ID,
+      playerId: TIMER_DEFAULT_HOST_ID,
+      mode: "async",
+      sessionDeadlineDays: 5,
+    });
+
+    const updateCall = poolQueryMock().mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("UPDATE sessions")
+    );
+    expect(updateCall).toBeDefined();
+    expect(updateCall?.[0]).toContain("$4::text");
+    expect(updateCall?.[0]).toContain("$5::int");
+    expect(updateCall?.[1]).toEqual([GAME_ID, "async", 5, "async", 90]);
   });
 });
