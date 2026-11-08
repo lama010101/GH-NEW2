@@ -1,28 +1,28 @@
 /*
   Timeline (14 letters, --i = 0..13):
-    B  pop & wobble   0.0s  -> ~2.9s   (letters pop in, one wobble each)
-    G  wave           3.0s  -> ~8.2s   (2 ripples through the letters)
-    H  glow pulse     8.3s  -> ~13.1s  (2 breaths of the white contour)
-    F  shine sweep    13.2s -> forever (the only permanent animation)
+    B  pop & wobble   0.0s  -> ~1.5s   (letters pop in, one wobble each)
+    G  wave           1.5s  -> ~4.1s   (2 ripples through the letters)
+    H  glow pulse     4.15s -> ~6.55s  (2 breaths of the white contour)
+    F  shine sweep    6.6s  -> forever (the only permanent animation)
 */
 .logo {
   overflow: visible;
   filter: drop-shadow(0 6px 40px rgba(0,0,0,.5));
   /* H — glow pulse on the whole logo, finite */
-  animation: glow 2.4s ease-in-out 8.3s 2;
+  animation: glow 1.2s ease-in-out 4.15s 2;
 }
 
 .letter {
   transform-box: fill-box;
   transform-origin: center;
   animation:
-    pop .7s cubic-bezier(.3,1.6,.5,1) both,
-    wobble 1.1s ease-in-out,
-    wave 1.8s ease-in-out 2;
+    pop .35s cubic-bezier(.3,1.6,.5,1) both,
+    wobble .55s ease-in-out,
+    wave .9s ease-in-out 2;
   animation-delay:
-    calc(var(--i) * 70ms),
-    calc(var(--i) * 70ms + 1.7s),
-    calc(var(--i) * 110ms + 3s);
+    calc(var(--i) * 35ms),
+    calc(var(--i) * 35ms + .85s),
+    calc(var(--i) * 55ms + 1.5s);
 }
 
 @keyframes pop { 0% { opacity: 0; transform: scale(0); } 100% { opacity: 1; transform: scale(1); } }
@@ -36,7 +36,7 @@
 /* F — shine sweep, loops forever after the sequence */
 .shineBar {
   transform: skewX(-18deg);
-  animation: shine 2.8s ease-in-out 13.2s infinite;
+  animation: shine 1.4s ease-in-out 6.6s infinite;
 }
 @keyframes shine {
   0% { transform: translateX(0) skewX(-18deg); }
