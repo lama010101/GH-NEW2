@@ -930,7 +930,18 @@
     "final_sub": "Sans téléchargement. Sans frais. Juste de la curiosité.",
     "footer_disc": "Toutes les images d'événements sont des reconstitutions générées par IA à partir de recherches historiques. Ce sont des illustrations, pas des photographies.",
     "phase_n": "Phase {n}",
-    "demo_place_name": "Berlin, Allemagne"
+    "demo_place_name": "Berlin, Allemagne",
+    "hero_note": "Gratuit · Sans téléchargement · Sans compte",
+    "faq_eyebrow": "Bon à savoir",
+    "faq_title": "Réponses rapides",
+    "faq_q1": "C'est vraiment gratuit ?",
+    "faq_a1": "Oui. Jouer est gratuit — aucun téléchargement ni paiement nécessaire.",
+    "faq_q2": "Ai-je besoin d'un compte ?",
+    "faq_a2": "Non. Appuyez sur Jouer et vous êtes en partie en quelques secondes. Inscrivez-vous quand vous voulez pour garder votre progression et jouer avec vos amis.",
+    "faq_q3": "Les images sont-elles de vraies photos ?",
+    "faq_a3": "Non. Chaque image est une reconstitution par IA fondée sur des recherches historiques et vérifiée par des humains — une illustration, pas une photographie.",
+    "faq_q4": "Puis-je jouer avec des amis ?",
+    "faq_a4": "Oui. Créez un salon, partagez le code de la salle et jouez en direct ou à votre rythme, jusqu'à 8 joueurs."
   },
   "rank": {
     "rank_label": "Rang",

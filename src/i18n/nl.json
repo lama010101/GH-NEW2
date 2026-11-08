@@ -930,7 +930,18 @@
     "final_sub": "Geen download. Geen kosten. Alleen nieuwsgierigheid.",
     "footer_disc": "Alle afbeeldingen van gebeurtenissen zijn door AI gegenereerde reconstructies op basis van historisch onderzoek. Het zijn illustraties, geen foto's.",
     "phase_n": "Fase {n}",
-    "demo_place_name": "Berlijn, Duitsland"
+    "demo_place_name": "Berlijn, Duitsland",
+    "hero_note": "Gratis · Geen download · Geen account nodig",
+    "faq_eyebrow": "Goed om te weten",
+    "faq_title": "Snelle antwoorden",
+    "faq_q1": "Is het echt gratis?",
+    "faq_a1": "Ja. Spelen is gratis — geen download en geen betaling nodig.",
+    "faq_q2": "Heb ik een account nodig?",
+    "faq_a2": "Nee. Tik op Nu spelen en je zit binnen enkele seconden in een spel. Meld je aan wanneer je wilt om je voortgang te bewaren en met vrienden te spelen.",
+    "faq_q3": "Zijn de beelden echte foto's?",
+    "faq_a3": "Nee. Elk beeld is een AI-reconstructie op basis van historisch onderzoek en gecontroleerd door mensen — een illustratie, geen foto.",
+    "faq_q4": "Kan ik met vrienden spelen?",
+    "faq_a4": "Ja. Maak een lobby, deel de kamercode en speel live of in je eigen tempo met maximaal 8 spelers."
   },
   "rank": {
     "rank_label": "Rang",
