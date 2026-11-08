@@ -498,3 +498,72 @@ describe("generate-answers-v3 pure helpers", () => {
     expect(fallback).toBe("RATE_LIMIT_DEFERRED retry_after_ms=unknown unknown/unknown");
   });
 });
+
+describe("generate-answers-v3 worker SQL hardening (AIP-FIX-WORKERHARDEN-V3-1107-098)", () => {
+  const rateLimited = () =>
+    orJson(
+      {
+        error: {
+          code: 429,
+          message: "slow down",
+          metadata: { provider_name: "test-provider", limit_source: "account" },
+        },
+      },
+      { status: 429, retryAfter: "1" }
+    );
+
+  it("the single-event query orders images deterministically before LIMIT 1", async () => {
+    mocks.orQueue = [rateLimited()];
+    await runWorker(["evt-1"]);
+
+    const eventQueries = queries("FROM events e");
+    expect(eventQueries.length).toBeGreaterThan(0);
+    expect(eventQueries[0].sql).toContain(
+      "ORDER BY i.display_order ASC NULLS LAST, i.created_at ASC, i.id ASC"
+    );
+    expect(eventQueries[0].sql).toContain("LIMIT 1");
+  }, 25000);
+
+  it("ensureAiPlayer looks up only live players, oldest first", async () => {
+    mocks.orQueue = [rateLimited()];
+    await runWorker(["evt-1"]);
+
+    const playerSelects = queries("FROM ai_players");
+    expect(playerSelects.length).toBeGreaterThan(0);
+    expect(playerSelects[0].sql).toContain("deleted_at IS NULL");
+    expect(playerSelects[0].sql).toContain("ORDER BY created_at ASC");
+  }, 25000);
+
+  it("resolveManifest inserts ON CONFLICT and re-selects the winner row", async () => {
+    const base = mocks.poolQuery.getMockImplementation()!;
+    let manifestSelects = 0;
+    mocks.poolQuery.mockImplementation(async (sql: string, params?: unknown[]) => {
+      if (sql.includes("INSERT INTO ai_model_execution_manifests")) {
+        mocks.recorded.push({ sql, params: params ?? [] });
+        return { rows: [] }; // lost the insert race
+      }
+      if (sql.includes("FROM ai_model_execution_manifests")) {
+        manifestSelects += 1;
+        mocks.recorded.push({ sql, params: params ?? [] });
+        return manifestSelects % 2 === 0
+          ? { rows: [{ id: "man-winner" }] }
+          : { rows: [] };
+      }
+      return base(sql, params);
+    });
+    mocks.orQueue = [rateLimited()];
+    await runWorker(["evt-1"]);
+
+    // Turn-1 429 still exits 75 — resolveManifest returned the winner id.
+    expect(exitSpy).toHaveBeenCalledWith(75);
+    const manifestInserts = queries("INSERT INTO ai_model_execution_manifests");
+    expect(manifestInserts.length).toBeGreaterThan(0);
+    for (const q of manifestInserts) {
+      expect(q.sql).toContain("ON CONFLICT (content_hash) DO NOTHING");
+      expect(q.sql).toContain("RETURNING id");
+    }
+    // SELECT -> INSERT(conflict) -> SELECT(winner) sequence happened.
+    const manifestSelectsRecorded = queries("FROM ai_model_execution_manifests");
+    expect(manifestSelectsRecorded.length).toBeGreaterThanOrEqual(2);
+  }, 25000);
+});

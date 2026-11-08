@@ -189,6 +189,7 @@ async function main(): Promise<void> {
        AND e.status = 'validated'
        AND l.latitude IS NOT NULL
        AND l.longitude IS NOT NULL
+     ORDER BY i.display_order ASC NULLS LAST, i.created_at ASC, i.id ASC
      LIMIT 1`,
     [eventId]
   );
@@ -1530,7 +1531,7 @@ function sortKeys(value: unknown): unknown {
 
 async function ensureAiPlayer(pool: Awaited<ReturnType<typeof getDbPool>>): Promise<string> {
   const existing = await pool.query<{ id: string }>(
-    "SELECT id FROM ai_players WHERE model_id = $1 LIMIT 1",
+    "SELECT id FROM ai_players WHERE model_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1",
     [MODEL_ID]
   );
   if (existing.rows.length > 0) {
@@ -1577,10 +1578,23 @@ async function resolveManifest(
 
   const inserted = await pool.query<{ id: string }>(
     `INSERT INTO ai_model_execution_manifests (content_hash, provider, model_id, content)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (content_hash) DO NOTHING
+     RETURNING id`,
     [contentHash, request.provider, request.model_id, content]
   );
-  return inserted.rows[0].id;
+  if (inserted.rows.length > 0) {
+    return inserted.rows[0].id;
+  }
+
+  const winner = await pool.query<{ id: string }>(
+    "SELECT id FROM ai_model_execution_manifests WHERE content_hash = $1 LIMIT 1",
+    [contentHash]
+  );
+  if (winner.rows.length > 0) {
+    return winner.rows[0].id;
+  }
+  throw new Error(`resolveManifest: content_hash ${contentHash} has no row after ON CONFLICT`);
 }
 
 async function resolveGroundTruthVersion(
