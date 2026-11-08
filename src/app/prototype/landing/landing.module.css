@@ -139,10 +139,6 @@
   height: 200px;
   width: auto;
 }
-.heroSub {
-  margin-top: 20px; font-family: var(--font-sora); font-size: clamp(20px,3.2vw,34px);
-  font-weight: 600; color: var(--gh-text-primary); letter-spacing: .02em;
-}
 .heroTagline {
   margin-top: 14px; font-size: clamp(15px,2vw,20px); font-weight: 400;
   color: var(--gh-text-secondary); letter-spacing: .02em; max-width: 560px;
