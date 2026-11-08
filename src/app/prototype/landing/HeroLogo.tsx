@@ -1,23 +1,32 @@
 // Landing hero wordmark, drawn inline so each letter can be animated.
-// Sequence (see heroLogo.module.css): B pop & wobble -> G wave -> H glow pulse -> F shine sweep.
+// Sequence (see heroLogo.module.css): B pop & wobble -> G wave -> F shine sweep.
 // F is the only animation that keeps running afterwards.
+// `shineOnly` skips B/G and runs just F (used by the sign-in modal logo).
 import { useId } from "react";
 import styles from "./heroLogo.module.css";
 import { LETTERS, OUTLINE } from "../logo-animations/logoData";
 
-export default function HeroLogo({ className }: { className?: string }) {
+export default function HeroLogo({
+  className,
+  shineOnly,
+  label = "Guess History",
+}: {
+  className?: string;
+  shineOnly?: boolean;
+  label?: string;
+}) {
   const uid = useId().replace(/:/g, "");
   const clipId = `hl-clip-${uid}`;
   const gradId = `hl-grad-${uid}`;
 
   return (
     <svg
-      className={`${styles.logo} ${className ?? ""}`}
+      className={`${styles.logo} ${shineOnly ? styles.shineOnly : ""} ${className ?? ""}`}
       viewBox="-24 -24 688 474"
       width={688}
       height={474}
       role="img"
-      aria-label="Guess History"
+      aria-label={label}
     >
       <defs>
         <clipPath id={clipId}>

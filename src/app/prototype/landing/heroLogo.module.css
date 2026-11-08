@@ -37,6 +37,10 @@
   21.875%, 100% { transform: translateX(900px) skewX(-18deg); }
 }
 
+/* Shine-only variant (sign-in modal): no pop/wobble/wave, first sweep right after opening */
+.shineOnly .letter { animation: none; }
+.shineOnly .shineBar { animation-delay: .6s; }
+
 @media (prefers-reduced-motion: reduce) {
   .logo, .letter { animation: none; }
   .shineBar { display: none; }

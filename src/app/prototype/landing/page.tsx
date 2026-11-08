@@ -22,7 +22,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import WhenCard from "@/components/compete/WhenCard";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import { getAccuracyColor } from "@/core/accuracyColor";
@@ -52,7 +52,6 @@ const WhereCard = dynamic(
 // ── Mock data for WhereCard + WhenCard (Fall of the Berlin Wall, 1989) ──
 const CORRECT_LAT = 52.5163;
 const CORRECT_LNG = 13.3777;
-const CORRECT_NAME = "Berlin, Germany";
 const CORRECT_YEAR = 1989;
 const DEMO_YEAR_END = 1989;
 const DEMO_XP = 184;
@@ -145,23 +144,6 @@ const MOCK_ROUND_RESULTS: RoundResult[] = [
 const MY_PLAYER_ID = "p1";
 const MY_DISTANCE_KM = 42;
 
-const ERA_LABELS: Record<string, string> = {
-  ancient: "Ancient",
-  medieval: "Medieval",
-  earlymodern: "Early Modern",
-  modern: "Modern",
-  contemporary: "Contemporary",
-};
-
-const REGION_LABELS: Record<string, string> = {
-  africa: "Africa",
-  asia: "Asia",
-  europe: "Europe",
-  north_america: "North America",
-  south_america: "South America",
-  oceania_antarctica: "Oceania & Antarctica",
-};
-
 const HERO_IMAGES = [
   { src: "/prototype/landing/hero/hero-1.webp", label: "Hero 1" },
   { src: "/prototype/landing/hero/hero-2.webp", label: "Hero 2" },
@@ -193,6 +175,7 @@ const RANK_PREVIEWS = [
 
 const AVATAR_PREVIEWS = [
   {
+    key: "einstein",
     name: "Albert Einstein",
     description: "Developed the theory of relativity",
     born: "Born: 1879-03-14, Ulm, Germany",
@@ -200,6 +183,7 @@ const AVATAR_PREVIEWS = [
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F0d19257e-9a2a-4553-93d7-1edf70327c68_AlbertEinstein.jpg?alt=media&token=d008d166-da67-423f-9281-9ec2e7f6aef0",
   },
   {
+    key: "curie",
     name: "Marie Curie",
     description: "Pioneer in radioactivity; first person to win two Nobel Prizes",
     born: "Born: 1867-11-07, Warsaw, Poland",
@@ -207,6 +191,7 @@ const AVATAR_PREVIEWS = [
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fa0afd408-fa5a-43f7-8723-4d50642ce210_MarieCurie.jpg?alt=media&token=32195928-02bf-4fd8-894f-4fb95badddb4",
   },
   {
+    key: "mandela",
     name: "Nelson Mandela",
     description: "Anti-apartheid revolutionary and former President of South Africa",
     born: "Born: 1918-07-18, Mvezo, South Africa",
@@ -214,6 +199,7 @@ const AVATAR_PREVIEWS = [
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fd93a9e35-9e9b-42cd-afd4-5d53e2329167_NelsonMandela.jpg?alt=media&token=55a85578-412a-4bf2-86ed-ba9c87c7b29e",
   },
   {
+    key: "lovelace",
     name: "Ada Lovelace",
     description: "Wrote the first algorithm intended for a computer",
     born: "Born: 1815-12-10, London, United Kingdom",
@@ -221,6 +207,7 @@ const AVATAR_PREVIEWS = [
     url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fe44e050a-f408-4698-a6d0-6f607fd2579b_AdaLovelace.jpg?alt=media&token=e82217a3-9b73-45ac-a932-1815dd762368",
   },
   {
+    key: "darwin",
     name: "Charles Darwin",
     description: "Naturalist known for the theory of evolution",
     born: "Born: 1809-02-12, Shrewsbury, United Kingdom",
@@ -286,6 +273,9 @@ const LEADERBOARD_LEVELUP: LandingLeaderboardEntry[] = [
 ];
 
 function MainLeaderboard() {
+  const tl = useTranslations("landing");
+  const tlb = useTranslations("leaderboard");
+  const locale = useLocale();
   const [activeTab, setActiveTab] = useState<LandingLeaderboardTab>("overall");
   const [activeSubTab, setActiveSubTab] = useState<LandingDailySubTab>("today");
   const [filter, setFilter] = useState({ humans: false, ai: false, friends: false });
@@ -312,10 +302,10 @@ function MainLeaderboard() {
   }, [filteredRows]);
 
   const summaryLabel = activeTab === "daily"
-    ? `Daily ${activeSubTab === "today" ? "Today" : "All-Time"}`
+    ? `${tlb("daily")} ${tlb(activeSubTab === "today" ? "today" : "all_time")}`
     : activeTab === "levelup"
-      ? "Level Up"
-      : "Overall";
+      ? tlb("level_up")
+      : tlb("overall");
 
   const podium = useMemo(() => {
     if (filteredRows.length < 3) return [];
@@ -332,14 +322,9 @@ function MainLeaderboard() {
   };
 
   const getOrdinalSuffix = (n: number): string => {
-    const m = n % 100;
-    if (m >= 11 && m <= 13) return "th";
-    switch (n % 10) {
-      case 1: return "st";
-      case 2: return "nd";
-      case 3: return "rd";
-      default: return "th";
-    }
+    const category = new Intl.PluralRules(locale, { type: "ordinal" }).select(n);
+    const suffixKey = `rank_suffix_${category}` as "rank_suffix_one" | "rank_suffix_two" | "rank_suffix_few" | "rank_suffix_many" | "rank_suffix_other";
+    return (tlb(suffixKey) as string) ?? "";
   };
 
   const formatNumber = (num: number | undefined): string => {
@@ -360,12 +345,12 @@ function MainLeaderboard() {
     let subtitle: string;
     if (activeTab === "overall") {
       const roundsWon = entry.rounds_won ?? 0;
-      subtitle = `${roundsWon} round${roundsWon === 1 ? "" : "s"} won · ${formatNumber(entry.games_played)} played`;
+      subtitle = `${tlb("rounds_won", { n: roundsWon })} · ${tlb("games_played_subtitle", { n: entry.games_played ?? 0 })}`;
     } else if (activeTab === "daily") {
       const games = entry.games_played ?? 0;
-      subtitle = `${formatNumber(games)} game${games === 1 ? "" : "s"} played`;
+      subtitle = tlb("games_played_subtitle", { n: games });
     } else {
-      subtitle = `Level ${entry.current_level ?? 0}`;
+      subtitle = tlb("level_subtitle", { n: entry.current_level ?? 0 });
     }
     const avatarFallback = entry.is_ai ? "AI" : getInitials(entry.display_name);
     return (
@@ -409,7 +394,7 @@ function MainLeaderboard() {
             onClick={() => setActiveTab(tab)}
             className={`${lbStyles.tab} ${activeTab === tab ? lbStyles.tabActive : ""}`}
           >
-            {tab === "overall" ? "Overall" : tab === "daily" ? "Daily" : "Level Up"}
+            {tab === "overall" ? tlb("overall") : tab === "daily" ? tlb("daily") : tlb("level_up")}
           </button>
         ))}
       </div>
@@ -421,14 +406,14 @@ function MainLeaderboard() {
             onClick={() => setActiveSubTab("today")}
             className={`${lbStyles.subTab} ${activeSubTab === "today" ? lbStyles.subTabActive : ""}`}
           >
-            Today
+            {tlb("today")}
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab("alltime")}
             className={`${lbStyles.subTab} ${activeSubTab === "alltime" ? lbStyles.subTabActive : ""}`}
           >
-            All-Time
+            {tlb("all_time")}
           </button>
         </div>
       )}
@@ -440,7 +425,7 @@ function MainLeaderboard() {
           className={`${lbStyles.filterChip} ${filter.humans ? lbStyles.filterChipActive : ""}`}
           aria-pressed={filter.humans}
         >
-          Humans
+          {tlb("filter_humans")}
         </button>
         <button
           type="button"
@@ -448,7 +433,7 @@ function MainLeaderboard() {
           className={`${lbStyles.filterChip} ${filter.ai ? lbStyles.filterChipActive : ""}`}
           aria-pressed={filter.ai}
         >
-          AI
+          {tlb("filter_ai")}
         </button>
         <button
           type="button"
@@ -456,14 +441,13 @@ function MainLeaderboard() {
           className={`${lbStyles.friendsToggle} ${filter.friends ? lbStyles.friendsToggleActive : ""}`}
           aria-pressed={filter.friends}
         >
-          Friends
+          {tlb("filter_friends")}
         </button>
       </div>
 
       {ownRank !== null && ownRank > 0 && (
         <div className={lbStyles.summaryLine}>
-          You are {ownRank}
-          {getOrdinalSuffix(ownRank)} in {summaryLabel}
+          {tlb("summary_line", { rank: ownRank, suffix: getOrdinalSuffix(ownRank), tab: summaryLabel })}
         </div>
       )}
 
@@ -503,23 +487,23 @@ function MainLeaderboard() {
       )}
 
       {filteredRows.length === 0 ? (
-        <div className={lbStyles.emptyState}>No players match the selected filters.</div>
+        <div className={lbStyles.emptyState}>{tl("lb_empty")}</div>
       ) : (
         <div className={lbStyles.tableWrapper}>
           <table className={lbStyles.table}>
             <thead>
               <tr>
                 <th className={lbStyles.th}>#</th>
-                <th className={lbStyles.th}>Player</th>
+                <th className={lbStyles.th}>{tlb("col_player")}</th>
                 {activeTab === "levelup" ? (
                   <>
-                    <th className={lbStyles.th}>Accuracy</th>
-                    <th className={lbStyles.th}>Level</th>
+                    <th className={lbStyles.th}>{tlb("sort_accuracy")}</th>
+                    <th className={lbStyles.th}>{tlb("col_level")}</th>
                   </>
                 ) : (
                   <>
-                    <th className={lbStyles.th}>Accuracy</th>
-                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>Games</th>
+                    <th className={lbStyles.th}>{tlb("sort_accuracy")}</th>
+                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>{tlb("col_games")}</th>
                   </>
                 )}
               </tr>
@@ -573,6 +557,11 @@ export default function LandingV2Prototype() {
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const router = useRouter();
   const t = useTranslations("auth");
+  const tl = useTranslations("landing");
+  const tg = useTranslations("game");
+  const tlb = useTranslations("leaderboard");
+  const tn = useTranslations("nav");
+  const trk = useTranslations("rank");
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestError, setGuestError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -756,7 +745,7 @@ export default function LandingV2Prototype() {
     } catch (err) {
       setGuestError(
         mapAuthError(
-          err instanceof Error ? err.message : "Unable to start the game — please try again.",
+          err instanceof Error ? err.message : tl("start_error"),
           t("err_network")
         )
       );
@@ -768,13 +757,8 @@ export default function LandingV2Prototype() {
     }
   };
 
-  const phaseTitle = ["A mysterious scene", "Drop a pin", "Pick a year", "Learn the story"][demoPhase];
-  const phaseBody = [
-    "No names. No dates. Just a picture from the past.",
-    "Where on Earth do you think this happened?",
-    "What year do you think this took place?",
-    "The true event is revealed — and you earn XP for accuracy.",
-  ][demoPhase];
+  const phaseTitle = [tl("demo_t1"), tl("demo_t2"), tl("demo_t3"), tl("demo_t4")][demoPhase];
+  const phaseBody = [tl("demo_b1"), tl("demo_b2"), tl("demo_b3"), tl("demo_b4")][demoPhase];
 
   const eraPairs = useMemo(() => Object.entries(ERA_STOCK_IMAGES), []);
   const regionPairs = useMemo(() => Object.entries(REGION_STOCK_IMAGES), []);
@@ -788,24 +772,24 @@ export default function LandingV2Prototype() {
         className={`${styles.topbar} ${topbarSolid ? styles.topbarSolid : ""} ${showTopbarExtras ? styles.topbarHasExtras : ""}`}
       >
         {showTopbarExtras && (
-          <a className={styles.brand} href="#hero" aria-label="Back to top">
+          <a className={styles.brand} href="#hero" aria-label={tl("back_to_top")}>
             <BrandMark size={32} />
           </a>
         )}
 
-        <nav className={styles.topnav} aria-label="Primary">
-          <a href="#how" onClick={() => setMenuOpen(false)}>How to play</a>
-          <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
-          <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
-          <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
-          <button type="button" onClick={() => router.push("/login")} disabled={!hydrated} className={`${styles.playNowBtn} ${styles.topbarCta}`}>Sign in</button>
+        <nav className={styles.topnav} aria-label={tl("nav_label")}>
+          <a href="#how" onClick={() => setMenuOpen(false)}>{tl("nav_how")}</a>
+          <a href="#ai" onClick={() => setMenuOpen(false)}>{tl("nav_ai")}</a>
+          <a href="#explore" onClick={() => setMenuOpen(false)}>{tl("nav_explore")}</a>
+          <a href="#fun" onClick={() => setMenuOpen(false)}>{tl("nav_why")}</a>
+          <button type="button" onClick={() => router.push("/login")} disabled={!hydrated} className={`${styles.playNowBtn} ${styles.topbarCta}`}>{tl("nav_signin")}</button>
           <LanguageDropdown />
         </nav>
 
         <button
           type="button"
           className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ""}`}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? tl("close_menu") : tl("open_menu")}
           aria-expanded={menuOpen}
           aria-controls="landing-menu"
           onClick={() => setMenuOpen((v) => !v)}
@@ -818,13 +802,13 @@ export default function LandingV2Prototype() {
         <nav
           id="landing-menu"
           className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ""}`}
-          aria-label="Primary"
+          aria-label={tl("nav_label")}
         >
-          <a href="#how" onClick={() => setMenuOpen(false)}>How to play</a>
-          <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
-          <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
-          <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
-          <a href="/login" onClick={(e) => { e.preventDefault(); setMenuOpen(false); router.push("/login"); }}>Sign in</a>
+          <a href="#how" onClick={() => setMenuOpen(false)}>{tl("nav_how")}</a>
+          <a href="#ai" onClick={() => setMenuOpen(false)}>{tl("nav_ai")}</a>
+          <a href="#explore" onClick={() => setMenuOpen(false)}>{tl("nav_explore")}</a>
+          <a href="#fun" onClick={() => setMenuOpen(false)}>{tl("nav_why")}</a>
+          <a href="/login" onClick={(e) => { e.preventDefault(); setMenuOpen(false); router.push("/login"); }}>{tl("nav_signin")}</a>
           <LanguageDropdown />
         </nav>
 
@@ -836,7 +820,7 @@ export default function LandingV2Prototype() {
               disabled={guestBusy || !hydrated}
               className={`${styles.playNowBtn} ${styles.topbarCta}`}
             >
-              Play Now
+              {tl("play_now")}
             </button>
             {guestError && (
               <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
@@ -848,7 +832,7 @@ export default function LandingV2Prototype() {
       </header>
 
       {/* ── HERO ── */}
-      <section className={styles.hero} id="hero" aria-label="Hero">
+      <section className={styles.hero} id="hero" aria-label={tl("hero_label")}>
         <div className={styles.heroSlides} aria-hidden="true">
           {HERO_IMAGES.map((img, i) => (
             <div
@@ -861,14 +845,14 @@ export default function LandingV2Prototype() {
         <div className={styles.heroScrim} aria-hidden="true" />
         <div className={styles.heroInner}>
           <p className={styles.eyebrowCenter}>
-            <span className={styles.eyebrow}>Have fun. Learn history.</span>
+            <span className={styles.eyebrow}>{tl("eyebrow_fun")}</span>
           </p>
           <h1 ref={heroLogoRef} className={styles.heroLogo}>
             <HeroLogo className={styles.heroLogoImg} />
           </h1>
-          <p className={styles.heroSub}>Travel through time. Guess where and when.</p>
+          <p className={styles.heroSub}>{tl("hero_sub")}</p>
           <p className={styles.heroTagline}>
-            A free game — look at a picture, guess the place and year, then learn the true story.
+            {tl("hero_tagline")}
           </p>
           <div className={styles.heroCtaRow}>
             <button
@@ -878,9 +862,9 @@ export default function LandingV2Prototype() {
               disabled={guestBusy || !hydrated}
               className={styles.playNowBtn}
             >
-              {guestBusy ? "Starting…" : "Play Now"}
+              {guestBusy ? tl("starting") : tl("play_now")}
             </button>
-            <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }} className={styles.ghostBtn}>Sign in / Sign up</a>
+            <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }} className={styles.ghostBtn}>{tl("signin_signup")}</a>
           </div>
           {guestError && (
             <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
@@ -894,13 +878,13 @@ export default function LandingV2Prototype() {
                 type="button"
                 onClick={() => setHeroIndex(i)}
                 className={`${styles.heroDot} ${i === heroIndex ? styles.heroDotActive : ""}`}
-                aria-label={`Slide ${i + 1}`}
+                aria-label={tl("slide_n", { n: i + 1 })}
               />
             ))}
           </div>
         </div>
         <div className={styles.scrollInd} aria-hidden="true">
-          <span>Scroll</span>
+          <span>{tl("scroll")}</span>
           <span className={styles.mouse} />
         </div>
       </section>
@@ -910,29 +894,29 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.how ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>How to play</span>
+              <span className={styles.eyebrow}>{tl("nav_how")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>One scene. Three actions.</h2>
-            <p className={styles.secHeadP}>Look at the picture. Guess where and when. Then learn the real story.</p>
+            <h2 className={styles.secHeadH2}>{tl("how_title")}</h2>
+            <p className={styles.secHeadP}>{tl("how_sub")}</p>
           </div>
 
           <div className={`${styles.stepsRow} ${revealed.how ? styles.in : ""}`}>
             <div className={styles.stepCard}>
               <span className={styles.stepNum}>01</span>
-              <h3 className={styles.stepTitle}>Look</h3>
-              <p className={styles.stepDesc}>A mysterious scene appears. No names, no dates.</p>
+              <h3 className={styles.stepTitle}>{tl("step_look")}</h3>
+              <p className={styles.stepDesc}>{tl("step_look_desc")}</p>
             </div>
             <div className={styles.stepArrow} aria-hidden="true">→</div>
             <div className={styles.stepCard}>
               <span className={styles.stepNum}>02</span>
-              <h3 className={styles.stepTitle}>Guess</h3>
-              <p className={styles.stepDesc}>Drop a pin on the map and pick a year.</p>
+              <h3 className={styles.stepTitle}>{tl("step_guess")}</h3>
+              <p className={styles.stepDesc}>{tl("step_guess_desc")}</p>
             </div>
             <div className={styles.stepArrow} aria-hidden="true">→</div>
             <div className={styles.stepCard}>
               <span className={styles.stepNum}>03</span>
-              <h3 className={styles.stepTitle}>Learn</h3>
-              <p className={styles.stepDesc}>The event is revealed. Points go to the closest answers.</p>
+              <h3 className={styles.stepTitle}>{tl("step_learn")}</h3>
+              <p className={styles.stepDesc}>{tl("step_learn_desc")}</p>
             </div>
           </div>
 
@@ -942,7 +926,7 @@ export default function LandingV2Prototype() {
                 {demoPhase === 0 && (
                   <div key={`see-${demoLoop}`} className={styles.demoScene}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/prototype/landing/berlinwall.webp" alt="Historical scene" className={styles.demoSceneImg} />
+                    <img src="/prototype/landing/berlinwall.webp" alt={tl("demo_scene_alt")} className={styles.demoSceneImg} />
                   </div>
                 )}
                 {demoPhase === 1 && (
@@ -956,13 +940,13 @@ export default function LandingV2Prototype() {
                         flyToTarget={DEMO_FLY_TO_BERLIN}
                       />
                     </div>
-                    <p className={styles.demoWhereText}>You guess: Berlin</p>
+                    <p className={styles.demoWhereText}>{tl("demo_guess_place")}</p>
                   </div>
                 )}
                 {demoPhase === 2 && (
                   <div key={`when-${demoLoop}`} className={styles.demoWhen}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/icons/when.webp" alt="When" width={40} height={40} className={styles.demoWhenIcon} />
+                    <img src="/icons/when.webp" alt={tl("demo_when_alt")} width={40} height={40} className={styles.demoWhenIcon} />
                     <div className={styles.demoYearPickerWrap}>
                       <YearPicker
                         value={DEMO_YEAR_END}
@@ -973,7 +957,7 @@ export default function LandingV2Prototype() {
                         className={styles.demoYearPicker}
                       />
                     </div>
-                    <p className={styles.demoWhenText}>You guess: {DEMO_YEAR_END}</p>
+                    <p className={styles.demoWhenText}>{tl("demo_guess_year", { year: DEMO_YEAR_END })}</p>
                   </div>
                 )}
                 {demoPhase === 3 && (
@@ -1000,14 +984,14 @@ export default function LandingV2Prototype() {
                         gap: 6,
                       }}
                     >
-                      <p className={styles.demoRevealTitle}>Berlin Wall falls</p>
+                      <p className={styles.demoRevealTitle}>{tl("demo_reveal_title")}</p>
                       <p className={styles.demoRevealYear}>1989</p>
                       <div className={styles.demoRevealScore}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/badges/combo_gold.webp" alt="Gold badge" className={styles.demoBadge} />
+                        <img src="/badges/combo_gold.webp" alt={tl("demo_badge_alt")} className={styles.demoBadge} />
                         <span className={styles.demoXp}>{demoXp} XP</span>
                       </div>
-                      <p className={styles.demoFact}>A divided city reunited — the end of the Cold War began here.</p>
+                      <p className={styles.demoFact}>{tl("demo_fact")}</p>
                     </div>
                   </div>
                 )}
@@ -1018,7 +1002,7 @@ export default function LandingV2Prototype() {
                     key={p}
                     type="button"
                     className={`${styles.demoDot} ${p === demoPhase ? styles.demoDotActive : ""}`}
-                    aria-label={`Phase ${p + 1}`}
+                    aria-label={tl("phase_n", { n: p + 1 })}
                   />
                 ))}
               </div>
@@ -1036,20 +1020,20 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.cards ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>The real thing</span>
+              <span className={styles.eyebrow}>{tl("cards_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>How accurate can you be?</h2>
-            <p className={styles.secHeadP}>After each round, players see exactly how close their where and when guesses were.</p>
+            <h2 className={styles.secHeadH2}>{tl("cards_title")}</h2>
+            <p className={styles.secHeadP}>{tl("cards_sub")}</p>
           </div>
 
           <div className={`${styles.howCards} ${revealed.cards ? styles.in : ""}`}>
-            <p className={styles.howStepLabel}>STEP 01 — WHERE?</p>
+            <p className={styles.howStepLabel}>{tl("step_where")}</p>
             <WhereCard
               roundResults={MOCK_ROUND_RESULTS}
               playerId={MY_PLAYER_ID}
               correctLat={CORRECT_LAT}
               correctLng={CORRECT_LNG}
-              correctName={CORRECT_NAME}
+              correctName={tl("demo_place_name")}
               whereAccPenalty={0}
               guessLat={52.45}
               guessLng={13.38}
@@ -1066,7 +1050,7 @@ export default function LandingV2Prototype() {
               isPractice={false}
             />
 
-            <p className={styles.howStepLabel}>STEP 02 — WHEN?</p>
+            <p className={styles.howStepLabel}>{tl("step_when")}</p>
             <WhenCard
               roundResults={MOCK_ROUND_RESULTS}
               playerId={MY_PLAYER_ID}
@@ -1083,10 +1067,10 @@ export default function LandingV2Prototype() {
               isPractice={false}
             />
 
-            <p className={styles.howStepLabel}>STEP 03 — WHY?</p>
+            <p className={styles.howStepLabel}>{tl("step_why")}</p>
             <div className={styles.howWhyCard}>
-              <h4>The Fall of the Berlin Wall</h4>
-              <p>In 1989, crowds gathered at the Brandenburg Gate as the barrier dividing East and West Berlin was opened — a turning point that hastened German reunification and the end of the Cold War.</p>
+              <h4>{tl("why_title")}</h4>
+              <p>{tl("why_body")}</p>
             </div>
           </div>
         </div>
@@ -1097,10 +1081,10 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.ai ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Painted by AI</span>
+              <span className={styles.eyebrow}>{tl("ai_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>Every image is an <span className={styles.orangeText}>AI reconstruction.</span></h2>
-            <p className={styles.secHeadP}>No real photos. Each scene is generated by AI from real historical research, then checked by humans.</p>
+            <h2 className={styles.secHeadH2}>{tl("ai_title_a")} <span className={styles.orangeText}>{tl("ai_title_b")}</span></h2>
+            <p className={styles.secHeadP}>{tl("ai_sub")}</p>
           </div>
 
           <div className={`${styles.pipeline} ${revealed.ai ? styles.in : ""}`}>
@@ -1110,8 +1094,8 @@ export default function LandingV2Prototype() {
             {PIPELINE.map((node, i) => (
               <div key={node.label} className={styles.pipeNode}>
                 <span className={styles.pipeRing}>{i + 1}</span>
-                <h4 className={styles.pipeNodeH4}>{node.label}</h4>
-                <p className={styles.pipeNodeP}>{node.desc}</p>
+                <h4 className={styles.pipeNodeH4}>{tl(`pipe_${i + 1}_label`)}</h4>
+                <p className={styles.pipeNodeP}>{tl(`pipe_${i + 1}_desc`)}</p>
               </div>
             ))}
           </div>
@@ -1120,7 +1104,7 @@ export default function LandingV2Prototype() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
             <p>
-              The illustrations help you imagine the moment, not replace primary sources.
+              {tl("ai_note")}
             </p>
           </div>
         </div>
@@ -1131,35 +1115,35 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.explore ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Explore all of history</span>
+              <span className={styles.eyebrow}>{tl("explore_eyebrow")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>5 eras. 6 regions.</h2>
-            <p className={styles.secHeadP}>Pick an era or region to focus your investigation.</p>
+            <h2 className={styles.secHeadH2}>{tl("explore_title")}</h2>
+            <p className={styles.secHeadP}>{tl("explore_sub")}</p>
           </div>
 
           <div className={`${styles.marqueeWrap} ${styles.erasWrap}`}>
-            <p className={styles.marqueeLabel}>Eras</p>
+            <p className={styles.marqueeLabel}>{tl("eras")}</p>
             <div className={styles.marqueeTrack}>
               {doubleEras.map(([key, src], i) => (
                 <div key={`${key}-${i}`} className={styles.marqueeCard}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={ERA_LABELS[key] ?? key} className={styles.marqueeImg} />
+                  <img src={src} alt={tg(`era_${key}`)} className={styles.marqueeImg} />
                   <span className={styles.marqueeOverlay} />
-                  <span className={styles.marqueeText}>{ERA_LABELS[key] ?? key}</span>
+                  <span className={styles.marqueeText}>{tg(`era_${key}`)}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className={`${styles.marqueeWrap} ${styles.regionsWrap}`}>
-            <p className={styles.marqueeLabel}>Regions</p>
+            <p className={styles.marqueeLabel}>{tl("regions")}</p>
             <div className={`${styles.marqueeTrack} ${styles.marqueeReverse}`}>
               {doubleRegions.map(([key, src], i) => (
                 <div key={`${key}-${i}`} className={styles.marqueeCard}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={REGION_LABELS[key] ?? key} className={styles.marqueeImg} />
+                  <img src={src} alt={tg(`region_${key}`)} className={styles.marqueeImg} />
                   <span className={styles.marqueeOverlay} />
-                  <span className={styles.marqueeText}>{REGION_LABELS[key] ?? key}</span>
+                  <span className={styles.marqueeText}>{tg(`region_${key}`)}</span>
                 </div>
               ))}
             </div>
@@ -1172,28 +1156,28 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.fun ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Have fun. Learn history.</span>
+              <span className={styles.eyebrow}>{tl("eyebrow_fun")}</span>
             </p>
-            <h2 className={styles.secHeadH2}>Play. <span className={styles.orangeText}>Level up.</span> Learn a story.</h2>
-            <p className={styles.secHeadP}>Earn XP, unlock rank titles, and collect badges for every kind of guess.</p>
+            <h2 className={styles.secHeadH2}>{tl("fun_title_a")} <span className={styles.orangeText}>{tl("fun_title_b")}</span> {tl("fun_title_c")}</h2>
+            <p className={styles.secHeadP}>{tl("fun_sub")}</p>
           </div>
 
           <div className={`${styles.funGrid} ${revealed.fun ? styles.in : ""}`}>
             <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Badges</h4>
+              <h4 className={styles.funCardH4}>{tl("badges")}</h4>
               <div className={styles.funBadges}>
                 {FUN_BADGES.map(({ src, label }, i) => (
                   <div key={src} className={styles.funBadgeWrap}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt={label} className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
-                    <span className={styles.funBadgeLabel}>{label}</span>
+                    <img src={src} alt={tl(`badge_${label.toLowerCase()}`)} className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                    <span className={styles.funBadgeLabel}>{tl(`badge_${label.toLowerCase()}`)}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Accuracy Tiers</h4>
+              <h4 className={styles.funCardH4}>{tl("tiers")}</h4>
               <div className={styles.tierRow}>
                 {[
                   { label: "85%+", name: "Expert", color: "var(--gh-success)" },
@@ -1204,7 +1188,7 @@ export default function LandingV2Prototype() {
                   <div key={t.name} className={styles.tier}>
                     <span className={styles.tierDot} style={{ background: t.color }} />
                     <span className={styles.tierLabel}>{t.label}</span>
-                    <span className={styles.tierName}>{t.name}</span>
+                    <span className={styles.tierName}>{tl(`tier_${t.name.toLowerCase()}`)}</span>
                   </div>
                 ))}
               </div>
@@ -1212,13 +1196,13 @@ export default function LandingV2Prototype() {
 
             <div className={styles.funCol}>
               <div className={styles.funCard}>
-                <h4 className={styles.funCardH4}>Ranks</h4>
+                <h4 className={styles.funCardH4}>{tl("ranks")}</h4>
                 <div className={styles.rankStrip}>
-                  {RANK_PREVIEWS.map(({ key, title }) => (
+                  {RANK_PREVIEWS.map(({ key }, i) => (
                     <div key={key} className={styles.rankItem}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/images/rank-titles/${key}.jpg`} alt={title} className={styles.rankThumb} />
-                      <span className={styles.rankTitle}>{title}</span>
+                      <img src={`/images/rank-titles/${key}.jpg`} alt={trk(`rank_${i + 1}`)} className={styles.rankThumb} />
+                      <span className={styles.rankTitle}>{trk(`rank_${i + 1}`)}</span>
                     </div>
                   ))}
                 </div>
@@ -1226,19 +1210,19 @@ export default function LandingV2Prototype() {
 
               <div className={`${styles.xpBar} ${styles.xpCard} ${revealed.fun ? styles.in : ""}`}>
                 <div className={styles.xpBarHead}>
-                  <span className={styles.xpBarTitle}>Total XP</span>
+                  <span className={styles.xpBarTitle}>{tlb("col_total_xp")}</span>
                   <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
                 </div>
                 <div className={styles.xpBarTrack}>
                   <div className={styles.xpBarFill} style={{ width: "37%" }} />
                 </div>
-                <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
+                <p className={styles.xpBarHint}>{tl("xp_hint")}</p>
               </div>
             </div>
 
             <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Avatars</h4>
-              <p className={styles.funCardDesc}>Play as a historical figure. These are the real avatars in the app.</p>
+              <h4 className={styles.funCardH4}>{tl("avatars")}</h4>
+              <p className={styles.funCardDesc}>{tl("avatars_desc")}</p>
               <div style={{ overflow: "hidden", width: "100%", marginTop: 16 }}>
                 <div
                   style={{
@@ -1305,10 +1289,10 @@ export default function LandingV2Prototype() {
                           {a.name}
                         </h5>
                         <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--gh-text-muted)", marginBottom: 10 }}>
-                          {a.description}
+                          {tl(`avatar_${a.key}`)}
                         </p>
-                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)", marginBottom: 4 }}>{a.born}</p>
-                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)" }}>{a.died}</p>
+                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)", marginBottom: 4 }}>{tl("born_label", { info: a.born.replace(/^Born:\s*/, "") })}</p>
+                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)" }}>{tl("died_label", { info: a.died.replace(/^Died:\s*/, "") })}</p>
                       </div>
                     </div>
                   ))}
@@ -1319,7 +1303,7 @@ export default function LandingV2Prototype() {
                   <button
                     key={a.name}
                     type="button"
-                    aria-label={`Show ${a.name}`}
+                    aria-label={tl("avatar_show", { name: a.name })}
                     onClick={() => setAvatarIndex(i)}
                     style={{
                       width: 8,
@@ -1344,10 +1328,10 @@ export default function LandingV2Prototype() {
         <div className={styles.wrap}>
           <div className={`${styles.secHead} ${revealed.leaderboard ? styles.in : ""}`}>
             <p className={styles.eyebrowCenter}>
-              <span className={styles.eyebrow}>Compete Rankings</span>
+              <span className={styles.eyebrow}>{tl("lb_eyebrow")}</span>
             </p>
-            <h2 className={lbStyles.title}>Leaderboard</h2>
-            <p className={styles.secHeadP}>See how you rank against players around the world.</p>
+            <h2 className={lbStyles.title}>{tn("leaderboard")}</h2>
+            <p className={styles.secHeadP}>{tl("lb_sub")}</p>
           </div>
           <div
             style={{
@@ -1370,10 +1354,10 @@ export default function LandingV2Prototype() {
         <div className={styles.finalScrim} aria-hidden="true" />
         <div className={`${styles.finalInner} ${revealed.play ? styles.in : ""}`}>
           <p className={styles.eyebrowCenter}>
-            <span className={styles.eyebrow}>Ready when you are</span>
+            <span className={styles.eyebrow}>{tl("final_eyebrow")}</span>
           </p>
-          <h2 className={styles.finalH2}>Ready for your first trip through time?</h2>
-          <p className={styles.finalP}>No download. No cost. Just curiosity.</p>
+          <h2 className={styles.finalH2}>{tl("final_title")}</h2>
+          <p className={styles.finalP}>{tl("final_sub")}</p>
           <div className={styles.finalCtaRow}>
             <button
               type="button"
@@ -1382,7 +1366,7 @@ export default function LandingV2Prototype() {
               className={`${styles.playNowBtn} ${styles.ctaBig}`}
             >
               <span className={styles.ctaPulse} />
-              {guestBusy ? "Starting…" : "Play Now"}
+              {guestBusy ? tl("starting") : tl("play_now")}
             </button>
             {guestError && (
               <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
@@ -1396,14 +1380,14 @@ export default function LandingV2Prototype() {
       {/* ── FOOTER ── */}
       <footer className={styles.footer}>
         <p className={styles.footerDisc}>
-          All event images are AI-generated reconstructions based on historical research. They are illustrations, not photographs.
+          {tl("footer_disc")}
         </p>
         <div className={styles.footerLinks}>
-          <a href="#how">How to Play</a>
-          <a href="#ai">AI Images</a>
-          <a href="#explore">Explore</a>
-          <a href="#fun">Why Play</a>
-          <a href="/" onClick={(e) => { e.preventDefault(); if (!hydrated) return; void playAsGuest(); }}>Play Now</a>
+          <a href="#how">{tl("footer_how")}</a>
+          <a href="#ai">{tl("footer_ai")}</a>
+          <a href="#explore">{tl("nav_explore")}</a>
+          <a href="#fun">{tl("footer_why")}</a>
+          <a href="/" onClick={(e) => { e.preventDefault(); if (!hydrated) return; void playAsGuest(); }}>{tl("play_now")}</a>
           {guestError && (
             <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
               {guestError}
