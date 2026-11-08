@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Bebas_Neue, DM_Sans, Sora } from "next/font/google";
+import { bebasNeue, dmSans, sora } from "@/lib/fonts";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -23,27 +23,6 @@ import "./globals.css";
  * source of truth. Single write path for client mutation lives in useTheme.
  */
 const THEME_INIT_SCRIPT = `(function(){try{var k='gh_theme';var ls=localStorage.getItem(k);if(ls==='light'||ls==='dark'){document.documentElement.setAttribute('data-theme',ls);}}catch(e){}})();`;
-
-const bebasNeue = Bebas_Neue({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-bebas',
-  display: 'swap',
-});
-
-const sora = Sora({
-  subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-sora',
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-});
 
 export const viewport: Viewport = {
   width: 'device-width',
