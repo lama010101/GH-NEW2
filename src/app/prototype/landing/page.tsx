@@ -850,7 +850,6 @@ export default function LandingV2Prototype() {
           <h1 ref={heroLogoRef} className={styles.heroLogo}>
             <HeroLogo className={styles.heroLogoImg} />
           </h1>
-          <p className={styles.heroSub}>{tl("hero_sub")}</p>
           <p className={styles.heroTagline}>
             {tl("hero_tagline")}
           </p>
