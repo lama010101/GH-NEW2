@@ -1,21 +1,17 @@
-// Fleet-final dashboard queries — AIP-BUILD-FLEETFINAL-1103-060 (design E5).
+// Fleet dashboard shared constants + pure helpers.
+// Task: ADM-BUILD-FLEETDASH-1107-120 (rebuild of /admin/dashboard).
 //
-// All queries use the service-role pg pool (getDbPool), consistent with the
-// existing page.tsx / queries.ts pattern. They read the security_invoker
-// views shipped in supabase/migrations/20261103120000_ai_fleet_final.sql
-// (SELECT is granted to service_role only — the pool role sees them).
-//
-// Pure helpers (deriveFleetAvailability, deriveFleetTier) carry no DB access
-// so they are unit-testable in fleetData.test.ts, mirroring
-// fleetMetrics.ts / fleetMetrics.test.ts.
+// AI_RATE_SETTING_KEYS is the single list shared by the "Speed and spending
+// limits" form (page.tsx) and the upsert action (actions.ts) — it MUST stay
+// in sync with src/core/aiRateBudget.ts NUMERIC_KEYS + ai_rpm_overrides.
+// deriveFleetAvailability / deriveFleetTier are kept for
+// fleetData.test.ts (pure helpers, no DB access).
 
-import type { Pool } from "pg";
 import { CHEAP_TIER_MAX_USD_PER_TOKEN } from "@/core/aiEligibility";
 
 // ---------------------------------------------------------------------------
-// ai_fleet_settings keys edited by the "Rate budget" form (D3; defaults
-// written by the migration). Single list shared by the form (page.tsx) and
-// the upsert action (actions.ts).
+// ai_fleet_settings keys edited by the rate-budget form (defaults written by
+// the ai_fleet_final migration; runtime defaults in aiRateBudget.ts).
 // ---------------------------------------------------------------------------
 
 export const AI_RATE_SETTING_KEYS = [
@@ -38,7 +34,119 @@ export const AI_RATE_SETTING_KEYS = [
 export type AiRateSettingKey = (typeof AI_RATE_SETTING_KEYS)[number];
 
 // ---------------------------------------------------------------------------
-// Pure helpers — availability reason / cost tier
+// Plain-English metadata for the "Speed and spending limits" table.
+// `field` maps each ai_fleet_settings key to its RateSettings field so the
+// page can show the effective default when no row exists yet.
+// ---------------------------------------------------------------------------
+
+import type { RateSettings } from "@/core/aiRateBudget";
+import { DEFAULT_RATE_SETTINGS } from "@/core/aiRateBudget";
+
+export type RateSettingMeta = {
+  label: string;
+  does: string;
+  changeWhen: string;
+  field: keyof RateSettings;
+};
+
+export const RATE_SETTING_META: Record<AiRateSettingKey, RateSettingMeta> = {
+  ai_rpm_free: {
+    label: "Free-model speed",
+    does: "The most calls per minute allowed across all free models combined pacing-wise (per model).",
+    changeWhen: "Lower it if free providers keep rate-limiting; raise it if the fleet waits too much.",
+    field: "rpmFree",
+  },
+  ai_rpm_paid: {
+    label: "Paid-model speed",
+    does: "The most calls per minute each paid model may make.",
+    changeWhen: "Raise it for fast paid models; lower it if a provider complains.",
+    field: "rpmPaid",
+  },
+  ai_rpm_overrides: {
+    label: "Per-model speed overrides",
+    does: "A JSON object of model slug -> calls per minute, overriding the two speeds above for specific models.",
+    changeWhen: "Only when one model needs a different speed than its tier default.",
+    field: "rpmOverrides",
+  },
+  ai_free_rpd_fleet: {
+    label: "Free calls per day (all free models)",
+    does: "The account-wide daily ceiling for calls to free models — OpenRouter's free tier allows 1000/day.",
+    changeWhen: "Raise toward 1000 for more coverage; lower to stay safely under the provider limit.",
+    field: "freeRpdFleet",
+  },
+  ai_rpd_paid_model: {
+    label: "Paid calls per day (per model)",
+    does: "The most calls one paid model may make per day.",
+    changeWhen: "Raise for models that should cover more events; lower to cap a spendy model.",
+    field: "rpdPaidModel",
+  },
+  ai_global_rpd: {
+    label: "Total calls per day (whole fleet)",
+    does: "The fleet-wide daily ceiling across every model and every kind of call.",
+    changeWhen: "Raise when the fleet is too slow to finish a run; lower to protect quotas.",
+    field: "globalRpd",
+  },
+  ai_run_max_plays: {
+    label: "Plays per run",
+    does: "The most play items one Daily/Coverage run will dispatch.",
+    changeWhen: "Raise to finish more events per run (longer runtime); lower for shorter runs.",
+    field: "runMaxPlays",
+  },
+  ai_run_max_audits: {
+    label: "Audits per run",
+    does: "The most audit items one audit run will dispatch.",
+    changeWhen: "Raise to audit the catalog faster; lower to keep audit runs short.",
+    field: "runMaxAudits",
+  },
+  ai_calls_per_play: {
+    label: "Calls expected per play",
+    does: "How many LLM calls one play is budgeted for (guess + hints + review). Used for pacing and request budgets.",
+    changeWhen: "Only if the play flow changes how many calls it makes.",
+    field: "callsPerPlay",
+  },
+  ai_backoff_base_ms: {
+    label: "Retry wait (start)",
+    does: "The first wait after a rate limit, in milliseconds — it doubles on each repeat, up to the max below.",
+    changeWhen: "Raise if providers need longer breathers; lower for faster recovery.",
+    field: "backoffBaseMs",
+  },
+  ai_backoff_max_ms: {
+    label: "Retry wait (max)",
+    does: "The ceiling for the doubling retry wait, in milliseconds.",
+    changeWhen: "Raise for heavily limited providers; lower to retry sooner.",
+    field: "backoffMaxMs",
+  },
+  ai_max_cooldowns_per_model: {
+    label: "Cooldowns per model per run",
+    does: "How many rate-limit cooldowns one model may suffer in a run before its remaining items are deferred to a later run.",
+    changeWhen: "Raise to keep trying a flaky model; lower to defer it sooner.",
+    field: "maxCooldownsPerModel",
+  },
+  ai_practice_per_player_per_run: {
+    label: "Practice plays per model per run",
+    does: "The most Practice-mode plays each model gets per run.",
+    changeWhen: "Raise for faster coverage of unplayed events; lower to save calls.",
+    field: "practicePerPlayerPerRun",
+  },
+  ai_benchmark_subset_size: {
+    label: "Benchmark events",
+    does: "How many fixed events premium-tier models re-play to compare themselves against each other.",
+    changeWhen: "Raise for a sharper comparison (more calls); lower to save budget.",
+    field: "benchmarkSubsetSize",
+  },
+};
+
+/** Effective value for a settings key: stored row value, else the D3 default. */
+export function rateSettingDisplayValue(
+  key: AiRateSettingKey,
+  stored: unknown
+): unknown {
+  if (stored !== undefined && stored !== null) return stored;
+  return DEFAULT_RATE_SETTINGS[RATE_SETTING_META[key].field];
+}
+
+// ---------------------------------------------------------------------------
+// Pure helpers — availability reason / cost tier (kept for fleetData.test.ts)
 // ---------------------------------------------------------------------------
 
 export type FleetAvailabilityRole = "play" | "audit" | "excluded";
@@ -115,261 +223,4 @@ export function deriveFleetTier(t: FleetTierInput): FleetTier | null {
   return t.pricePromptUsd + t.priceCompletionUsd <= CHEAP_TIER_MAX_USD_PER_TOKEN
     ? "cheap"
     : "premium";
-}
-
-/** numeric columns arrive as strings from pg; normalize to number|null. */
-function numOrNull(value: string | number | null | undefined): number | null {
-  if (value === null || value === undefined) return null;
-  const n = typeof value === "string" ? parseFloat(value) : value;
-  return Number.isFinite(n) ? n : null;
-}
-
-// ---------------------------------------------------------------------------
-// Fleet coverage & reliability — ai_model_reliability + player flags + catalog
-// ---------------------------------------------------------------------------
-
-export type FleetReliabilityRow = {
-  ai_player_id: string;
-  name: string;
-  model_id: string;
-  plays_ok: number;
-  plays_error: number;
-  /** numeric -> string; null when the player has no plays. */
-  parse_failure_rate: string | number | null;
-  n429: number;
-  p50_duration_ms: number | null;
-  p95_duration_ms: number | null;
-  events_played: number;
-  /** numeric -> string; % of playable events with an OK play. */
-  coverage_pct: string | number | null;
-  last_success_at: string | null;
-  /** numeric -> string; mean total_cost_usd over OK plays. */
-  avg_cost_usd: string | number | null;
-  is_active: boolean;
-  is_active_daily: boolean;
-  is_active_practice: boolean;
-  daily_cost_cap_usd: string | number | null;
-  deleted_at: string | null;
-  has_catalog_row: boolean;
-  is_free: boolean | null;
-  is_vision: boolean | null;
-  availability_status: string | null;
-  price_prompt_usd: string | number | null;
-  price_completion_usd: string | number | null;
-  tier: FleetTier | null;
-  role: FleetAvailabilityRole;
-  availabilityReason: string;
-};
-
-export async function fetchFleetReliability(
-  pool: Pool
-): Promise<FleetReliabilityRow[]> {
-  const { rows } = await pool.query<
-    Omit<FleetReliabilityRow, "tier" | "role" | "availabilityReason">
-  >(
-    `
-    SELECT
-      r.ai_player_id,
-      r.name,
-      r.model_id,
-      r.plays_ok,
-      r.plays_error,
-      r.parse_failure_rate,
-      r.n429,
-      r.p50_duration_ms,
-      r.p95_duration_ms,
-      r.events_played,
-      r.coverage_pct,
-      r.last_success_at::text AS last_success_at,
-      r.avg_cost_usd,
-      p.is_active,
-      p.is_active_daily,
-      p.is_active_practice,
-      p.daily_cost_cap_usd,
-      p.deleted_at::text AS deleted_at,
-      (om.model_id IS NOT NULL) AS has_catalog_row,
-      om.is_free,
-      om.is_vision,
-      om.availability_status,
-      om.price_prompt_usd,
-      om.price_completion_usd
-    FROM ai_model_reliability r
-    JOIN ai_players p ON p.id = r.ai_player_id
-    LEFT JOIN openrouter_models om ON om.model_id = r.model_id
-    ORDER BY r.name
-    `
-  );
-  return rows.map((row) => {
-    const availability = deriveFleetAvailability({
-      deleted: row.deleted_at !== null,
-      hasCatalogRow: row.has_catalog_row,
-      availabilityStatus: row.availability_status,
-      isVision: row.is_vision,
-      isFree: row.is_free,
-      isActive: row.is_active,
-    });
-    return {
-      ...row,
-      tier: deriveFleetTier({
-        isFree: row.is_free,
-        pricePromptUsd: numOrNull(row.price_prompt_usd),
-        priceCompletionUsd: numOrNull(row.price_completion_usd),
-      }),
-      role: availability.role,
-      availabilityReason: availability.reason,
-    };
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Event AI difficulty — ai_event_ai_difficulty, hardest events first
-// ---------------------------------------------------------------------------
-
-export type EventDifficultyRow = {
-  event_id: string;
-  title: string | null;
-  event_year: number | null;
-  n_models: number;
-  /** numeric -> string; null when the event has no OK plays. */
-  avg_distance_km: string | number | null;
-  avg_abs_year_diff: string | number | null;
-  avg_difficulty_score: string | number | null;
-  avg_authenticity_score: string | number | null;
-};
-
-export async function fetchEventDifficulty(
-  pool: Pool,
-  limit: number = 50
-): Promise<EventDifficultyRow[]> {
-  const { rows } = await pool.query<EventDifficultyRow>(
-    `
-    SELECT
-      d.event_id,
-      e.title,
-      e.event_year,
-      d.n_models,
-      d.avg_distance_km,
-      d.avg_abs_year_diff,
-      d.avg_difficulty_score,
-      d.avg_authenticity_score
-    FROM ai_event_ai_difficulty d
-    LEFT JOIN events e ON e.id = d.event_id
-    ORDER BY d.avg_distance_km DESC NULLS LAST
-    LIMIT $1
-    `,
-    [limit]
-  );
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Events needing review — ai_events_needing_review, worst review_score first
-// ---------------------------------------------------------------------------
-
-export type EventNeedingReviewRow = {
-  event_id: string;
-  title: string;
-  event_year: number | null;
-  incorrect_hint_reviews: number;
-  doubtful_or_fabricated_votes: number;
-  year_disagreement: boolean;
-  location_disagreement: boolean;
-  /** numeric -> string. */
-  review_score: string | number;
-};
-
-export async function fetchEventsNeedingReview(
-  pool: Pool,
-  limit: number = 100
-): Promise<EventNeedingReviewRow[]> {
-  const { rows } = await pool.query<EventNeedingReviewRow>(
-    `
-    SELECT
-      r.event_id,
-      e.title,
-      e.event_year,
-      r.incorrect_hint_reviews,
-      r.doubtful_or_fabricated_votes,
-      r.year_disagreement,
-      r.location_disagreement,
-      r.review_score
-    FROM ai_events_needing_review r
-    JOIN events e ON e.id = r.event_id
-    ORDER BY r.review_score DESC
-    LIMIT $1
-    `,
-    [limit]
-  );
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Rate settings — every ai_fleet_settings row (jsonb value arrives parsed)
-// ---------------------------------------------------------------------------
-
-export type RateSettingRow = {
-  key: string;
-  value: unknown;
-  updated_at: string | null;
-};
-
-export async function fetchRateSettings(pool: Pool): Promise<RateSettingRow[]> {
-  const { rows } = await pool.query<RateSettingRow>(
-    `
-    SELECT key, value, updated_at::text AS updated_at
-    FROM ai_fleet_settings
-    ORDER BY key
-    `
-  );
-  return rows;
-}
-
-// ---------------------------------------------------------------------------
-// Deferred plays — open ai_play_deferrals (429 cooldown bookkeeping, D3)
-// ---------------------------------------------------------------------------
-
-export type DeferredPlayRow = {
-  id: string;
-  ai_player_id: string;
-  event_id: string;
-  player_name: string | null;
-  event_title: string | null;
-  mode: string;
-  reason: string | null;
-  n429: number;
-  attempts: number;
-  retry_after_at: string | null;
-  first_deferred_at: string;
-  last_deferred_at: string;
-};
-
-export async function fetchDeferredPlays(
-  pool: Pool,
-  limit: number = 50
-): Promise<DeferredPlayRow[]> {
-  const { rows } = await pool.query<DeferredPlayRow>(
-    `
-    SELECT
-      d.id,
-      d.ai_player_id,
-      d.event_id,
-      p.name AS player_name,
-      e.title AS event_title,
-      d.mode,
-      d.reason,
-      d.n429,
-      d.attempts,
-      d.retry_after_at::text AS retry_after_at,
-      d.first_deferred_at::text AS first_deferred_at,
-      d.last_deferred_at::text AS last_deferred_at
-    FROM ai_play_deferrals d
-    LEFT JOIN ai_players p ON p.id = d.ai_player_id
-    LEFT JOIN events e ON e.id = d.event_id
-    WHERE d.resolved_at IS NULL
-    ORDER BY d.retry_after_at ASC NULLS FIRST
-    LIMIT $1
-    `,
-    [limit]
-  );
-  return rows;
 }
