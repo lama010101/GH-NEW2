@@ -202,6 +202,12 @@ a {
   --radius-lg:  16px;
   --radius-pill: 9999px;
 
+  /* --- Bottom safe area (single source for bottom-anchored UI) ---
+     env() covers iOS/browsers/WebView>=140. --safe-area-inset-bottom is injected
+     by Capacitor SystemBars (Android) and is 0/unset elsewhere, so max() never
+     double-pads. */
+  --gh-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+
   /* --- Legacy shadow (kept for backward compat) --- */
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 

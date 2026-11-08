@@ -485,7 +485,7 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(92px + env(safe-area-inset-bottom));
+  bottom: calc(92px + var(--gh-safe-bottom, env(safe-area-inset-bottom, 0px)));
   z-index: 31;
   pointer-events: none;
   text-align: center;
@@ -512,7 +512,7 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 14px 16px calc(16px + var(--gh-safe-bottom, env(safe-area-inset-bottom, 0px)));
   pointer-events: auto;
 }
 
@@ -768,7 +768,7 @@
   border-top-left-radius: 22px;
   border-top-right-radius: 22px;
   box-shadow: var(--gh-shadow-lg);
-  padding: 0 16px 8px;
+  padding: 0 16px calc(8px + var(--gh-safe-bottom, env(safe-area-inset-bottom, 0px)));
   animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
