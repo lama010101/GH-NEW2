@@ -1,0 +1,106 @@
+.page {
+  min-height: 100vh;
+  padding: 40px 16px 80px;
+  background: #0b1020;
+  color: #f4f6fb;
+}
+.title { margin: 0 auto 8px; max-width: 1100px; font-size: clamp(24px, 4vw, 36px); font-weight: 700; }
+.sub { margin: 0 auto 32px; max-width: 1100px; color: #9aa4bd; font-size: 15px; line-height: 1.5; }
+.grid {
+  margin: 0 auto; max-width: 1100px;
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.card {
+  background: #121a33; border: 1px solid rgba(255,255,255,.08); border-radius: 16px;
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.cardHead { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.cardTitle { margin: 0; font-size: 16px; font-weight: 700; }
+.cardDesc { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: #9aa4bd; }
+.replay {
+  flex: none; cursor: pointer; border: 1px solid rgba(255,255,255,.25); background: transparent;
+  color: #f4f6fb; border-radius: 999px; padding: 6px 12px; font-size: 13px;
+}
+.replay:hover { background: rgba(255,255,255,.08); }
+.stage {
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(120% 120% at 50% 30%, #1a2550 0%, #0b1020 70%);
+  border-radius: 12px; padding: 20px; min-height: 220px; overflow: hidden;
+}
+.tag { margin: 0; font-size: 12px; color: #6f7a96; text-transform: uppercase; letter-spacing: .08em; }
+
+.logo { width: 100%; max-width: 280px; height: auto; overflow: visible; }
+
+/* Every letter animates around its own centre */
+.letter { transform-box: fill-box; transform-origin: center; }
+
+/* ---------- A · Letter drop ---------- */
+.drop .letter { animation: drop .8s cubic-bezier(.3,1.4,.5,1) both; animation-delay: calc(var(--i) * 90ms); }
+@keyframes drop {
+  0% { opacity: 0; transform: translateY(-120px) rotate(-8deg); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) rotate(0); }
+}
+
+/* ---------- B · Pop & wobble ---------- */
+.pop .letter {
+  animation:
+    pop .7s cubic-bezier(.3,1.6,.5,1) both,
+    wobble 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 70ms), calc(var(--i) * 70ms + 1.2s);
+}
+@keyframes pop { 0% { opacity: 0; transform: scale(0); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-2.5deg); } 75% { transform: rotate(2.5deg); } }
+
+/* ---------- C · Row flip ---------- */
+.flip { perspective: 600px; }
+.flip .letter { transform-origin: 50% 100%; animation: flip .9s cubic-bezier(.2,.8,.2,1) both; }
+.flip .row0 { animation-delay: 0ms; }
+.flip .row1 { animation-delay: 220ms; }
+.flip .row2 { animation-delay: 440ms; }
+@keyframes flip {
+  0% { opacity: 0; transform: rotateX(-95deg) translateY(20px); }
+  100% { opacity: 1; transform: rotateX(0) translateY(0); }
+}
+
+/* ---------- D · Rewind spin ---------- */
+.rewind .letter { animation: rewind 1s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 80ms); }
+@keyframes rewind {
+  0% { opacity: 0; transform: rotate(360deg) scale(.2); filter: blur(4px); }
+  100% { opacity: 1; transform: rotate(0) scale(1); filter: blur(0); }
+}
+
+/* ---------- E · Contour draw ---------- */
+.draw .outlineLayer { animation: fadeIn .5s ease 1.7s both; }
+.draw .fillLayer { animation: fadeIn .6s ease 1.5s both; }
+.traceLayer { pointer-events: none; }
+.trace {
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: trace 1.5s cubic-bezier(.5,0,.2,1) forwards, fadeOut .4s ease 1.9s forwards;
+  animation-delay: calc(var(--i) * 40ms), 1.9s;
+}
+@keyframes trace { to { stroke-dashoffset: 0; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; } }
+
+/* ---------- F · Shine sweep ---------- */
+.shineBar { animation: shine 2.8s ease-in-out infinite; transform: skewX(-18deg); }
+@keyframes shine { 0% { transform: translateX(0) skewX(-18deg); } 60%, 100% { transform: translateX(900px) skewX(-18deg); } }
+
+/* ---------- G · Wave ---------- */
+.wave .letter { animation: wave 1.8s ease-in-out infinite; animation-delay: calc(var(--i) * 110ms); }
+@keyframes wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+
+/* ---------- H · Glow pulse ---------- */
+.glow { animation: glow 2.4s ease-in-out infinite; }
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255,255,255,.35)); }
+  50% { filter: drop-shadow(0 0 14px rgba(255,255,255,.95)) drop-shadow(0 0 28px rgba(249,115,22,.55)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo, .logo * { animation: none !important; }
+  .trace { stroke-dashoffset: 1; }
+  .shineBar { display: none; }
+}
