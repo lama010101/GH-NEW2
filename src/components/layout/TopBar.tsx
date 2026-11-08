@@ -41,7 +41,9 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   return (
     <div className={styles.topbar}>
       <button className={styles.topbarLeft} onClick={() => router.push('/home')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-        <BrandMark size={36} title={t('logo_alt')} />
+        <span className={styles.brandTile}>
+          <BrandMark size={26} title={t('logo_alt')} />
+        </span>
       </button>
       <div className={styles.xpPillCol}>
         <button
