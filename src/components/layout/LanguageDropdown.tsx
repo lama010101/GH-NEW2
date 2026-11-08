@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { locales, defaultLocale, LOCALE_COOKIE, localeMeta, type Locale } from '@/i18n/config';
 import { setLocale } from '@/actions/setLocale';
 import styles from './LanguageDropdown.module.css';
@@ -89,7 +90,10 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
           <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
-      {isOpen && (
+      {isOpen && createPortal(
+        // Portaled to <body>: an ancestor with backdrop-filter/transform (e.g. the landing
+        // top bar) would otherwise become the containing block of this position:fixed
+        // overlay, shrinking it to the bar's box and clipping the language list.
         <div className={styles.overlay} onClick={() => setIsOpen(false)}>
           <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
             {locales.map(loc => (
@@ -110,7 +114,8 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
