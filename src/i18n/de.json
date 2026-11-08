@@ -930,7 +930,18 @@
     "final_sub": "Kein Download. Keine Kosten. Nur Neugier.",
     "footer_disc": "Alle Ereignisbilder sind von KI erzeugte Rekonstruktionen auf Basis historischer Forschung. Es sind Illustrationen, keine Fotografien.",
     "phase_n": "Phase {n}",
-    "demo_place_name": "Berlin, Deutschland"
+    "demo_place_name": "Berlin, Deutschland",
+    "hero_note": "Kostenlos · Kein Download · Kein Konto nötig",
+    "faq_eyebrow": "Gut zu wissen",
+    "faq_title": "Kurze Antworten",
+    "faq_q1": "Ist es wirklich kostenlos?",
+    "faq_a1": "Ja. Spielen ist kostenlos — kein Download und keine Zahlung nötig.",
+    "faq_q2": "Brauche ich ein Konto?",
+    "faq_a2": "Nein. Tippe auf Jetzt spielen und du bist in wenigen Sekunden im Spiel. Registriere dich jederzeit, um deinen Fortschritt zu behalten und mit Freunden zu spielen.",
+    "faq_q3": "Sind die Bilder echte Fotos?",
+    "faq_a3": "Nein. Jedes Bild ist eine KI-Rekonstruktion auf Basis historischer Recherche und wird von Menschen geprüft — eine Illustration, kein Foto.",
+    "faq_q4": "Kann ich mit Freunden spielen?",
+    "faq_a4": "Ja. Erstelle eine Lobby, teile den Raumcode und spiele live oder im eigenen Tempo mit bis zu 8 Spielern."
   },
   "rank": {
     "rank_label": "Rang",

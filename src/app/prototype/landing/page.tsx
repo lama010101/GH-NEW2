@@ -327,65 +327,45 @@ function MainLeaderboard() {
     return (tlb(suffixKey) as string) ?? "";
   };
 
-  const formatNumber = (num: number | undefined): string => {
-    if (num === undefined || num === null) return "—";
-    return num.toLocaleString();
-  };
+  const accuracyNode = (acc: number | undefined) =>
+    acc === undefined || acc === null ? (
+      "—"
+    ) : (
+      <span style={{ color: getAccuracyColor(acc) }}>{Math.round(acc)}%</span>
+    );
 
-  function AccuracyValue({ acc }: { acc: number | undefined }) {
-    if (acc === undefined || acc === null) return "—";
+  const avatarNode = (entry: LandingLeaderboardEntry, large = false) => {
+    if (entry.avatar_url) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={toProxiedImageUrl(entry.avatar_url) ?? ""}
+          alt=""
+          className={`${styles.lbAvatar} ${large ? styles.lbAvatarLg : ""}`}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        />
+      );
+    }
     return (
-      <span className={lbStyles.accuracyValue} style={{ color: getAccuracyColor(acc) }}>
-        {Math.round(acc)}%
+      <span className={`${styles.lbAvatar} ${large ? styles.lbAvatarLg : ""} ${entry.is_ai ? styles.lbAvatarAi : ""}`} aria-hidden="true">
+        {entry.is_ai ? "AI" : getInitials(entry.display_name)}
       </span>
     );
-  }
-
-  function PlayerCell({ entry }: { entry: LandingLeaderboardEntry }) {
-    let subtitle: string;
-    if (activeTab === "overall") {
-      const roundsWon = entry.rounds_won ?? 0;
-      subtitle = `${tlb("rounds_won", { n: roundsWon })} · ${tlb("games_played_subtitle", { n: entry.games_played ?? 0 })}`;
-    } else if (activeTab === "daily") {
-      const games = entry.games_played ?? 0;
-      subtitle = tlb("games_played_subtitle", { n: games });
-    } else {
-      subtitle = tlb("level_subtitle", { n: entry.current_level ?? 0 });
-    }
-    const avatarFallback = entry.is_ai ? "AI" : getInitials(entry.display_name);
-    return (
-      <div className={lbStyles.playerCell}>
-        {entry.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={toProxiedImageUrl(entry.avatar_url) ?? ""}
-            alt=""
-            className={lbStyles.avatar}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : (
-          <div className={`${lbStyles.avatarInitials} ${entry.is_ai ? lbStyles.avatarAi : ""}`}>{avatarFallback}</div>
-        )}
-        <div className={lbStyles.playerInfo}>
-          <span className={lbStyles.playerName}>
-            {entry.display_name}
-            {entry.is_ai ? <span className={lbStyles.aiBadge}>AI</span> : null}
-          </span>
-          <span className={lbStyles.playerSubtitle}>{subtitle}</span>
-        </div>
-      </div>
-    );
-  }
-
-  const renderRank = (rank: number) => {
-    if (rank === 1) return <span className={lbStyles.medalGold}>🥇</span>;
-    if (rank === 2) return <span className={lbStyles.medalSilver}>🥈</span>;
-    if (rank === 3) return <span className={lbStyles.medalBronze}>🥉</span>;
-    return <span className={lbStyles.rankNumber}>{rank}</span>;
   };
 
+  const subtitleFor = (entry: LandingLeaderboardEntry) => {
+    if (activeTab === "overall") {
+      return `${tlb("rounds_won", { n: entry.rounds_won ?? 0 })} · ${tlb("games_played_subtitle", { n: entry.games_played ?? 0 })}`;
+    }
+    if (activeTab === "daily") return tlb("games_played_subtitle", { n: entry.games_played ?? 0 });
+    return tlb("games_played_subtitle", { n: entry.games_played ?? 0 });
+  };
+
+  const renderRank = (rank: number) =>
+    rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+
   return (
-    <div>
+    <div className={styles.lbWidget}>
       <div className={lbStyles.tabRow}>
         {(["overall", "daily", "levelup"] as const).map((tab) => (
           <button
@@ -418,7 +398,7 @@ function MainLeaderboard() {
         </div>
       )}
 
-      <div className={lbStyles.filterRow}>
+      <div className={`${lbStyles.filterRow} ${styles.lbFilterRow}`}>
         <button
           type="button"
           onClick={() => setFilter((f) => ({ ...f, humans: !f.humans }))}
@@ -452,89 +432,62 @@ function MainLeaderboard() {
       )}
 
       {podium.length === 3 && (
-        <div className={lbStyles.podium}>
-          {podium.map((slot) => (
-            <div
-              key={slot.entry.player_id}
-              className={`${lbStyles.podiumItem} ${slot.className}`}
-              style={{ height: slot.height }}
-            >
-              <span className={lbStyles.podiumRank}>{slot.place}</span>
-              {slot.entry.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={toProxiedImageUrl(slot.entry.avatar_url) ?? ""}
-                  alt=""
-                  className={lbStyles.podiumAvatar}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                />
-              ) : (
-                <div className={`${lbStyles.podiumAvatarInitials} ${slot.entry.is_ai ? lbStyles.avatarAi : ""}`}>
-                  {slot.entry.is_ai ? "AI" : getInitials(slot.entry.display_name)}
-                </div>
-              )}
-              <span className={lbStyles.podiumName}>{slot.entry.display_name}</span>
-              <span className={lbStyles.podiumValue}>
-                {activeTab === "levelup" ? (
-                  <span style={{ color: "var(--gh-violet)" }}>{slot.entry.current_level}</span>
-                ) : (
-                  <AccuracyValue acc={slot.entry.avg_accuracy} />
-                )}
-              </span>
-            </div>
-          ))}
+        <div className={`${lbStyles.card} ${styles.lbCard}`}>
+          <div className={`${lbStyles.podium} ${styles.lbPodium}`}>
+            {podium.map((slot) => (
+              <div
+                key={slot.entry.player_id}
+                className={`${lbStyles.podiumItem} ${slot.className}`}
+                style={{ height: slot.height }}
+              >
+                <span className={`${lbStyles.podiumRank} ${slot.place === 1 ? lbStyles.podiumRankGold : slot.place === 2 ? lbStyles.podiumRankSilver : lbStyles.podiumRankBronze}`}>{slot.place}</span>
+                {slot.place === 1 && <span className={lbStyles.crown}>👑</span>}
+                {avatarNode(slot.entry, true)}
+                <span className={lbStyles.podiumName}>{slot.entry.display_name}</span>
+                <span className={lbStyles.podiumScore}>
+                  {activeTab === "levelup" ? (
+                    <span style={{ color: "var(--gh-violet)" }}>{slot.entry.current_level}</span>
+                  ) : (
+                    accuracyNode(slot.entry.avg_accuracy)
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {filteredRows.length === 0 ? (
         <div className={lbStyles.emptyState}>{tl("lb_empty")}</div>
       ) : (
-        <div className={lbStyles.tableWrapper}>
-          <table className={lbStyles.table}>
-            <thead>
-              <tr>
-                <th className={lbStyles.th}>#</th>
-                <th className={lbStyles.th}>{tlb("col_player")}</th>
-                {activeTab === "levelup" ? (
-                  <>
-                    <th className={lbStyles.th}>{tlb("sort_accuracy")}</th>
-                    <th className={lbStyles.th}>{tlb("col_level")}</th>
-                  </>
-                ) : (
-                  <>
-                    <th className={lbStyles.th}>{tlb("sort_accuracy")}</th>
-                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>{tlb("col_games")}</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((entry, idx) => {
-                const rank = idx + 1;
-                const isMe = entry.player_id === "p1";
-                return (
-                  <tr
-                    key={entry.player_id}
-                    className={`${lbStyles.row} ${isMe ? lbStyles.rowHighlight : ""}`}
-                  >
-                    <td className={lbStyles.rankCell}>{renderRank(rank)}</td>
-                    <td className={lbStyles.playerCell}><PlayerCell entry={entry} /></td>
-                    {activeTab === "levelup" ? (
-                      <>
-                        <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.best_accuracy} /></td>
-                        <td className={lbStyles.levelCell}><span className={lbStyles.levelValue}>Lvl {entry.current_level}</span></td>
-                      </>
-                    ) : (
-                      <>
-                        <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.avg_accuracy} /></td>
-                        <td className={`${lbStyles.gamesCell} ${lbStyles.gamesCellDesktop}`}>{formatNumber(entry.games_played)}</td>
-                      </>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className={`${lbStyles.card} ${lbStyles.list} ${styles.lbCard}`}>
+          {filteredRows.map((entry, idx) => {
+            const rank = idx + 1;
+            const isMe = entry.player_id === "p1";
+            return (
+              <div key={entry.player_id} className={`${lbStyles.listRow} ${isMe ? lbStyles.listRowMe : ""}`}>
+                <span className={lbStyles.listRank}>{renderRank(rank)}</span>
+                {avatarNode(entry)}
+                <div className={lbStyles.listNameCol}>
+                  <span className={lbStyles.listName}>
+                    <span className={styles.lbNameText}>{entry.display_name}</span>
+                    {entry.is_ai ? <span className={lbStyles.aiBadge}>AI</span> : null}
+                  </span>
+                  <span className={lbStyles.listMeta}>{subtitleFor(entry)}</span>
+                </div>
+                <div className={lbStyles.listScoreCol}>
+                  {activeTab === "levelup" ? (
+                    <>
+                      <span className={lbStyles.listScore} style={{ color: "var(--gh-violet)" }}>{tlb("level_subtitle", { n: entry.current_level })}</span>
+                      <span className={lbStyles.listAcc}>{accuracyNode(entry.best_accuracy)}</span>
+                    </>
+                  ) : (
+                    <span className={lbStyles.listScore}>{accuracyNode(entry.avg_accuracy)}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -562,6 +515,7 @@ export default function LandingV2Prototype() {
   const tlb = useTranslations("leaderboard");
   const tn = useTranslations("nav");
   const trk = useTranslations("rank");
+  const tgd = useTranslations("grow_deck");
   const [guestBusy, setGuestBusy] = useState(false);
   const [guestError, setGuestError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -577,10 +531,18 @@ export default function LandingV2Prototype() {
 
   // Scroll reveal
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
+    if (typeof IntersectionObserver === "undefined") {
+      // No IntersectionObserver: show everything instead of leaving sections invisible.
+      const all: Record<string, boolean> = {};
+      document.querySelectorAll("[data-reveal]").forEach((el) => {
+        if (el.id) all[el.id] = true;
+      });
+      setRevealed(all);
+      return;
+    }
     const obs = new IntersectionObserver(
       (entries) => {
-        const ids = entries.map((e) => e.target.id).filter(Boolean) as string[];
+        const ids = entries.filter((e) => e.isIntersecting).map((e) => e.target.id).filter(Boolean) as string[];
         if (ids.length === 0) return;
         setRevealed((prev) => {
           const next = { ...prev };
@@ -588,7 +550,7 @@ export default function LandingV2Prototype() {
           return next;
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -60px 0px" }
+      { threshold: 0.05, rootMargin: "0px 0px -40px 0px" }
     );
     document.querySelectorAll("[data-reveal]").forEach((el) => obs.observe(el));
     return () => obs.disconnect();
@@ -601,6 +563,20 @@ export default function LandingV2Prototype() {
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close the mobile menu on Escape or when the page scrolls away from where it opened
+  useEffect(() => {
+    if (!menuOpen) return;
+    const startY = window.scrollY;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
+    const onScroll = () => { if (Math.abs(window.scrollY - startY) > 80) setMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [menuOpen]);
 
   // Show topbar logo + Play Now only when the hero logo and CTA are hidden by the topbar
   useEffect(() => {
@@ -823,7 +799,7 @@ export default function LandingV2Prototype() {
               {tl("play_now")}
             </button>
             {guestError && (
-              <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
+              <span role="alert" className={styles.errorInline}>
                 {guestError}
               </span>
             )}
@@ -865,10 +841,12 @@ export default function LandingV2Prototype() {
             </button>
             <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }} className={styles.ghostBtn}>{tl("signin_signup")}</a>
           </div>
-          {guestError && (
-            <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
+          {guestError ? (
+            <p role="alert" className={styles.errorText}>
               {guestError}
             </p>
+          ) : (
+            <p className={styles.heroNote}>{tl("hero_note")}</p>
           )}
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
@@ -878,6 +856,7 @@ export default function LandingV2Prototype() {
                 onClick={() => setHeroIndex(i)}
                 className={`${styles.heroDot} ${i === heroIndex ? styles.heroDotActive : ""}`}
                 aria-label={tl("slide_n", { n: i + 1 })}
+                aria-current={i === heroIndex}
               />
             ))}
           </div>
@@ -995,21 +974,32 @@ export default function LandingV2Prototype() {
                   </div>
                 )}
               </div>
-              <div className={styles.demoProgress}>
+              <div className={styles.demoProgress} role="img" aria-label={tl("phase_n", { n: demoPhase + 1 })}>
                 {[0, 1, 2, 3].map((p) => (
-                  <button
+                  <span
                     key={p}
-                    type="button"
+                    aria-hidden="true"
                     className={`${styles.demoDot} ${p === demoPhase ? styles.demoDotActive : ""}`}
-                    aria-label={tl("phase_n", { n: p + 1 })}
                   />
                 ))}
               </div>
-              <div className={styles.demoCaption}>
+              <div className={styles.demoCaption} aria-live="off">
                 <p className={styles.demoPhaseTitle}>{phaseTitle}</p>
                 <p className={styles.demoPhaseBody}>{phaseBody}</p>
               </div>
             </div>
+          </div>
+
+          <div className={`${styles.midCta} ${revealed.how ? styles.in : ""}`}>
+            <button
+              type="button"
+              onClick={() => void playAsGuest()}
+              disabled={guestBusy || !hydrated}
+              className={styles.playNowBtn}
+            >
+              {guestBusy ? tl("starting") : tl("play_now")}
+            </button>
+            <p className={styles.midCtaNote}>{tl("hero_note")}</p>
           </div>
         </div>
       </section>
@@ -1219,101 +1209,45 @@ export default function LandingV2Prototype() {
               </div>
             </div>
 
-            <div className={styles.funCard}>
+            <div className={`${styles.funCard} ${styles.avatarCard}`}>
               <h4 className={styles.funCardH4}>{tl("avatars")}</h4>
               <p className={styles.funCardDesc}>{tl("avatars_desc")}</p>
-              <div style={{ overflow: "hidden", width: "100%", marginTop: 16 }}>
+              <div className={styles.avatarViewport}>
                 <div
-                  style={{
-                    display: "flex",
-                    width: `${AVATAR_PREVIEWS.length * 100}%`,
-                    transform: `translateX(-${(avatarIndex * 100) / AVATAR_PREVIEWS.length}%)`,
-                    transition: "transform 0.6s ease",
-                  }}
+                  className={styles.avatarTrack}
+                  style={{ transform: `translateX(-${avatarIndex * 100}%)` }}
                 >
-                  {AVATAR_PREVIEWS.map((a) => (
-                    <div
-                      key={a.name}
-                      style={{
-                        width: `${100 / AVATAR_PREVIEWS.length}%`,
-                        flexShrink: 0,
-                        padding: "0 8px",
-                        boxSizing: "border-box",
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: "var(--gh-glass-bg)",
-                          borderRadius: "var(--gh-radius-md)",
-                          padding: "20px 24px",
-                          textAlign: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 96,
-                            height: 96,
-                            borderRadius: "50%",
-                            padding: 3,
-                            background: "linear-gradient(135deg, #f9a8d4, #fde047)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            margin: "0 auto 12px",
-                          }}
-                        >
+                  {AVATAR_PREVIEWS.map((a, i) => (
+                    <div key={a.name} className={styles.avatarSlide} aria-hidden={i !== avatarIndex}>
+                      <div className={styles.avatarPerson}>
+                        <div className={styles.avatarRing}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={toProxiedImageUrl(a.url) ?? ""}
                             alt={a.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                              border: "2px solid var(--gh-bg-surface)",
-                            }}
+                            className={styles.avatarPhoto}
+                            loading="lazy"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                           />
                         </div>
-                        <h5
-                          className="font-bebas"
-                          style={{
-                            fontSize: 20,
-                            fontWeight: 700,
-                            marginBottom: 6,
-                            color: "var(--gh-text-primary)",
-                            letterSpacing: "0.02em",
-                          }}
-                        >
-                          {a.name}
-                        </h5>
-                        <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--gh-text-muted)", marginBottom: 10 }}>
-                          {tl(`avatar_${a.key}`)}
-                        </p>
-                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)", marginBottom: 4 }}>{tl("born_label", { info: a.born.replace(/^Born:\s*/, "") })}</p>
-                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)" }}>{tl("died_label", { info: a.died.replace(/^Died:\s*/, "") })}</p>
+                        <h5 className={`font-bebas ${styles.avatarPersonName}`}>{a.name}</h5>
+                        <p className={styles.avatarPersonDesc}>{tl(`avatar_${a.key}`)}</p>
+                        <p className={styles.avatarPersonMeta}>{tl("born_label", { info: a.born.replace(/^Born:\s*/, "") })}</p>
+                        <p className={styles.avatarPersonMeta}>{tl("died_label", { info: a.died.replace(/^Died:\s*/, "") })}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+              <div className={styles.avatarDots}>
                 {AVATAR_PREVIEWS.map((a, i) => (
                   <button
                     key={a.name}
                     type="button"
                     aria-label={tl("avatar_show", { name: a.name })}
+                    aria-current={i === avatarIndex}
                     onClick={() => setAvatarIndex(i)}
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      background: i === avatarIndex ? "var(--gh-text-primary)" : "var(--gh-text-muted)",
-                      opacity: i === avatarIndex ? 1 : 0.5,
-                    }}
+                    className={`${styles.avatarDot} ${i === avatarIndex ? styles.avatarDotActive : ""}`}
                   />
                 ))}
               </div>
@@ -1344,6 +1278,26 @@ export default function LandingV2Prototype() {
         </div>
       </section>
 
+      {/* ── FAQ ── */}
+      <section className={styles.sec} id="faq" data-reveal="faq">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.faq ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>{tl("faq_eyebrow")}</span>
+            </p>
+            <h2 className={styles.secHeadH2}>{tl("faq_title")}</h2>
+          </div>
+          <div className={`${styles.faqList} ${revealed.faq ? styles.in : ""}`}>
+            {[1, 2, 3, 4].map((n) => (
+              <details key={n} className={styles.faqItem}>
+                <summary className={styles.faqQ}>{tl(`faq_q${n}`)}</summary>
+                <p className={styles.faqA}>{tl(`faq_a${n}`)}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FINAL CTA ── */}
       <section className={styles.final} id="play" data-reveal="play">
         <div className={styles.finalBg}>
@@ -1368,7 +1322,7 @@ export default function LandingV2Prototype() {
               {guestBusy ? tl("starting") : tl("play_now")}
             </button>
             {guestError && (
-              <p role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginTop: 12 }}>
+              <p role="alert" className={styles.errorText}>
                 {guestError}
               </p>
             )}
@@ -1386,12 +1340,18 @@ export default function LandingV2Prototype() {
           <a href="#ai">{tl("footer_ai")}</a>
           <a href="#explore">{tl("nav_explore")}</a>
           <a href="#fun">{tl("footer_why")}</a>
+          <a href="#faq">{tl("faq_title")}</a>
           <a href="/" onClick={(e) => { e.preventDefault(); if (!hydrated) return; void playAsGuest(); }}>{tl("play_now")}</a>
           {guestError && (
-            <span role="alert" style={{ color: "var(--gh-danger)", fontSize: "var(--font-sm)", marginLeft: 8 }}>
+            <span role="alert" className={styles.errorInline}>
               {guestError}
             </span>
           )}
+        </div>
+        <div className={styles.footerLinks}>
+          <a href="/help">{tn("help")}</a>
+          <a href="/privacy">{tgd("footer_link_privacy")}</a>
+          <a href="/terms">{tgd("footer_link_terms")}</a>
         </div>
         <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
       </footer>

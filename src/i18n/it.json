@@ -930,7 +930,18 @@
     "final_sub": "Nessun download. Nessun costo. Solo curiosità.",
     "footer_disc": "Tutte le immagini degli eventi sono ricostruzioni generate dall'IA basate su ricerche storiche. Sono illustrazioni, non fotografie.",
     "phase_n": "Fase {n}",
-    "demo_place_name": "Berlino, Germania"
+    "demo_place_name": "Berlino, Germania",
+    "hero_note": "Gratis · Nessun download · Nessun account",
+    "faq_eyebrow": "Da sapere",
+    "faq_title": "Risposte rapide",
+    "faq_q1": "È davvero gratis?",
+    "faq_a1": "Sì. Giocare è gratis: nessun download e nessun pagamento.",
+    "faq_q2": "Mi serve un account?",
+    "faq_a2": "No. Tocca Gioca ora e in pochi secondi sei in partita. Registrati quando vuoi per conservare i progressi e giocare con gli amici.",
+    "faq_q3": "Le immagini sono foto reali?",
+    "faq_a3": "No. Ogni immagine è una ricostruzione creata con l'IA a partire da ricerche storiche e verificata da persone: un'illustrazione, non una fotografia.",
+    "faq_q4": "Posso giocare con gli amici?",
+    "faq_a4": "Sì. Crea una lobby, condividi il codice della stanza e sfida gli altri dal vivo o con i tuoi tempi, fino a 8 giocatori."
   },
   "rank": {
     "rank_label": "Rango",

@@ -930,7 +930,18 @@
     "final_sub": "No download. No cost. Just curiosity.",
     "footer_disc": "All event images are AI-generated reconstructions based on historical research. They are illustrations, not photographs.",
     "phase_n": "Phase {n}",
-    "demo_place_name": "Berlin, Germany"
+    "demo_place_name": "Berlin, Germany",
+    "hero_note": "Free to play · No download · No account needed",
+    "faq_eyebrow": "Good to know",
+    "faq_title": "Quick answers",
+    "faq_q1": "Is it really free?",
+    "faq_a1": "Yes. Playing is free — no download and no payment needed.",
+    "faq_q2": "Do I need an account?",
+    "faq_a2": "No. Tap Play Now and you're in a game within seconds. Sign up whenever you want to keep your progress and play with friends.",
+    "faq_q3": "Are the images real photos?",
+    "faq_a3": "No. Every image is an AI reconstruction based on historical research and checked by humans — an illustration, not a photograph.",
+    "faq_q4": "Can I play with friends?",
+    "faq_a4": "Yes. Create a lobby, share the room code, and compete live or at your own pace with up to 8 players."
   },
   "rank": {
     "rank_label": "Rank",
