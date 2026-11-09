@@ -108,7 +108,10 @@ describe("scrubDescription", () => {
   });
 
   it("fails closed when a leak survives scrubbing (ok=false)", () => {
-    const r = scrubDescription("In 44 BCE, the 40s crowd gathered in Rome.", {
+    // AIP-BUILD-DEDUCTFIX-1109-023: "the 40s" is now covered by the widened
+    // R2 decade rule, so the surviving leak uses a bare "40s" (no the/early/
+    // mid/late prefix, no era suffix) which R5 still catches.
+    const r = scrubDescription("In 44 BCE, 40s crowds gathered in Rome.", {
       eventYear: -44,
       title: "Assassination of Caesar",
       displayName: "Rome, Italy",
@@ -179,6 +182,149 @@ describe("scrubDescription", () => {
     const twice = scrubDescription(once.text, ctx);
     expect(twice.text).toBe(once.text);
     expect(twice.ok).toBe(once.ok);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AIP-BUILD-DEDUCTFIX-1109-023 — widened scrub coverage + placeholders.
+// "clean" = ok=true with no residual reasons (fail-closed would also satisfy
+// the spec's fallback definition, but every fixture below scrubs cleanly).
+// ---------------------------------------------------------------------------
+
+describe("scrubDescription widened coverage + placeholders", () => {
+  const C = (
+    eventYear: number,
+    extra: Partial<DeductionScrubContext> = {}
+  ): DeductionScrubContext => ({
+    eventYear,
+    title: "Fixture Title",
+    displayName: null,
+    country: null,
+    continent: null,
+    ...extra,
+  });
+
+  const clean: [string, string, DeductionScrubContext][] = [
+    ["A1", "In AD 79 the town was buried.", C(79)],
+    ["A2", "in 79 CE and later", C(79)],
+    ["A4-BCE", "in 426 BCE", C(-426)],
+    ["A4-B.C.", "in 426 B.C.", C(-426)],
+    ["A4-420sBCE", "in the 420s BCE", C(-426)],
+    ["A4-mid420s", "in the mid-420s BC", C(-426)],
+    ["A5-spelledYear", "in nineteen sixty-nine", C(1969)],
+    ["A5-19thC", "in the nineteenth century", C(1969)],
+    ["A5-20thC", "in the twentieth century", C(1969)],
+    ["A6-apos69", "in '69", C(1969)],
+    ["A6-apos60s", "the '60s", C(1969)],
+    ["A6-sixties", "the sixties", C(1969)],
+    ["A6-late1960s", "late 1960s", C(1969)],
+    ["A6-rangeSlash", "in 1969/70", C(1969)],
+    ["A6-rangeDash", "in 1969-70", C(1969)],
+    ["A6-commaYear", "in 1,969", C(1969)],
+  ];
+  for (const [name, text, c] of clean) {
+    it(`${name}: ${JSON.stringify(text)}`, () => {
+      const r = scrubDescription(text, c);
+      expect(r.ok).toBe(true);
+      expect(r.reasons).toEqual([]);
+    });
+  }
+
+  it("A1 leaves no bare AD residue", () => {
+    const r = scrubDescription("In AD 79 the town was buried.", C(79));
+    expect(r.ok).toBe(true);
+    expect(r.text).toBe("In [year] the town was buried.");
+    expect(r.text).not.toMatch(/\bAD\b/);
+  });
+
+  it("A7 produces the exact placeholder text", () => {
+    const r = scrubDescription("On 14 July 1789 the prison fell", C(1789));
+    expect(r.ok).toBe(true);
+    expect(r.text).toBe("On 14 July [year] the prison fell");
+  });
+
+  it("A5 MCMLXIX is unchanged (Roman numerals are documented INFO)", () => {
+    const r = scrubDescription("MCMLXIX", C(1969));
+    expect(r.ok).toBe(true);
+    expect(r.text).toBe("MCMLXIX");
+  });
+
+  it("A8 accent-folded place matching; demonyms/alt names unchanged (INFO)", () => {
+    const krakow = C(1241, {
+      displayName: "Kraków, Lesser Poland, Poland",
+      country: "Poland",
+      continent: "Europe",
+    });
+    for (const t of ["The army reached Krakow in force.", "The army reached Kraków in force."]) {
+      const r = scrubDescription(t, krakow);
+      expect(r.ok).toBe(true);
+      expect(r.text).toContain("[place]");
+      expect(r.text).not.toMatch(/Krakow|Kraków/i);
+    }
+    for (const t of ["Polish forces advanced.", "Poles cheered.", "Cracow fell."]) {
+      const r = scrubDescription(t, krakow);
+      expect(r.ok).toBe(true);
+      expect(r.text).toBe(t);
+    }
+  });
+
+  it("A9 US/UK aliases apply; demonym unchanged (INFO)", () => {
+    const us = C(1776, { country: "United States", continent: "North America" });
+    expect(scrubDescription("the U.S. army", us).text).toBe("the [place] army");
+    expect(scrubDescription("USA troops", us).text).toBe("[place] troops");
+    expect(scrubDescription("United States forces", us).text).toBe("[place] forces");
+    expect(scrubDescription("American troops", us).text).toBe("American troops");
+  });
+
+  it("A10 short place forms are case-sensitive: pronoun 'us' survives", () => {
+    const us = C(1776, { country: "US", continent: "North America" });
+    expect(scrubDescription("give us time", us).text).toBe("give us time");
+    expect(scrubDescription("US forces", us).text).toBe("[place] forces");
+  });
+
+  it("A11 title-word overlap is BY DESIGN — description unchanged", () => {
+    // "Hastings" is not a place form of this context, and R4 only removes the
+    // full title string, so single-word overlap with the title is preserved.
+    const r = scrubDescription("The battle near Hastings was decisive.", C(1066, {
+      title: "Battle of Hastings",
+      displayName: "Normandy, France",
+      country: "France",
+      continent: "Europe",
+    }));
+    expect(r.ok).toBe(true);
+    expect(r.text).toBe("The battle near Hastings was decisive.");
+  });
+
+  it("A12 anniversary phrases unchanged (INFO)", () => {
+    for (const t of ["the 10th anniversary", "25th anniversary of the event"]) {
+      const r = scrubDescription(t, C(1950));
+      expect(r.ok).toBe(true);
+      expect(r.text).toBe(t);
+    }
+  });
+
+  it("A13 eventYear 0/1 over-scrubs ordinary counts (documented behaviour)", () => {
+    // The literal eventYear is treated as a year token even when it is 0 or 1.
+    expect(scrubDescription("0 casualties reported", C(0)).text).toBe(
+      "[year] casualties reported"
+    );
+    expect(scrubDescription("1 fleet sighted", C(1)).text).toBe("[year] fleet sighted");
+  });
+
+  it("punctuation: no ',,' or ',.' artifacts survive", () => {
+    const r = scrubDescription("On March 29, 1458, Matthias was crowned.", C(1458));
+    expect(r.ok).toBe(true);
+    expect(r.text).not.toMatch(/,,|,\./);
+    expect(r.text).toContain("[year]");
+
+    const r2 = scrubDescription("Expo '74 was held in Spokane, Washington.", C(1974, {
+      displayName: "Spokane, Washington, United States",
+      country: "United States",
+      continent: "North America",
+    }));
+    expect(r2.ok).toBe(true);
+    expect(r2.text).not.toMatch(/74|Spokane/);
+    expect(r2.text).toContain("[place]");
   });
 });
 
@@ -264,15 +410,18 @@ const T3_TRUE: DeductionPoolEvent = {
   country: "United Kingdom",
 };
 
+// AIP-BUILD-DEDUCTFIX-1109-023: decoys need displayName or country to be
+// eligible (they are scrubbed symmetrically); displayName/country words are
+// kept disjoint from the titles so titles scrub to themselves.
 const T3_POOL: DeductionEventCore[] = [
-  { id: "d1", title: "Berlin Wall Construction", year: 1961, continent: "Europe" },
-  { id: "d2", title: "Treaty of Rome Signing", year: 1957, continent: "Europe" },
-  { id: "d3", title: "Alpine Tunnel Completion", year: 1970, continent: "Europe" },
-  { id: "d4", title: "Baltic Fleet Review", year: 1965, continent: "Europe" },
-  { id: "d5", title: "Pyrenees Railway Opening", year: 1964, continent: "Europe" },
-  { id: "x-cont", title: "Desert Caravan Arrival", year: 1969, continent: "Africa" },
-  { id: "x-year", title: "Ancient Script Discovery", year: 1800, continent: "Europe" },
-  { id: "x-dup", title: "Summer Games Opening", year: 1968, continent: "Europe" },
+  { id: "d1", title: "Berlin Wall Construction", year: 1961, continent: "Europe", displayName: "Paris, France", country: "France" },
+  { id: "d2", title: "Treaty of Rome Signing", year: 1957, continent: "Europe", displayName: "Lyon, France", country: "France" },
+  { id: "d3", title: "Alpine Tunnel Completion", year: 1970, continent: "Europe", displayName: "Zurich, Switzerland", country: "Switzerland" },
+  { id: "d4", title: "Baltic Fleet Review", year: 1965, continent: "Europe", displayName: "Stockholm, Sweden", country: "Sweden" },
+  { id: "d5", title: "Pyrenees Railway Opening", year: 1964, continent: "Europe", displayName: "Madrid, Spain", country: "Spain" },
+  { id: "x-cont", title: "Desert Caravan Arrival", year: 1969, continent: "Africa", displayName: "Cairo, Egypt", country: "Egypt" },
+  { id: "x-year", title: "Ancient Script Discovery", year: 1800, continent: "Europe", displayName: "Athens, Greece", country: "Greece" },
+  { id: "x-dup", title: "Summer Games Opening", year: 1968, continent: "Europe", displayName: "Paris, France", country: "France" },
 ];
 
 describe("buildT3Item", () => {
@@ -321,60 +470,113 @@ describe("buildT3Item", () => {
 
   it("counts duplicate decoy titles once toward the 4 needed", () => {
     const dupPool: DeductionEventCore[] = [
-      { id: "d1", title: "Alpha Event", year: 1960, continent: "Europe" },
-      { id: "d2", title: "Beta Event", year: 1965, continent: "Europe" },
-      { id: "d3", title: "Gamma Event", year: 1970, continent: "Europe" },
-      { id: "d4", title: "Beta Event", year: 1971, continent: "Europe" },
+      { id: "d1", title: "Alpha Event", year: 1960, continent: "Europe", displayName: "Paris, France", country: "France" },
+      { id: "d2", title: "Beta Event", year: 1965, continent: "Europe", displayName: "Lyon, France", country: "France" },
+      { id: "d3", title: "Gamma Event", year: 1970, continent: "Europe", displayName: "Nice, France", country: "France" },
+      { id: "d4", title: "Beta Event", year: 1971, continent: "Europe", displayName: "Paris, France", country: "France" },
     ];
     const r = buildT3Item(T3_TRUE, dupPool, "salt-1");
     expect(r).toEqual({ ok: false, reason: "insufficient_decoys" });
   });
 
-  it("fails closed on option_title_leak: 4-digit year in a decoy title", () => {
+  // AIP-BUILD-DEDUCTFIX-1109-023: leaking titles are now scrubbed with each
+  // option event's OWN context; option_title_leak only fires when the residual
+  // check still fails after that scrub.
+  const T3_LEAKY_BASE: DeductionEventCore[] = [
+    { id: "d1", title: "Alpha Event", year: 1960, continent: "Europe", displayName: "Paris, France", country: "France" },
+    { id: "d2", title: "Beta Event", year: 1965, continent: "Europe", displayName: "Lyon, France", country: "France" },
+    { id: "d3", title: "Gamma Event", year: 1970, continent: "Europe", displayName: "Nice, France", country: "France" },
+  ];
+
+  it("scrubs a 4-digit year in a decoy title to [year] instead of rejecting", () => {
     const leaky: DeductionEventCore[] = [
-      { id: "d1", title: "Alpha Event", year: 1960, continent: "Europe" },
-      { id: "d2", title: "Beta Event", year: 1965, continent: "Europe" },
-      { id: "d3", title: "Gamma Event", year: 1970, continent: "Europe" },
-      { id: "dl", title: "The 1957 Treaty Details", year: 1960, continent: "Europe" },
+      ...T3_LEAKY_BASE,
+      { id: "dl", title: "The 1957 Treaty Details", year: 1960, continent: "Europe", displayName: "Paris, France", country: "France" },
     ];
-    expect(buildT3Item(T3_TRUE, leaky, "salt-1")).toEqual({
-      ok: false,
-      reason: "option_title_leak",
-    });
+    const r = buildT3Item(T3_TRUE, leaky, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.options.map((o) => o.title)).toContain("The [year] Treaty Details");
   });
 
-  it("fails closed on option_title_leak: place token in a decoy title", () => {
+  it("scrubs a place token in a decoy title to [place] instead of rejecting", () => {
     const leaky: DeductionEventCore[] = [
-      { id: "d1", title: "Alpha Event", year: 1960, continent: "Europe" },
-      { id: "d2", title: "Beta Event", year: 1965, continent: "Europe" },
-      { id: "d3", title: "Gamma Event", year: 1970, continent: "Europe" },
-      { id: "dl", title: "London Eye Construction", year: 1960, continent: "Europe" },
+      ...T3_LEAKY_BASE,
+      { id: "dl", title: "London Eye Construction", year: 1960, continent: "Europe", displayName: "London, United Kingdom", country: "United Kingdom" },
     ];
-    expect(buildT3Item(T3_TRUE, leaky, "salt-1")).toEqual({
-      ok: false,
-      reason: "option_title_leak",
-    });
+    const r = buildT3Item(T3_TRUE, leaky, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.options.map((o) => o.title)).toContain("[place] Eye Construction");
   });
 
-  it("fails closed on option_title_leak: year-like token in a decoy title", () => {
+  it("scrubs a year-like token in a decoy title instead of rejecting", () => {
     const leaky: DeductionEventCore[] = [
-      { id: "d1", title: "Alpha Event", year: 1960, continent: "Europe" },
-      { id: "d2", title: "Beta Event", year: 1965, continent: "Europe" },
-      { id: "d3", title: "Gamma Event", year: 1970, continent: "Europe" },
-      { id: "dl", title: "Events of the 1960s", year: 1960, continent: "Europe" },
+      ...T3_LEAKY_BASE,
+      { id: "dl", title: "Events of the 1960s", year: 1960, continent: "Europe", displayName: "Paris, France", country: "France" },
     ];
-    expect(buildT3Item(T3_TRUE, leaky, "salt-1")).toEqual({
-      ok: false,
-      reason: "option_title_leak",
-    });
+    const r = buildT3Item(T3_TRUE, leaky, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.options.map((o) => o.title)).toContain("Events of the [year]");
   });
 
-  it("fails closed when the TRUE title itself leaks", () => {
+  it("scrubs the TRUE title itself instead of rejecting", () => {
     const trueLeak: DeductionPoolEvent = { ...T3_TRUE, title: "The 1923 Games" };
-    expect(buildT3Item(trueLeak, T3_POOL, "salt-1")).toEqual({
+    const r = buildT3Item(trueLeak, T3_POOL, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const answer = r.options.find((o) => o.id === r.answerId);
+    expect(answer?.title).toBe("The [year] Games");
+  });
+
+  it("fails closed on option_title_leak when a scrubbed title still leaks", () => {
+    // "40s Files" keeps a bare "40s" (no the/early/mid/late prefix, no era
+    // suffix) which survives R2 and trips the R5 decade residual for year 44.
+    const trueEv: DeductionPoolEvent = {
+      id: "e-45",
+      title: "Ancient Uprising",
+      year: 45,
+      continent: "Europe",
+      displayName: "Rome, Italy",
+      country: "Italy",
+    };
+    const pool: DeductionEventCore[] = [
+      { id: "d1", title: "Alpha Event", year: 40, continent: "Europe", displayName: "Paris, France", country: "France" },
+      { id: "d2", title: "Beta Event", year: 50, continent: "Europe", displayName: "Lyon, France", country: "France" },
+      { id: "d3", title: "Gamma Event", year: 47, continent: "Europe", displayName: "Nice, France", country: "France" },
+      { id: "dl", title: "40s Files", year: 44, continent: "Europe", displayName: "Paris, France", country: "France" },
+    ];
+    expect(buildT3Item(trueEv, pool, "salt-1")).toEqual({
       ok: false,
       reason: "option_title_leak",
     });
+  });
+
+  it("skips decoy candidates that carry neither displayName nor country", () => {
+    const noCtx: DeductionEventCore[] = [
+      { id: "n1", title: "No Context One", year: 1960, continent: "Europe" },
+      { id: "n2", title: "No Context Two", year: 1965, continent: "Europe" },
+      { id: "n3", title: "No Context Three", year: 1970, continent: "Europe" },
+      { id: "n4", title: "No Context Four", year: 1962, continent: "Europe" },
+      { id: "n5", title: "No Context Five", year: 1968, continent: "Europe" },
+    ];
+    // Only 3 context-carrying decoys exist -> insufficient_decoys despite 8 raw candidates.
+    const threeCtx: DeductionEventCore[] = [...T3_LEAKY_BASE, ...noCtx];
+    expect(buildT3Item(T3_TRUE, threeCtx, "salt-1")).toEqual({
+      ok: false,
+      reason: "insufficient_decoys",
+    });
+    // A 4th context-carrying decoy makes the item build; context-less titles never appear.
+    const fourCtx: DeductionEventCore[] = [
+      ...threeCtx,
+      { id: "d4", title: "Delta Event", year: 1963, continent: "Europe", displayName: "Paris, France", country: "France" },
+    ];
+    const r = buildT3Item(T3_TRUE, fourCtx, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const titles = r.options.map((o) => o.title);
+    for (const n of noCtx) expect(titles).not.toContain(n.title);
   });
 });
 
@@ -815,5 +1017,98 @@ describe("summarizeLadder", () => {
       firstStepAt90: null,
       brier: null,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AIP-BUILD-DEDUCTFIX-1109-023 — answer-position distribution proofs.
+// ---------------------------------------------------------------------------
+
+/** Deterministic synthetic pool: 48 same-continent events, unique titles, full scrub context + hints. */
+function synthPool(): DeductionPoolEvent[] {
+  return Array.from({ length: 48 }, (_, i) => ({
+    id: `syn-${i}`,
+    title: `Synthetic Event ${i}`,
+    year: 1900 + ((i * 37) % 110),
+    continent: "Europe",
+    displayName: `City${i}, Country${i}`,
+    country: `Country${i}`,
+    hints: [
+      { tier: 3, type: "when", content: `When clue alpha ${i}` },
+      { tier: 3, type: "when", content: `When clue beta ${i}` },
+      { tier: 4, type: "where", content: `Where clue gamma ${i}` },
+      { tier: 4, type: "where", content: `Where clue delta ${i}` },
+    ],
+  }));
+}
+const SYN_POOL = synthPool();
+const T4_DIST_SLOT = { tier: 3, type: "when" };
+
+function letterCounts(letters: string[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const l of letters) out[l] = (out[l] ?? 0) + 1;
+  return out;
+}
+
+describe("answer-position distribution", () => {
+  it("T3 answerId letters stay within 15-25% over >=2000 (event,salt) pairs", () => {
+    const letters: string[] = [];
+    for (let i = 0; i < 2200; i++) {
+      const event = SYN_POOL[i % SYN_POOL.length];
+      const r = buildT3Item(event, SYN_POOL, `audit-${i}`);
+      if (!r.ok) throw new Error(`unexpected T3 failure: ${JSON.stringify(r)}`);
+      letters.push(r.answerId);
+    }
+    const counts = letterCounts(letters);
+    console.log("T3 answerId distribution (n=%d):", letters.length, counts);
+    for (const L of ["a", "b", "c", "d", "e"]) {
+      const pct = (counts[L] ?? 0) / letters.length;
+      expect(pct).toBeGreaterThanOrEqual(0.15);
+      expect(pct).toBeLessThanOrEqual(0.25);
+    }
+  });
+
+  it("T4 answerId letters stay within 20-30% over >=2000 pairs", () => {
+    const letters: string[] = [];
+    for (let i = 0; i < 2200; i++) {
+      const event = SYN_POOL[i % SYN_POOL.length];
+      const r = buildT4Item(event, SYN_POOL, T4_DIST_SLOT, `audit-${i}`);
+      if (!r.ok) throw new Error(`unexpected T4 failure: ${JSON.stringify(r)}`);
+      letters.push(r.answerId);
+    }
+    const counts = letterCounts(letters);
+    console.log("T4 answerId distribution (n=%d):", letters.length, counts);
+    for (const L of ["a", "b", "c", "d"]) {
+      const pct = (counts[L] ?? 0) / letters.length;
+      expect(pct).toBeGreaterThanOrEqual(0.2);
+      expect(pct).toBeLessThanOrEqual(0.3);
+    }
+  });
+
+  it("same inputs twice produce deep-equal results (T3 and T4)", () => {
+    const event = SYN_POOL[7];
+    expect(buildT3Item(event, SYN_POOL, "same-salt")).toEqual(
+      buildT3Item(event, SYN_POOL, "same-salt")
+    );
+    expect(buildT4Item(event, SYN_POOL, T4_DIST_SLOT, "same-salt")).toEqual(
+      buildT4Item(event, SYN_POOL, T4_DIST_SLOT, "same-salt")
+    );
+  });
+
+  it("changing only the salt changes T3 answerId for ~80% of a 200-event sample", () => {
+    let changed = 0;
+    let total = 0;
+    for (let i = 0; i < 200; i++) {
+      const event = SYN_POOL[i % SYN_POOL.length];
+      const a = buildT3Item(event, SYN_POOL, "salt-A");
+      const b = buildT3Item(event, SYN_POOL, "salt-B");
+      if (!a.ok || !b.ok) continue;
+      total++;
+      if (a.answerId !== b.answerId) changed++;
+    }
+    const rate = changed / total;
+    console.log(`T3 salt-flip rate: ${changed}/${total} = ${rate.toFixed(3)}`);
+    expect(rate).toBeGreaterThanOrEqual(0.6);
+    expect(rate).toBeLessThanOrEqual(0.95);
   });
 });
