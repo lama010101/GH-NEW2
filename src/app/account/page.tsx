@@ -1,6 +1,6 @@
 'use client'
 
-import { DM_Sans } from 'next/font/google'
+import { dmSans } from '@/lib/fonts'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
@@ -16,8 +16,6 @@ import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
 import NotificationPreferencesSection from '@/components/NotificationPreferencesSection'
 import GetAppCard from '@/components/GetAppCard'
-
-const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
 
 type AvatarInfo = {
   name: string

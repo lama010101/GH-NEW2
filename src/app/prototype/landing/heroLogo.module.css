@@ -1,0 +1,47 @@
+/*
+  Timeline (14 letters, --i = 0..13):
+    B  pop & wobble   0.0s  -> ~1.2s   (letters pop in, one wobble each)
+    G  wave           1.0s  -> ~2.7s   (2 ripples through the letters)
+    F  shine sweep    2.7s  -> forever (the only permanent animation):
+                      one 0.84s sweep, then a 3s pause, then repeat
+*/
+.logo {
+  overflow: visible;
+  filter: drop-shadow(0 6px 40px rgba(0,0,0,.5));
+}
+
+.letter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    pop .2333s cubic-bezier(.3,1.6,.5,1) both,
+    wobble .3667s ease-in-out,
+    wave .6s ease-in-out 2;
+  animation-delay:
+    calc(var(--i) * 23.33ms),
+    calc(var(--i) * 23.33ms + .5667s),
+    calc(var(--i) * 36.67ms + 1s);
+}
+
+@keyframes pop { 0% { opacity: 0; transform: scale(0); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+@keyframes wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+
+/* F — shine sweep, loops forever after the sequence: 0.84s sweep + 3s pause = 3.84s cycle */
+.shineBar {
+  transform: skewX(-18deg);
+  animation: shine 3.84s ease-in-out 2.7s infinite;
+}
+@keyframes shine {
+  0% { transform: translateX(0) skewX(-18deg); }
+  21.875%, 100% { transform: translateX(900px) skewX(-18deg); }
+}
+
+/* Shine-only variant (sign-in modal): no pop/wobble/wave, first sweep right after opening */
+.shineOnly .letter { animation: none; }
+.shineOnly .shineBar { animation-delay: .6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo, .letter { animation: none; }
+  .shineBar { display: none; }
+}

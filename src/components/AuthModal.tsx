@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import HeroLogo from "@/app/prototype/landing/HeroLogo";
 import { defaultLocale } from "@/i18n/config";
 import styles from "./AuthModal.module.css";
 
@@ -237,14 +238,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         </h2>
 
         <div className={styles.logoWrap}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/gh-wordmark.svg"
-            alt={tLanding('logo_alt')}
-            width={688}
-            height={474}
-            className={styles.logoImg}
-          />
+          <HeroLogo shineOnly label={tLanding('logo_alt')} className={styles.logoImg} />
         </div>
 
         <p className={styles.tagline}>

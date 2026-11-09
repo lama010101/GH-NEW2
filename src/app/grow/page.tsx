@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { DM_Sans } from 'next/font/google'
+import { dmSans } from '@/lib/fonts'
 import { getTranslations } from 'next-intl/server'
 import InvestorFooter from '@/components/grow/InvestorFooter'
 import InvestorProgress from '@/components/grow/InvestorProgress'
@@ -17,11 +17,6 @@ import Section09BusinessModel from '@/components/grow/Section09BusinessModel'
 import Section10Flywheel from '@/components/grow/Section10Flywheel'
 import Section11Platform from '@/components/grow/Section11Platform'
 import Section12Investment from '@/components/grow/Section12Investment'
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
-})
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('grow_deck')

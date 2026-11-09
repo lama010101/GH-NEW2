@@ -3,15 +3,13 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { DM_Sans } from 'next/font/google'
+import { dmSans } from '@/lib/fonts'
 import { useIdentity } from '@/hooks/useIdentity'
 import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import TopBar from '@/components/layout/TopBar'
 import { NavModal } from '@/components/NavModal'
 import styles from './help.module.css'
-
-const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500', '700'] })
 
 /* ---------- Static config (icons + gradients only — no user-facing strings) ---------- */
 
