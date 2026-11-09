@@ -107,7 +107,7 @@ function asStringArray(value: unknown): string[] {
   return value.filter((x): x is string => typeof x === "string" && x.length > 0);
 }
 
-function cleanJson(text: string): string {
+export function cleanJson(text: string): string {
   const trimmed = text
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")

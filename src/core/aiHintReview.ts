@@ -83,7 +83,7 @@ function tryParse(text: string): unknown {
 }
 
 /** Returns text[start..end] spanning a balanced open/close pair (string-aware). */
-function balancedSlice(text: string, start: number, open: string, close: string): string | null {
+export function balancedSlice(text: string, start: number, open: string, close: string): string | null {
   if (start < 0 || text[start] !== open) return null;
   let depth = 0;
   let inString = false;
