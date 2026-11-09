@@ -23,13 +23,16 @@ import {
   MIN_MATCH_SCORE,
   YEAR_TOLERANCE,
   classifyVerification,
+  closestYearQid,
   extractCoords,
   extractEventDates,
   isEventLike,
+  normalizeText,
   scoreCandidate,
   selectCandidate,
   type MatchCandidate,
   type VerificationStatus,
+  type WdDateRange,
   type WdEntity,
 } from "../../src/core/wikidataMatch";
 
@@ -406,6 +409,8 @@ type EventRow = {
   year_consistent_count: number | null;
   winner_year_consistent: boolean | null;
   runner_up_year_consistent: boolean | null;
+  /** RECALL-1101-032: qid uniquely picked by the same-label year preference. */
+  year_pref_qid: string | null;
   error?: string;
 };
 
@@ -452,6 +457,7 @@ async function verifyEvent(ev: DbEvent, fulltext: boolean): Promise<EventRow> {
     year_consistent_count: null,
     winner_year_consistent: null,
     runner_up_year_consistent: null,
+    year_pref_qid: null,
   };
 
   // Union hits across all query variants; keep per-query hit lists for the
@@ -515,7 +521,53 @@ async function verifyEvent(ev: DbEvent, fulltext: boolean): Promise<EventRow> {
     eventLike: isEventLike(e),
   }));
 
-  const selection = selectCandidate(candidates, scoreTitles);
+  let selection = selectCandidate(candidates, scoreTitles);
+
+  // EDQ-FIX-WIKIDATA-RECALL-1101-032 — same-label homonym year preference.
+  // When several search-hit entities carry the winner's exact normalized
+  // en-label, prefer the one whose Wikidata year range is uniquely closest
+  // to stored event_year ("Battle of Quang Tri" 1968 item vs a same-labelled
+  // sibling). A uniquely closest pick becomes — or keeps — the winner;
+  // classifyVerification still runs on it, so a wrong-year homonym reports
+  // "mismatch" with both years (Chlumec 1124 vs 1775), never auto-passed.
+  let yearPrefQid: string | null = null;
+  if (selection.winner) {
+    const winnerLabelNorm = normalizeText(selection.winner.label ?? "");
+    if (winnerLabelNorm !== "") {
+      const group: string[] = [selection.winner.qid];
+      for (const [qid, e] of Object.entries(entities)) {
+        if (qid === selection.winner.qid) continue;
+        if (normalizeText(entityLabel(e) ?? "") !== winnerLabelNorm) continue;
+        const s = scoreCandidate(
+          { label: entityLabel(e), aliases: entityAliases(e) },
+          scoreTitles
+        );
+        if (s.containment < MIN_MATCH_SCORE) continue;
+        group.push(qid);
+      }
+      if (group.length > 1) {
+        const datesByQid: Record<string, WdDateRange | null> = {};
+        for (const qid of group) {
+          datesByQid[qid] = entities[qid] ? extractEventDates(entities[qid]) : null;
+        }
+        const pick = closestYearQid(group, ev.event_year, datesByQid);
+        if (pick != null) {
+          yearPrefQid = pick;
+          if (pick !== selection.winner.qid || selection.kind === "ambiguous") {
+            const pc = candidates.find((c) => c.qid === pick);
+            selection = {
+              ...selection,
+              kind: "winner",
+              winner: pc
+                ? { ...pc, ...scoreCandidate(pc, scoreTitles) }
+                : selection.winner,
+            };
+          }
+        }
+      }
+    }
+  }
+
   const winnerEntity = selection.winner ? entities[selection.winner.qid] : undefined;
   const runnerUpEntity = selection.runnerUp ? entities[selection.runnerUp.qid] : undefined;
   const dates = winnerEntity ? extractEventDates(winnerEntity) : null;
@@ -588,6 +640,7 @@ async function verifyEvent(ev: DbEvent, fulltext: boolean): Promise<EventRow> {
   row.candidates = allDetails.slice(0, 5); // details jsonb: truncated to 5
   row.winner_year_consistent = winnerEntity ? yearConsistent(winnerEntity) : null;
   row.runner_up_year_consistent = runnerUpEntity ? yearConsistent(runnerUpEntity) : null;
+  row.year_pref_qid = yearPrefQid;
 
   // Ambiguous: the tie set = ranked event-like candidates within
   // MIN_MATCH_MARGIN of the winner (winner + runner-up at minimum).
@@ -635,7 +688,7 @@ const STATUS_ORDER: VerificationStatus[] = ["verified", "review", "mismatch", "a
 async function main() {
   const { limit, seed, write, runId, out, fulltext } = parseFlags();
   const startedAt = Date.now();
-  console.log("=== WIKIDATA VERIFY — EDQ-FIX-WIKIDATA-RECALL-1027-001 ===");
+  console.log("=== WIKIDATA VERIFY — EDQ-FIX-WIKIDATA-RECALL-1101-032 ===");
   console.log(`mode: ${write ? "WRITE (upserts to event_wikidata_verification)" : "DRY RUN — zero DB writes"}   fulltext: ${fulltext ? "ON" : "OFF"}`);
   console.log(`run_id: ${runId}   seed: ${seed}   limit: ${limit}`);
 
@@ -682,7 +735,7 @@ async function main() {
         reason: null, coords_unverifiable: false, candidates: [],
         query_hits: [], no_match_reason: null, tied_candidates: null,
         year_consistent_count: null, winner_year_consistent: null,
-        runner_up_year_consistent: null,
+        runner_up_year_consistent: null, year_pref_qid: null,
         error: err instanceof Error ? err.message : String(err),
       });
     }
@@ -717,7 +770,7 @@ async function main() {
           r.wd_year_start, r.wd_year_end, r.wd_date_precision, r.wd_lat, r.wd_lon,
           r.wd_coord_source, r.year_delta, r.distance_km, r.match_score,
           r.runner_up_qid, r.runner_up_score,
-          JSON.stringify({ queries: r.queries, reason: r.reason, coords_unverifiable: r.coords_unverifiable, winner_dice: r.winner_dice, winner_p31: r.winner_p31, candidates: r.candidates, no_match_reason: r.no_match_reason, tied_candidates: r.tied_candidates, year_consistent_count: r.year_consistent_count, winner_year_consistent: r.winner_year_consistent, runner_up_year_consistent: r.runner_up_year_consistent, query_hits: r.query_hits }),
+          JSON.stringify({ queries: r.queries, reason: r.reason, coords_unverifiable: r.coords_unverifiable, winner_dice: r.winner_dice, winner_p31: r.winner_p31, candidates: r.candidates, no_match_reason: r.no_match_reason, tied_candidates: r.tied_candidates, year_consistent_count: r.year_consistent_count, winner_year_consistent: r.winner_year_consistent, runner_up_year_consistent: r.runner_up_year_consistent, year_pref_qid: r.year_pref_qid, query_hits: r.query_hits }),
         ]
       );
       written += 1;
@@ -807,7 +860,7 @@ async function main() {
   console.log(`\n=== ALL NON-NO_MATCH ROWS (${nonNoMatch.length}) ===`);
   for (const r of nonNoMatch) {
     console.log(
-      `  ${r.title} | ${r.stored_year} | winner=${r.wikidata_qid} "${r.wd_label}" cont=${r.match_score?.toFixed(2)} dice=${r.winner_dice?.toFixed(2)} yc=${r.winner_year_consistent} | runner=${r.runner_up_qid ?? "-"}@${r.runner_up_score?.toFixed(2) ?? "-"} yc=${r.runner_up_year_consistent} | p31=${r.winner_p31.join("+") || "-"} | ${r.verification_status} | ${r.reason ?? "-"}`
+      `  ${r.title} | ${r.stored_year} | winner=${r.wikidata_qid} "${r.wd_label}" cont=${r.match_score?.toFixed(2)} dice=${r.winner_dice?.toFixed(2)} yc=${r.winner_year_consistent} yp=${r.year_pref_qid ?? "-"} | runner=${r.runner_up_qid ?? "-"}@${r.runner_up_score?.toFixed(2) ?? "-"} yc=${r.runner_up_year_consistent} | p31=${r.winner_p31.join("+") || "-"} | ${r.verification_status} | ${r.reason ?? "-"}`
     );
   }
 
