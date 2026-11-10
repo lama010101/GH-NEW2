@@ -62,6 +62,7 @@ function poolSelectSql(preferCelebrity) {
     SELECT e.id
     FROM public.events e
     WHERE e.status = 'validated'
+      AND e.retired_at IS NULL
       AND e.real_event = true
       AND e.event_year >= 1900
       AND e.event_year <= EXTRACT(YEAR FROM now())::int
