@@ -2019,3 +2019,129 @@ describe("MP-FIX-LIVETIMER90-1105-090 — sync round timer default 90s", () => {
     expect(updateCall?.[1]).toEqual([GAME_ID, "async", 5, "async", 90]);
   });
 });
+
+describe("startCompeteSession — sync pending-invitee gate (MP-BUILD-LIVEINVITEEGATE-1110-006)", () => {
+  const SYNC_SESSION_ROW = {
+    game_id: GAME_ID,
+    mode: "sync",
+    round_timer_sec: 90,
+    total_rounds: 5,
+    year_min: -400,
+    year_max: 2026,
+    results_auto_advance_sec: 90,
+    selected_eras: [],
+    selected_regions: [],
+    session_deadline: null,
+    session_deadline_days: null,
+    created_at: new Date(),
+    seed: 1n,
+    room_code: "ROOM01",
+    scoring_reference_year: 1000,
+  };
+  const READY_PLAYERS = [
+    { game_id: GAME_ID, player_id: HOST_ID, display_name: "Host", joined_at: new Date(), left_at: null, ready: true, is_host: true, avatar_url: null, kicked: false },
+    { game_id: GAME_ID, player_id: PLAYER_ID, display_name: "P2", joined_at: new Date(), left_at: null, ready: true, is_host: false, avatar_url: null, kicked: false },
+  ];
+
+  function createStartGateMockClient(opts: { mode?: string; pendingInviteCount?: string } = {}) {
+    const mode = opts.mode ?? "sync";
+    const sessionRow = { ...SYNC_SESSION_ROW, mode };
+    const query = vi.fn(async (sql: string) => {
+      if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
+      if (sql.includes("FROM sessions") && sql.includes("game_id")) return { rows: [sessionRow] };
+      if (sql.includes("FROM session_players") && sql.includes("ORDER BY joined_at")) return { rows: READY_PLAYERS };
+      if (sql.includes("FROM session_players") && sql.includes("left_at, kicked")) return { rows: [{ left_at: null, kicked: false }] };
+      if (sql.includes("COUNT(*)::text AS count") && sql.includes("FROM game_invitations")) {
+        return { rows: [{ count: opts.pendingInviteCount ?? "0" }] };
+      }
+      if (sql.includes("SELECT id, invitee_id FROM game_invitations")) return { rows: [] };
+      if (sql.includes("SELECT payload FROM round_events") && sql.includes("SESSION_CREATED")) {
+        return { rows: [{ payload: { eventIds: ["evt-1"] } }] };
+      }
+      if (sql.includes("FROM round_events") && sql.includes("FOR UPDATE")) {
+        return { rows: [{ id: 1, event_type: "SESSION_CREATED", round_index: null }] };
+      }
+      if (sql.includes("INSERT INTO round_events") || sql.includes("INSERT INTO player_round_events")) return { rows: [] };
+      if (sql.includes("FROM player_round_events")) return { rows: [] };
+      if (sql.includes("AS exists")) return { rows: [{ exists: false }] };
+      return { rows: [] };
+    });
+    const release = vi.fn();
+    return { client: { query, release } as unknown as DbTransactionClient, query };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(deriveStateFromEventStream).mockReturnValue({
+      currentRound: 0,
+      currentPhase: "LOBBY",
+    });
+    vi.mocked(dbPool.query).mockResolvedValue({ rows: [{ exists: false }] } as any);
+    vi.mocked(getGameState).mockResolvedValue(
+      createReconstructedGameState({
+        players: READY_PLAYERS.map((p) => ({
+          playerId: p.player_id,
+          displayName: p.display_name,
+          joinedAt: p.joined_at.toISOString(),
+          leftAt: null,
+          ready: true,
+          isHost: p.is_host,
+          avatarUrl: null,
+        })),
+      })
+    );
+  });
+
+  it("sync + pending invite row -> throws 'Waiting on invited players', no ROUND_STARTED append", async () => {
+    const { client, query } = createStartGateMockClient({ pendingInviteCount: "1" });
+    mockPoolConnect(client);
+
+    await expect(
+      startCompeteSession({ gameId: GAME_ID, playerId: HOST_ID, cause: TransitionCause.PLAYER })
+    ).rejects.toThrow("Waiting on invited players (1 pending)");
+
+    expect(query).toHaveBeenCalledWith("ROLLBACK");
+    expect(query).not.toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO round_events"),
+      expect.anything()
+    );
+    const gateCall = query.mock.calls.find(
+      ([sql]) => typeof sql === "string" && sql.includes("COUNT(*)::text AS count")
+    );
+    expect(gateCall?.[0]).toContain("status = 'pending'");
+    expect(gateCall?.[0]).toContain("expires_at > NOW()");
+    expect((gateCall as unknown as [string, unknown[]?])?.[1]).toEqual([GAME_ID]);
+  });
+
+  it("sync + zero pending invitees -> proceeds to ROUND_STARTED append + COMMIT", async () => {
+    const { client, query } = createStartGateMockClient({ pendingInviteCount: "0" });
+    mockPoolConnect(client);
+
+    const result = await startCompeteSession({
+      gameId: GAME_ID,
+      playerId: HOST_ID,
+      cause: TransitionCause.PLAYER,
+    });
+
+    expect(result.gameId).toBe(GAME_ID);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO round_events"),
+      expect.anything()
+    );
+    expect(query).toHaveBeenCalledWith("COMMIT");
+  });
+
+  it("async mode delegates to startRelaxPlayer BEFORE the gate — COUNT query never issued", async () => {
+    const { client, query } = createStartGateMockClient({ mode: "async", pendingInviteCount: "1" });
+    mockPoolConnect(client);
+
+    // Sparse mocks may reject inside startRelaxPlayer; the assertion is that
+    // the sync-branch gate COUNT was never issued regardless of outcome.
+    await startCompeteSession({ gameId: GAME_ID, playerId: PLAYER_ID, cause: TransitionCause.PLAYER }).catch(() => {});
+
+    expect(query).not.toHaveBeenCalledWith(
+      expect.stringContaining("COUNT(*)::text AS count"),
+      expect.anything()
+    );
+  });
+});

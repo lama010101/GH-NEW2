@@ -799,6 +799,7 @@ export default class GameServer {
     if (!isRuntimeState(this.snapshot)) return;
     if (this.snapshot.config?.mode === "async") return;
     if (this.snapshot.status !== "LOBBY") return;
+    if ((this.snapshot.pendingInvitees ?? []).length > 0) return;
     const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
     const allReady = activePlayers.length >= this.minPlayersToStart(this.snapshot.config?.mode ?? "sync") &&
       activePlayers.every(p => p.ready === true);
@@ -2756,6 +2757,7 @@ export default class GameServer {
           }
           const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
+          await this.attemptAutoStart(gameId);
           break;
         }
 

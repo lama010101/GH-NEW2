@@ -3118,6 +3118,18 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       throw new Error(`Not all players are ready (${notReady.length} pending)`);
     }
 
+    if (session.mode === "sync") {
+      const pendingInvites = await client.query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM game_invitations
+         WHERE game_id = $1 AND status = 'pending' AND expires_at > NOW()`,
+        [gameId]
+      );
+      const pendingInviteCount = Number(pendingInvites.rows[0]?.count ?? 0);
+      if (pendingInviteCount > 0) {
+        throw new Error(`Waiting on invited players (${pendingInviteCount} pending)`);
+      }
+    }
+
     const sessionCreatedEventForStart = await client.query<{ payload: { eventIds: string[] } }>(
       `SELECT payload FROM round_events
        WHERE game_id = $1 AND event_type = 'SESSION_CREATED'

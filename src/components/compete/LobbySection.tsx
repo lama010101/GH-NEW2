@@ -1604,7 +1604,7 @@ export default function LobbySection({
             <span className={styles['lobby-ready-count']} data-testid="lobby-ready-count">
               {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
               {snapshot.allPlayersReady && totalPlayers > 0 && (
-                <span className={styles['lobbyAllReadyTag']}>{t('lobby.starting_soon')}</span>
+                <span className={styles['lobbyAllReadyTag']}>{(snapshot.pendingInvitees ?? []).length > 0 ? t('lobby.waiting_invitees') : t('lobby.starting_soon')}</span>
               )}
             </span>
           )}
