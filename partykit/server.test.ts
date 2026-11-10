@@ -678,3 +678,114 @@ describe("DO async per-player status-regression guard (MP-FIX-RELAXLATEJOINER-10
     expect(lastC.message).toContain("LOBBY");
   });
 });
+
+describe("DO ready gate — pending invitees (MP-BUILD-LIVEINVITEEGATE-1110-006)", () => {
+  const startedSnapshot = {
+    gameId: GAME_ID,
+    status: "ROUND_ACTIVE",
+    config: { mode: "sync" },
+    players: [],
+    currentRoundIndex: 0,
+    roundEndsAt: null,
+    roundTimerSec: 60,
+    resultsAutoAdvanceSec: 90,
+    events: [],
+  };
+
+  function makeLobbySnapshot(options: {
+    players?: Array<{ playerId: string; displayName: string; ready: boolean; isHost: boolean; hasSubmitted: boolean; leftAt: string | null }>;
+    pendingInvitees?: Array<{ playerId: string; displayName: string; avatarUrl: string | null; invitedAt: string }>;
+  } = {}) {
+    return {
+      gameId: GAME_ID,
+      status: "LOBBY",
+      config: { mode: "sync" },
+      players: options.players ?? [
+        { playerId: PLAYER_A, displayName: "A", ready: true, isHost: true, hasSubmitted: false, leftAt: null },
+        { playerId: PLAYER_B, displayName: "B", ready: true, isHost: false, hasSubmitted: false, leftAt: null },
+      ],
+      currentRoundIndex: 0,
+      roundEndsAt: null,
+      roundTimerSec: 60,
+      resultsAutoAdvanceSec: 90,
+      resultPhaseStartedAt: null,
+      pendingInvitees: options.pendingInvitees ?? [],
+      events: [],
+    };
+  }
+
+  function makeServer() {
+    const connA = makeConnection("A");
+    const connB = makeConnection("B");
+    const room = mockRoom([connA, connB]);
+    const server = new GameServer(room as any);
+    return { server, connA, connB };
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => startedSnapshot,
+        text: async () => "",
+      })
+    );
+  });
+
+  it("a. all ready + pending invitee -> NO auto-start /start call", async () => {
+    const { server } = makeServer();
+    (server as any).snapshot = makeLobbySnapshot({
+      pendingInvitees: [
+        { playerId: PLAYER_C, displayName: "C", avatarUrl: null, invitedAt: new Date().toISOString() },
+      ],
+    });
+    await (server as any).attemptAutoStart(GAME_ID);
+    const startCalls = vi.mocked(fetch).mock.calls.filter((c) => String(c[0]).includes("/start"));
+    expect(startCalls).toHaveLength(0);
+  });
+
+  it("b. all ready + no pending invitees -> auto-start fires /start once", async () => {
+    const { server } = makeServer();
+    (server as any).snapshot = makeLobbySnapshot();
+    await (server as any).attemptAutoStart(GAME_ID);
+    const startCalls = vi.mocked(fetch).mock.calls.filter((c) => String(c[0]).includes("/api/compete/") && String(c[0]).endsWith("/start"));
+    expect(startCalls).toHaveLength(1);
+    const body = JSON.parse(String(startCalls[0][1]?.body));
+    expect(body.playerId).toBe(PLAYER_A);
+  });
+
+  it("c. CANCEL_INVITE success triggers attemptAutoStart re-check -> /start follows", async () => {
+    const lobbyAfterCancel = makeLobbySnapshot();
+    const fetchMock = vi.fn().mockImplementation(async (url: any) => {
+      const u = String(url);
+      if (u.includes("/cancel-invite")) {
+        return { ok: true, status: 200, json: async () => lobbyAfterCancel, text: async () => "" };
+      }
+      return { ok: true, status: 200, json: async () => startedSnapshot, text: async () => "" };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { server, connA } = makeServer();
+    (server as any).snapshot = makeLobbySnapshot({
+      pendingInvitees: [
+        { playerId: PLAYER_C, displayName: "C", avatarUrl: null, invitedAt: new Date().toISOString() },
+      ],
+    });
+    (server as any).verifiedUids.set(connA.id, PLAYER_A);
+    (server as any).connections.set(connA.id, PLAYER_A);
+
+    await server.onMessage(
+      JSON.stringify({
+        type: "CANCEL_INVITE",
+        playerId: "a1111111-1111-4111-8111-111111111111",
+        inviteeId: "b2222222-2222-4222-8222-222222222222",
+      }),
+      connA as any
+    );
+
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("/cancel-invite"))).toBe(true);
+    expect(urls.some((u) => u.includes("/api/compete/") && u.endsWith("/start"))).toBe(true);
+  });
+});
