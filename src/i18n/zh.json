@@ -1,4 +1,9 @@
 {
+  "daily": {
+    "share_button": "分享成绩",
+    "share_copied": "已复制",
+    "share_aria": "分享你的每日成绩"
+  },
   "nav": {
     "notifications": "通知",
     "profile": "个人资料",

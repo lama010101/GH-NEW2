@@ -1,4 +1,9 @@
 {
+  "daily": {
+    "share_button": "結果をシェア",
+    "share_copied": "コピーしました",
+    "share_aria": "デイリー結果をシェア"
+  },
   "nav": {
     "notifications": "通知",
     "profile": "プロフィール",

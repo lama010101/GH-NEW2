@@ -7,6 +7,7 @@ import type { CompeteSessionSnapshot } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
 import { AllRoundResult } from "@/core/competeTypes";
 import SessionComplete from "@/components/compete/SessionComplete";
+import DailyFinalExtras from "@/components/daily/DailyFinalExtras";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
@@ -153,6 +154,13 @@ export default function DailyResultsPage() {
             onPlayAgain={() => router.push('/home')}
             sendMessage={() => router.push('/home')}
           />
+          {snapshot.status === "SESSION_COMPLETE" && (
+            <DailyFinalExtras
+              gameId={gameId}
+              playerId={playerId}
+              allRoundResults={allRoundResults}
+            />
+          )}
         </div>
       </div>
     </main>

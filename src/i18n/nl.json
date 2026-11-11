@@ -1,4 +1,9 @@
 {
+  "daily": {
+    "share_button": "Resultaat delen",
+    "share_copied": "Gekopieerd!",
+    "share_aria": "Deel je dagelijkse resultaat"
+  },
   "nav": {
     "notifications": "Meldingen",
     "profile": "Profiel",

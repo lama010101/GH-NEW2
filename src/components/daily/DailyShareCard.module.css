@@ -1,0 +1,38 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-block: 16px;
+  padding-inline: 16px;
+  border-radius: var(--gh-radius-md);
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-bg-elevated);
+  box-shadow: var(--gh-shadow-sm);
+}
+
+.cardText {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--gh-text-primary);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.shareButton {
+  align-self: flex-start;
+  padding-block: 8px;
+  padding-inline: 16px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-primary);
+  color: var(--gh-btn-text);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shareButton:hover {
+  border-color: var(--gh-border-strong);
+}

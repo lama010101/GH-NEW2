@@ -11,6 +11,7 @@ import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
 import SessionComplete from "@/components/compete/SessionComplete";
+import DailyFinalExtras from "@/components/daily/DailyFinalExtras";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
@@ -523,13 +524,20 @@ export default function DailyRoundPage() {
           ) : null}
 
           {snapshot.status === "SESSION_COMPLETE" ? (
-            <SessionComplete
-              snapshot={snapshot}
-              playerId={playerId}
-              allRoundResults={allRoundResults}
-              onPlayAgain={() => router.push('/home')}
-              sendMessage={() => router.push('/home')}
-            />
+            <>
+              <SessionComplete
+                snapshot={snapshot}
+                playerId={playerId}
+                allRoundResults={allRoundResults}
+                onPlayAgain={() => router.push('/home')}
+                sendMessage={() => router.push('/home')}
+              />
+              <DailyFinalExtras
+                gameId={gameId}
+                playerId={playerId}
+                allRoundResults={allRoundResults}
+              />
+            </>
           ) : null}
         </div>
 

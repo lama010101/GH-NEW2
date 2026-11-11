@@ -1,4 +1,9 @@
 {
+  "daily": {
+    "share_button": "Share result",
+    "share_copied": "Copied!",
+    "share_aria": "Share your Daily result"
+  },
   "nav": {
     "notifications": "Notifications",
     "profile": "Profile",

@@ -1,4 +1,9 @@
 {
+  "daily": {
+    "share_button": "مشاركة النتيجة",
+    "share_copied": "تم النسخ!",
+    "share_aria": "مشاركة نتيجتك اليومية"
+  },
   "nav": {
     "notifications": "الإشعارات",
     "profile": "الملف الشخصي",
