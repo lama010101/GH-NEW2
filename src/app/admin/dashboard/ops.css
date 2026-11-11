@@ -1011,13 +1011,13 @@
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--ops-mute, #5a6b80);
-  padding: 8px 8px;
+  padding: 8px 6px;
   border-bottom: 1px solid var(--ops-line, #dde4ec);
   white-space: nowrap;
 }
 
 .ops-table td {
-  padding: 8px 8px;
+  padding: 8px 6px;
   border-bottom: 1px solid var(--ops-line, #dde4ec);
   color: var(--ops-ink, #14202b);
   vertical-align: top;
@@ -1073,7 +1073,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 120px;
+  min-width: 104px;
 }
 
 .fleet-modelid {
@@ -1083,9 +1083,19 @@
 }
 
 .fleet-why {
+  display: block;
   font-size: var(--font-xs);
   color: var(--ops-mute, #5a6b80);
   max-width: 420px;
+}
+
+.fleet-alwayson {
+  /* Previously unstyled — rendered as ~200px of inline text and inflated
+     its column's preferred width past the wrap at ~1024px viewports. */
+  display: block;
+  font-size: var(--font-2xs);
+  color: var(--ops-mute, #5a6b80);
+  max-width: 132px;
 }
 
 .fleet-numcell {
@@ -1093,7 +1103,7 @@
   flex-direction: column;
   gap: 3px;
   align-items: flex-end;
-  min-width: 64px;
+  min-width: 56px;
 }
 
 .fleet-sub {
