@@ -60,6 +60,13 @@ export type DeductionScrubResult = {
   reasons: string[];
 };
 
+/** Placeholders emitted for every removed year / place / title token. */
+const YEAR_PLACEHOLDER = "[year]";
+const PLACE_PLACEHOLDER = "[place]";
+const EVENT_PLACEHOLDER = "[event]";
+const PLACEHOLDER_RE = /\[(?:year|place|event)\]/g;
+const PLACEHOLDER_MERGE_RE = /\[(year|place|event)\](?:(?:[ \t,]+|\band\b)*\[\1\])+/g;
+
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -83,14 +90,93 @@ function eventYearPatterns(eventYear: number): RegExp[] {
   ];
 }
 
-/** R2: every standalone year-like token — 4-digit 1000-2099, decades, centuries. */
+/** Era markers shared by the R2 era rules (B6 numbers, B8 decades, B9 ranges). */
+const ERA_SRC = String.raw`(?:B\.C\.E?\.?|BCE|BC|A\.D\.?|AD|CE)`;
+
+// B9 — year ranges "1969/70", "1969-70"; an optional era suffix is consumed too.
+function yearRangeRe(flags = "gi"): RegExp {
+  return new RegExp(
+    `(?<![A-Za-z0-9])\\d{4}\\s*[/-]\\s*\\d{2,4}(?:\\s*${ERA_SRC})?(?![A-Za-z0-9])`,
+    flags
+  );
+}
+
+// B6 — era-suffixed numbers of any length 1-4 digits, suffix and AD-prefix forms.
+function eraSuffixRe(flags = "gi"): RegExp {
+  return new RegExp(`(?<![A-Za-z0-9])\\d{1,4}\\s*${ERA_SRC}(?![A-Za-z0-9])`, flags);
+}
+function eraPrefixRe(flags = "gi"): RegExp {
+  return new RegExp(`(?<![A-Za-z0-9])(?:A\\.D\\.?|AD)\\s*\\d{1,4}(?![A-Za-z0-9])`, flags);
+}
+
+// B8 — 2-3 digit decades only when era-suffixed or preceded by the/early/mid/late.
+function precededDecadeRe(flags = "gi"): RegExp {
+  return new RegExp(
+    `(?<![A-Za-z0-9])(?:the|early|mid|late)[-\\s]\\d{1,2}0s(?:\\s*${ERA_SRC})?(?![A-Za-z0-9])`,
+    flags
+  );
+}
+function eraDecadeRe(flags = "gi"): RegExp {
+  return new RegExp(`(?<![A-Za-z0-9])\\d{1,4}0s\\s*${ERA_SRC}(?![A-Za-z0-9])`, flags);
+}
+
+// B7 — "(in )?the year <n>": only the number is replaced, the words stay.
+function theYearRe(flags = "gi"): RegExp {
+  return new RegExp(`(\\b(?:in\\s+)?the\\s+year\\s+)\\d{1,4}\\b`, flags);
+}
+
+// B2 — apostrophe years/decades: '69, ’69, '60s (apostrophe ' or ’; not after letter/digit).
+function apostropheYearRe(flags = "gi"): RegExp {
+  return new RegExp(`(?<![A-Za-z0-9])['’]\\d{2}s?(?![A-Za-z0-9])`, flags);
+}
+
+// B1 — comma-formatted years: 1,969.
+function commaYearRe(flags = "gi"): RegExp {
+  return new RegExp(`(?<![A-Za-z0-9])\\d{1,3}(?:,\\d{3})+(?![A-Za-z0-9])`, flags);
+}
+
+const CENTURY_ORDINAL_SRC = String.raw`(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|twenty[-\s]?first)`;
+
+// B3 — spelled-out centuries, in addition to the digit ordinals in YEAR_LIKE_SRC.
+function spelledCenturyRe(flags = "gi"): RegExp {
+  return new RegExp(`\\b${CENTURY_ORDINAL_SRC}[-\\s]+century\\b`, flags);
+}
+
+const DECADE_WORD_SRC = String.raw`(?:twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)`;
+
+// B4 — spelled-out decades: "the sixties", "early twenties", "mid-twenties", "late the forties".
+function spelledDecadeRe(flags = "gi"): RegExp {
+  return new RegExp(
+    `\\b(?:the\\s+${DECADE_WORD_SRC}|(?:early|mid|late)[-\\s]+(?:the\\s+)?${DECADE_WORD_SRC})\\b`,
+    flags
+  );
+}
+
+const YEAR_PREFIX_SRC = String.raw`(?:eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)`;
+const YEAR_TENS_SRC = String.raw`(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)`;
+const YEAR_ONES_SRC = String.raw`(?:one|two|three|four|five|six|seven|eight|nine)`;
+const YEAR_TEENS_SRC = String.raw`(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)`;
+const YEAR_COMPONENT_SRC = String.raw`(?:hundred|oh[-\s]?\w+|${YEAR_TENS_SRC}(?:[-\s]${YEAR_ONES_SRC})?|${YEAR_TEENS_SRC})`;
+
+// B5 — spelled-out years: "nineteen sixty-nine", "eighteen hundred", "twenty twenty-six".
+function spelledYearRe(flags = "gi"): RegExp {
+  return new RegExp(`\\b${YEAR_PREFIX_SRC}[-\\s]+${YEAR_COMPONENT_SRC}\\b`, flags);
+}
+
+/** R2 generic year-like tokens — 4-digit 1000-2099, decades, digit centuries. */
 const YEAR_LIKE_SRC = String.raw`\b(?:1\d{3}|20\d{2})\b|\b\d{3,4}0s\b|\b\d{1,2}(?:st|nd|rd|th)[- ]century\b`;
 
 function yearLikeRe(flags = "gi"): RegExp {
   return new RegExp(YEAR_LIKE_SRC, flags);
 }
 
-/** R3 surface forms, longest first: displayName, its comma components, country, continent. */
+/** Built-in aliases applied only when ctx.country matches exactly. */
+const COUNTRY_PLACE_ALIASES: Record<string, readonly string[]> = {
+  "United States": ["U.S.", "U.S.A.", "USA", "US"],
+  "United Kingdom": ["U.K.", "UK", "Britain", "Great Britain"],
+};
+
+/** R3 surface forms, longest first: displayName, its comma components, country, continent, aliases. */
 function collectPlaceForms(
   ctx: Pick<DeductionScrubContext, "displayName" | "country" | "continent">
 ): string[] {
@@ -105,19 +191,73 @@ function collectPlaceForms(
   }
   add(ctx.country);
   add(ctx.continent);
+  const country = typeof ctx.country === "string" ? ctx.country.trim() : "";
+  for (const alias of COUNTRY_PLACE_ALIASES[country] ?? []) add(alias);
   return [...forms].sort((a, b) => b.length - a.length || cmpStr(a, b));
 }
 
-function placeFormRe(form: string): RegExp {
-  return tokenRe(escapeRegExp(form), "gi");
+/** NFD-strip combining marks so e.g. "Kraków" also matches "Krakow". */
+function foldAccents(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}/gu, "");
+}
+
+function capitalized(s: string): string {
+  const lower = s.toLowerCase();
+  return lower.length === 0 ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+/**
+ * R3 matchers for one surface form. Forms longer than 3 chars match
+ * case-insensitively on the raw and accent-folded variants; forms of
+ * length <= 3 match case-sensitively and only as UPPER or Capitalized
+ * tokens, so the pronoun "us" is never removed.
+ */
+function placeFormRes(form: string, flags = "gi"): RegExp[] {
+  const f = form.trim();
+  if (f.length === 0) return [];
+  const variants = new Set<string>([f]);
+  const folded = foldAccents(f);
+  if (folded !== f) variants.add(folded);
+  if (f.length <= 3) {
+    const bodies = new Set<string>();
+    for (const v of variants) {
+      bodies.add(v.toUpperCase());
+      bodies.add(capitalized(v));
+    }
+    const body = [...bodies]
+      .sort((a, b) => b.length - a.length || cmpStr(a, b))
+      .map(escapeRegExp)
+      .join("|");
+    return [new RegExp(`(?<![A-Za-z0-9])(?:${body})(?![A-Za-z0-9])`, flags.replace("i", ""))];
+  }
+  const body = [...variants]
+    .sort((a, b) => b.length - a.length || cmpStr(a, b))
+    .map(escapeRegExp)
+    .join("|");
+  return [tokenRe(`(?:${body})`, flags)];
 }
 
 /** Applies R1-R3 removals to `text` (shared by the description and the title variant). */
 function applyScrubRules(text: string, eventYear: number, forms: readonly string[]): string {
   let out = text;
-  for (const re of eventYearPatterns(eventYear)) out = out.replace(re, " ");
-  out = out.replace(yearLikeRe(), " ");
-  for (const f of forms) out = out.replace(placeFormRe(f), " ");
+  // Era forms run first so "AD 79" / "79 CE" are consumed whole; then ranges,
+  // decades, the literal event year, spelled forms, generic year-likes, places.
+  out = out.replace(eraPrefixRe(), YEAR_PLACEHOLDER);
+  out = out.replace(eraSuffixRe(), YEAR_PLACEHOLDER);
+  out = out.replace(precededDecadeRe(), YEAR_PLACEHOLDER);
+  out = out.replace(eraDecadeRe(), YEAR_PLACEHOLDER);
+  out = out.replace(yearRangeRe(), YEAR_PLACEHOLDER);
+  for (const re of eventYearPatterns(eventYear)) out = out.replace(re, YEAR_PLACEHOLDER);
+  out = out.replace(theYearRe(), `$1${YEAR_PLACEHOLDER}`);
+  out = out.replace(apostropheYearRe(), YEAR_PLACEHOLDER);
+  out = out.replace(commaYearRe(), YEAR_PLACEHOLDER);
+  out = out.replace(spelledYearRe(), YEAR_PLACEHOLDER);
+  out = out.replace(spelledDecadeRe(), YEAR_PLACEHOLDER);
+  out = out.replace(spelledCenturyRe(), YEAR_PLACEHOLDER);
+  out = out.replace(yearLikeRe(), YEAR_PLACEHOLDER);
+  for (const f of forms) {
+    for (const re of placeFormRes(f)) out = out.replace(re, PLACE_PLACEHOLDER);
+  }
   return out;
 }
 
@@ -128,11 +268,15 @@ function collapseResidue(s: string): string {
     .replace(/[^\S\n]+/g, " ")
     .replace(/[ \t]*\n[ \t]*/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
+    .replace(PLACEHOLDER_MERGE_RE, "[$1]")
     .replace(/ +([,.;:!?)\]}])/g, "$1")
     .replace(/([(\[]) +/g, "$1")
     .replace(/(^|\n) +/g, "$1")
     .replace(/ +(?=\n|$)/g, "")
     .replace(/^[ \t]*[,.;:!?)\]}]+/gm, "")
+    .replace(/,{2,}/g, ",")
+    .replace(/,\s*,+/g, ",")
+    .replace(/,\s*\./g, ".")
     .trim();
 }
 
@@ -159,9 +303,12 @@ function findResidualLeaks(
 ): string[] {
   const reasons: string[] = [];
   const absYear = Math.abs(ctx.eventYear);
+  // Placeholders are scrub artifacts, not leaks — probes ignore them.
+  const probe = text.replace(PLACEHOLDER_RE, " ");
+  const foldedProbe = foldAccents(probe);
 
   for (const re of eventYearPatterns(ctx.eventYear)) {
-    if (re.test(text)) {
+    if (re.test(probe)) {
       reasons.push(`eventYear ${ctx.eventYear}`);
       break;
     }
@@ -169,7 +316,7 @@ function findResidualLeaks(
 
   if (Number.isFinite(absYear) && absYear >= 10) {
     const decade = `${Math.floor(absYear / 10) * 10}s`;
-    if (tokenRe(escapeRegExp(decade), "i").test(text)) {
+    if (tokenRe(escapeRegExp(decade), "i").test(probe)) {
       reasons.push(`decade '${decade}'`);
     }
   }
@@ -177,13 +324,32 @@ function findResidualLeaks(
   if (Number.isFinite(absYear) && absYear >= 1) {
     const century = Math.floor((absYear - 1) / 100) + 1;
     const ord = ordinalSuffix(century);
-    if (new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(ord)}[- ]century\\b`, "i").test(text)) {
+    if (new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(ord)}[- ]century\\b`, "i").test(probe)) {
       reasons.push(`century '${ord} century'`);
     }
   }
 
+  // B1-B5 spelled-out / apostrophe / comma year-like survivors.
+  if (commaYearRe("i").test(probe)) reasons.push("comma year");
+  if (apostropheYearRe("i").test(probe)) reasons.push("apostrophe year");
+  if (spelledCenturyRe("i").test(probe)) reasons.push("spelled century");
+  if (spelledDecadeRe("i").test(probe)) reasons.push("spelled decade");
+  if (spelledYearRe("i").test(probe)) reasons.push("spelled year");
+  // B6 era-suffixed number survivors (suffix, prefix and decade forms).
+  if (
+    eraSuffixRe("i").test(probe) ||
+    eraPrefixRe("i").test(probe) ||
+    eraDecadeRe("i").test(probe)
+  ) {
+    reasons.push("era-suffixed number");
+  }
+
   for (const f of forms) {
-    if (f.trim().length >= 4 && placeFormRe(f).test(text)) {
+    if (f.trim().length < 4) continue;
+    if (
+      placeFormRes(f, "i").some((re) => re.test(probe)) ||
+      placeFormRes(foldAccents(f), "i").some((re) => re.test(foldedProbe))
+    ) {
       reasons.push(`place '${f}'`);
     }
   }
@@ -212,9 +378,11 @@ export function scrubDescription(
   const rawTitle = collapseResidue(title);
   if (rawTitle.length > 0) titleForms.add(rawTitle);
   const scrubbedTitle = collapseResidue(applyScrubRules(title, ctx.eventYear, forms));
-  if (scrubbedTitle.length >= 4) titleForms.add(scrubbedTitle);
+  if (scrubbedTitle.replace(PLACEHOLDER_RE, "").trim().length >= 4) {
+    titleForms.add(scrubbedTitle);
+  }
   for (const t of [...titleForms].sort((a, b) => b.length - a.length || cmpStr(a, b))) {
-    out = out.replace(tokenRe(escapeRegExp(t), "gi"), " ");
+    out = out.replace(tokenRe(escapeRegExp(t), "gi"), EVENT_PLACEHOLDER);
   }
   out = collapseResidue(out);
 
@@ -269,7 +437,8 @@ export function buildT2Prompt(scrubbedDescription: string): string {
   return (
     `You are playing a text-only deduction game. The description below is of a ` +
     `historical event with all dates, years, decades, centuries and place names ` +
-    `removed. Deduce the event's year and geographic coordinates.\n\n` +
+    `removed; removed items appear as [year] and [place] placeholders. ` +
+    `Deduce the event's year and geographic coordinates.\n\n` +
     `Description:\n${scrubbedDescription}\n\n` +
     `Reply with a single JSON object (JSON only, no markdown, no prose) with ` +
     `EXACTLY these keys:\n` +
@@ -292,11 +461,11 @@ export type DeductionEventCore = {
   title: string;
   year: number;
   continent: string | null;
+  displayName?: string | null;
+  country?: string | null;
 };
 
 export type DeductionPoolEvent = DeductionEventCore & {
-  displayName?: string | null;
-  country?: string | null;
   hints?: readonly DeductionHintInput[];
 };
 
@@ -312,30 +481,36 @@ function orderKey(eventId: string, candidateId: string, salt: string): string {
   return createHash("sha256").update(eventId + candidateId + salt).digest("hex");
 }
 
-const FOUR_DIGIT_RE = /\b\d{4}\b/;
+/** Domain separator for the final option ordering (decoy selection keeps `salt`). */
+const ORDER_SALT_SUFFIX = "|order";
 
-/** True when `title` carries a 4-digit year or an R1-R3 token of the true event. */
-function titleLeaks(
-  title: string,
-  scrubCtx: DeductionScrubContext,
-  forms: readonly string[]
-): boolean {
-  if (FOUR_DIGIT_RE.test(title)) return true;
-  for (const re of eventYearPatterns(scrubCtx.eventYear)) {
-    if (re.test(title)) return true;
-  }
-  if (yearLikeRe("i").test(title)) return true;
-  for (const f of forms) {
-    if (placeFormRe(f).test(title)) return true;
-  }
-  return false;
+/**
+ * Scrubs one option title with that option event's OWN context (its own year,
+ * displayName, country, continent) and the same rules/placeholders as
+ * scrubDescription. R4 title-removal is disabled (title: "") because the text
+ * IS the title. Returns null when the residual check still fails.
+ */
+function scrubOptionTitle(e: DeductionEventCore): string | null {
+  const r = scrubDescription(e.title, {
+    eventYear: e.year,
+    title: "",
+    displayName: e.displayName ?? null,
+    country: e.country ?? null,
+    continent: e.continent ?? null,
+  });
+  return r.ok ? r.text : null;
 }
 
 /**
  * 5 options = the true title + 4 decoys from pool events on the same
  * continent within +-50 years, never the true event or a duplicate title.
- * Decoys and options are ordered by sha256(eventId + candidateId + salt);
- * the true answer's position is derived from that hash, not fixed.
+ * Decoy SELECTION is ordered by sha256(eventId + candidateId + salt); the
+ * final option ORDER uses the domain-separated sha256(eventId + candidateId +
+ * salt + "|order") so selection and ordering never share a hash value and the
+ * true answer's position is an independent uniform draw.
+ * Every option title is scrubbed with its own event context; decoy candidates
+ * with displayName === undefined AND country === undefined are skipped because
+ * they cannot be scrubbed symmetrically.
  */
 export function buildT3Item(
   event: DeductionPoolEvent,
@@ -350,42 +525,44 @@ export function buildT3Item(
         Math.abs(p.year - event.year) <= 50 &&
         p.title !== event.title
     )
-    .map((p) => ({ id: p.id, title: p.title, hash: orderKey(event.id, p.id, salt) }))
+    .map((p) => ({ p, hash: orderKey(event.id, p.id, salt) }))
     .sort((a, b) => cmpStr(a.hash, b.hash));
 
-  const decoys: { id: string; title: string; hash: string }[] = [];
+  const decoys: { p: DeductionEventCore; hash: string }[] = [];
   const seenTitles = new Set<string>([event.title]);
   for (const c of candidates) {
-    if (seenTitles.has(c.title)) continue;
-    seenTitles.add(c.title);
+    if (c.p.displayName === undefined && c.p.country === undefined) continue;
+    if (seenTitles.has(c.p.title)) continue;
+    seenTitles.add(c.p.title);
     decoys.push(c);
     if (decoys.length === 4) break;
   }
   if (decoys.length < 4) return { ok: false, reason: "insufficient_decoys" };
 
-  type Entry = { id: string; title: string; hash: string; isTrue: boolean };
+  const trueTitle = scrubOptionTitle(event);
+  if (trueTitle === null) return { ok: false, reason: "option_title_leak" };
+
+  type Entry = { title: string; orderHash: string; isTrue: boolean };
   const all: Entry[] = [
-    { id: event.id, title: event.title, hash: orderKey(event.id, event.id, salt), isTrue: true },
-    ...decoys.map((d) => ({ id: d.id, title: d.title, hash: d.hash, isTrue: false })),
-  ].sort((a, b) => cmpStr(a.hash, b.hash));
+    {
+      title: trueTitle,
+      orderHash: orderKey(event.id, event.id, salt + ORDER_SALT_SUFFIX),
+      isTrue: true,
+    },
+  ];
+  for (const d of decoys) {
+    const title = scrubOptionTitle(d.p);
+    if (title === null) return { ok: false, reason: "option_title_leak" };
+    all.push({
+      title,
+      orderHash: orderKey(event.id, d.p.id, salt + ORDER_SALT_SUFFIX),
+      isTrue: false,
+    });
+  }
+  all.sort((a, b) => cmpStr(a.orderHash, b.orderHash));
 
   const options = all.map((c, i) => ({ id: OPTION_IDS[i], title: c.title }));
   const answerId = OPTION_IDS[all.findIndex((c) => c.isTrue)];
-
-  const scrubCtx: DeductionScrubContext = {
-    eventYear: event.year,
-    title: event.title,
-    displayName: event.displayName ?? null,
-    country: event.country ?? null,
-    continent: event.continent ?? null,
-  };
-  const forms = collectPlaceForms(scrubCtx);
-  for (const o of options) {
-    if (titleLeaks(o.title, scrubCtx, forms)) {
-      return { ok: false, reason: "option_title_leak" };
-    }
-  }
-
   return { ok: true, options, answerId };
 }
 
@@ -439,11 +616,19 @@ export function buildT4Item(
   if (decoys.length < 3) return { ok: false, reason: "insufficient_decoys" };
 
   const realKey = `${event.id}:${real.content}`;
-  type Entry = { content: string; hash: string; isReal: boolean };
+  type Entry = { content: string; orderHash: string; isReal: boolean };
   const all: Entry[] = [
-    { content: real.content, hash: orderKey(event.id, realKey, salt), isReal: true },
-    ...decoys.map((d) => ({ content: d.content, hash: d.hash, isReal: false })),
-  ].sort((a, b) => cmpStr(a.hash, b.hash));
+    {
+      content: real.content,
+      orderHash: orderKey(event.id, realKey, salt + ORDER_SALT_SUFFIX),
+      isReal: true,
+    },
+    ...decoys.map((d) => ({
+      content: d.content,
+      orderHash: orderKey(event.id, d.key, salt + ORDER_SALT_SUFFIX),
+      isReal: false,
+    })),
+  ].sort((a, b) => cmpStr(a.orderHash, b.orderHash));
 
   const options = all.map((c, i) => ({ id: OPTION_IDS[i], content: c.content }));
   const answerId = OPTION_IDS[all.findIndex((c) => c.isReal)];
