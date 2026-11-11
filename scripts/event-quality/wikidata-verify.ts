@@ -7,7 +7,7 @@
 // writes. Wikidata results never overwrite events/locations.
 //
 //   npx tsx scripts/event-quality/wikidata-verify.ts [--limit N] [--seed S]
-//           [--run-id X] [--out <path>] [--write]
+//           [--run-id X] [--out <path>] [--write] [--all] [--recheck]
 //
 // Wikidata Action API only (wbsearchentities + wbgetentities). Serial
 // requests, >=250ms gap, retry on 429/5xx honoring Retry-After (max 5).
@@ -39,7 +39,7 @@ dotenv.config({ path: ".env.local" });
 // Flags
 // ─────────────────────────────────────────────────────────────────────────────
 
-function parseFlags(): { limit: number; seed: number; write: boolean; runId: string; out: string; fulltext: boolean } {
+function parseFlags(): { limit: number; seed: number; write: boolean; runId: string; out: string; fulltext: boolean; all: boolean; recheck: boolean; limitSet: boolean } {
   const flags = new Map<string, string | true>();
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i++) {
@@ -58,7 +58,7 @@ function parseFlags(): { limit: number; seed: number; write: boolean; runId: str
   const limit = flags.has("limit") ? Number(flags.get("limit")) : 100;
   const runId = String(flags.get("run-id") ?? `wd-1027-001-seed${seed}`);
   const out = String(flags.get("out") ?? "../wikidata-dryrun-1027-001.json");
-  return { limit, seed, write: flags.has("write"), runId, out, fulltext: flags.has("fulltext") };
+  return { limit, seed, write: flags.has("write"), runId, out, fulltext: flags.has("fulltext"), all: flags.has("all"), recheck: flags.has("recheck"), limitSet: flags.has("limit") };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -633,28 +633,89 @@ function percentile(sorted: number[], p: number): number {
 const STATUS_ORDER: VerificationStatus[] = ["verified", "review", "mismatch", "ambiguous", "no_match", "no_wd_date"];
 
 async function main() {
-  const { limit, seed, write, runId, out, fulltext } = parseFlags();
+  const { limit, seed, write, runId, out, fulltext, all, recheck, limitSet } = parseFlags();
   const startedAt = Date.now();
   console.log("=== WIKIDATA VERIFY — EDQ-FIX-WIKIDATA-RECALL-1027-001 ===");
   console.log(`mode: ${write ? "WRITE (upserts to event_wikidata_verification)" : "DRY RUN — zero DB writes"}   fulltext: ${fulltext ? "ON" : "OFF"}`);
-  console.log(`run_id: ${runId}   seed: ${seed}   limit: ${limit}`);
+  console.log(`run_id: ${runId}   seed: ${seed}   limit: ${all && !limitSet ? "none" : limit}`);
 
   const evRes = await dbPool.query<DbEvent>(
     `SELECT e.id, e.title, e.event_year, e.status,
             l.latitude, l.longitude, l.display_name, l.country
        FROM events e
        JOIN locations l ON l.event_id = e.id
-      WHERE e.real_event = true`
+      WHERE e.real_event = true${all ? " ORDER BY e.id" : ""}`
   );
   const rng = mulberry32(seed);
-  const { picked, quotas } = sampleEvents(evRes.rows, limit, rng);
-  console.log(`pool: ${evRes.rows.length} real events; sampled: ${picked.length}`);
-  console.log("quotas (achieved/requested):");
-  for (const [k, v] of Object.entries(quotas)) {
-    console.log(`  ${k}: ${v.achieved}/${v.requested}`);
+
+  // --all: bypass the status-quota sampler entirely; deterministic e.id
+  // order; skip event_ids already present in event_wikidata_verification
+  // unless --recheck. An explicit --limit caps the count; otherwise none.
+  let pool = evRes.rows;
+  let skippedChecked = 0;
+  if (all && !recheck) {
+    const checked = await dbPool.query<{ event_id: string }>(
+      `SELECT event_id FROM public.event_wikidata_verification`
+    );
+    const have = new Set(checked.rows.map((r) => r.event_id));
+    const before = pool.length;
+    pool = pool.filter((e) => !have.has(e.id));
+    skippedChecked = before - pool.length;
+  }
+
+  let picked: DbEvent[];
+  let quotas: ReturnType<typeof sampleEvents>["quotas"] | null = null;
+  if (all) {
+    picked = limitSet ? pool.slice(0, limit) : pool;
+    console.log(`ALL mode: pool=${evRes.rows.length} real events (with locations); already-checked skipped=${skippedChecked}; to-check=${picked.length}; write=${write}; recheck=${recheck}; limit=${limitSet ? limit : "none"}`);
+  } else {
+    const sampled = sampleEvents(pool, limit, rng);
+    picked = sampled.picked;
+    quotas = sampled.quotas;
+    console.log(`pool: ${evRes.rows.length} real events; sampled: ${picked.length}`);
+    console.log("quotas (achieved/requested):");
+    for (const [k, v] of Object.entries(quotas)) {
+      console.log(`  ${k}: ${v.achieved}/${v.requested}`);
+    }
   }
 
   const rows: EventRow[] = [];
+  // Buffered write path — upserts into event_wikidata_verification ONLY,
+  // error rows skipped. --all flushes every 25 processed events so a
+  // crash keeps progress; without --all the single end-of-run flush
+  // preserves the original behavior exactly.
+  let written = 0;
+  let flushedUpTo = 0;
+  const flushRows = async () => {
+    for (let i = flushedUpTo; i < rows.length; i++) {
+      const r = rows[i];
+      if (r.verification_status === "error") continue;
+      await dbPool.query(
+        `INSERT INTO public.event_wikidata_verification
+          (event_id, run_id, status, wikidata_qid, wd_label, wd_year_start, wd_year_end,
+           wd_date_precision, wd_lat, wd_lon, wd_coord_source, year_delta, distance_km,
+           match_score, runner_up_qid, runner_up_score, details)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         ON CONFLICT (event_id) DO UPDATE SET
+           run_id=EXCLUDED.run_id, status=EXCLUDED.status, wikidata_qid=EXCLUDED.wikidata_qid,
+           wd_label=EXCLUDED.wd_label, wd_year_start=EXCLUDED.wd_year_start,
+           wd_year_end=EXCLUDED.wd_year_end, wd_date_precision=EXCLUDED.wd_date_precision,
+           wd_lat=EXCLUDED.wd_lat, wd_lon=EXCLUDED.wd_lon, wd_coord_source=EXCLUDED.wd_coord_source,
+           year_delta=EXCLUDED.year_delta, distance_km=EXCLUDED.distance_km,
+           match_score=EXCLUDED.match_score, runner_up_qid=EXCLUDED.runner_up_qid,
+           runner_up_score=EXCLUDED.runner_up_score, details=EXCLUDED.details`,
+        [
+          r.event_id, runId, r.verification_status, r.wikidata_qid, r.wd_label,
+          r.wd_year_start, r.wd_year_end, r.wd_date_precision, r.wd_lat, r.wd_lon,
+          r.wd_coord_source, r.year_delta, r.distance_km, r.match_score,
+          r.runner_up_qid, r.runner_up_score,
+          JSON.stringify({ queries: r.queries, reason: r.reason, coords_unverifiable: r.coords_unverifiable, winner_dice: r.winner_dice, winner_p31: r.winner_p31, candidates: r.candidates, no_match_reason: r.no_match_reason, tied_candidates: r.tied_candidates, year_consistent_count: r.year_consistent_count, winner_year_consistent: r.winner_year_consistent, runner_up_year_consistent: r.runner_up_year_consistent, query_hits: r.query_hits }),
+        ]
+      );
+      written += 1;
+    }
+    flushedUpTo = rows.length;
+  };
   let abortedBy429 = false;
   for (let i = 0; i < picked.length; i++) {
     // RECALL-1027-001: Wikimedia rate-limit guard — stop the run and report.
@@ -686,42 +747,18 @@ async function main() {
         error: err instanceof Error ? err.message : String(err),
       });
     }
+    if (all && write && (i + 1) % 25 === 0) await flushRows();
     if ((i + 1) % 10 === 0) {
       console.log(`  ... ${i + 1}/${picked.length} events processed (requests so far: ${stats.requests}, 429s: ${stats.retries429})`);
     }
   }
   if (abortedBy429) console.log(`  aborted: ${picked.length - rows.length} events unprocessed`);
 
-  // Optional write path — upserts into event_wikidata_verification ONLY.
-  // NOT run in this task.
-  let written = 0;
+  // Optional write path — flush remaining rows (end-of-run for the
+  // sampled path; final partial batch for --all). Upserts ONLY into
+  // event_wikidata_verification; error rows are never written.
   if (write) {
-    for (const r of rows) {
-      if (r.verification_status === "error") continue;
-      await dbPool.query(
-        `INSERT INTO public.event_wikidata_verification
-          (event_id, run_id, status, wikidata_qid, wd_label, wd_year_start, wd_year_end,
-           wd_date_precision, wd_lat, wd_lon, wd_coord_source, year_delta, distance_km,
-           match_score, runner_up_qid, runner_up_score, details)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
-         ON CONFLICT (event_id) DO UPDATE SET
-           run_id=EXCLUDED.run_id, status=EXCLUDED.status, wikidata_qid=EXCLUDED.wikidata_qid,
-           wd_label=EXCLUDED.wd_label, wd_year_start=EXCLUDED.wd_year_start,
-           wd_year_end=EXCLUDED.wd_year_end, wd_date_precision=EXCLUDED.wd_date_precision,
-           wd_lat=EXCLUDED.wd_lat, wd_lon=EXCLUDED.wd_lon, wd_coord_source=EXCLUDED.wd_coord_source,
-           year_delta=EXCLUDED.year_delta, distance_km=EXCLUDED.distance_km,
-           match_score=EXCLUDED.match_score, runner_up_qid=EXCLUDED.runner_up_qid,
-           runner_up_score=EXCLUDED.runner_up_score, details=EXCLUDED.details`,
-        [
-          r.event_id, runId, r.verification_status, r.wikidata_qid, r.wd_label,
-          r.wd_year_start, r.wd_year_end, r.wd_date_precision, r.wd_lat, r.wd_lon,
-          r.wd_coord_source, r.year_delta, r.distance_km, r.match_score,
-          r.runner_up_qid, r.runner_up_score,
-          JSON.stringify({ queries: r.queries, reason: r.reason, coords_unverifiable: r.coords_unverifiable, winner_dice: r.winner_dice, winner_p31: r.winner_p31, candidates: r.candidates, no_match_reason: r.no_match_reason, tied_candidates: r.tied_candidates, year_consistent_count: r.year_consistent_count, winner_year_consistent: r.winner_year_consistent, runner_up_year_consistent: r.runner_up_year_consistent, query_hits: r.query_hits }),
-        ]
-      );
-      written += 1;
-    }
+    await flushRows();
     console.log(`write: upserted ${written} rows into event_wikidata_verification`);
   }
 
@@ -730,7 +767,7 @@ async function main() {
   // ── Report JSON (outside repo) + raw response cache (Correction 3) ──
   const outPath = resolve(out);
   const cachePath = outPath.replace(/\.json$/i, "") + ".rawcache.json";
-  writeFileSync(outPath, JSON.stringify({ meta: { runId, seed, limit, write, fulltext, abortedBy429, elapsedSec, stats, quotas }, rows }, null, 1));
+  writeFileSync(outPath, JSON.stringify({ meta: { runId, seed, limit: all && !limitSet ? null : limit, write, fulltext, abortedBy429, elapsedSec, stats, quotas }, rows }, null, 1));
   writeFileSync(cachePath, JSON.stringify(rawCache));
   console.log(`report: ${outPath}`);
   console.log(`raw cache: ${cachePath} (${rawCache.length} responses)`);
