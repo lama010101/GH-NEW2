@@ -191,6 +191,7 @@ async function fetchAllEligibleEventIds(): Promise<string[]> {
      FROM events e
      JOIN locations l ON l.event_id = e.id
      WHERE e.status = 'validated'
+       AND e.retired_at IS NULL
        AND l.latitude IS NOT NULL
        AND l.longitude IS NOT NULL
        AND l.continent = ANY($1::text[])
