@@ -156,7 +156,7 @@ const PIPELINE = [
   { label: "Real event", desc: "A documented moment in history." },
   { label: "Research", desc: "Historians gather sources and facts." },
   { label: "AI paints", desc: "An AI creates the scene from the research." },
-  { label: "Human check", desc: "Verified before it reaches you." },
+  { label: "Cross-check", desc: "Automated checks, still rolling out." },
 ];
 
 const FUN_BADGES = [
