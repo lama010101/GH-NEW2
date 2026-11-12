@@ -9,7 +9,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 // Records (Users, Trash), System (Debug). The former in-page tab strip is
 // removed; this sidebar is the only navigation. Responsive: ≥1280px full
 // labels, 1024–1279px icon rail (title tooltips), <1024px off-canvas drawer
-// driven by AdminShell.
+// driven by AdminShell. ≥1024px a toggle button lets the user force expand
+// or collapse; the choice is persisted by AdminShell (ops-nav-pref).
 
 type NavItem = { label: string; href: string; match: string; icon: JSX.Element };
 type NavGroup = { heading: string | null; items: NavItem[] };
@@ -33,6 +34,12 @@ const GROUPS: NavGroup[] = [
   {
     heading: null,
     items: [
+      {
+        label: "Game home",
+        href: "/home",
+        match: "/home",
+        icon: <Icon d="M3 11l9-8 9 8M5 9v12h14V9M10 21v-6h4v6" />,
+      },
       {
         label: "Overview",
         href: "/admin/dashboard?tab=overview",
@@ -108,9 +115,15 @@ const GROUPS: NavGroup[] = [
 export function SidebarNav({
   open,
   onNavigate,
+  navOverride,
+  navExpanded,
+  onToggleNav,
 }: {
   open: boolean;
   onNavigate: () => void;
+  navOverride: "expanded" | "collapsed" | null;
+  navExpanded: boolean;
+  onToggleNav: () => void;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -124,8 +137,20 @@ export function SidebarNav({
   return (
     <nav
       aria-label="Admin dashboard"
-      className={`ops-sidebar${open ? " ops-sidebar-open" : ""}`}
+      className={`ops-sidebar${open ? " ops-sidebar-open" : ""}${navOverride ? ` ops-sidebar--${navOverride}` : ""}`}
     >
+      <button
+        type="button"
+        className="ops-navtoggle"
+        aria-label={navExpanded ? "Collapse navigation" : "Expand navigation"}
+        aria-expanded={navExpanded}
+        onClick={onToggleNav}
+      >
+        <Icon d={navExpanded ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+        <span className="ops-navlabel">
+          {navExpanded ? "Collapse navigation" : "Expand navigation"}
+        </span>
+      </button>
       {GROUPS.map((group) => (
         <div key={group.heading ?? "overview"} className="ops-navgroup">
           {group.heading && <p className="ops-navheading">{group.heading}</p>}
