@@ -24,7 +24,7 @@
   "help": {
     "title": "Hilfecenter",
     "hero_title": "Wie können wir helfen?",
-    "hero_subtitle": "Finde Antworten, lerne die Regeln und hole das Beste aus Back to the Past heraus.",
+    "hero_subtitle": "Finde Antworten, lerne die Regeln und hole das Beste aus Dig the Past heraus.",
     "search_placeholder": "Hilfecenter durchsuchen…",
     "search_label": "Hilfecenter durchsuchen",
     "clear_search": "Suche löschen",
@@ -301,7 +301,7 @@
     "pwa_install_desc": "Relax-Spiele laufen abwechselnd (turn-based). Auf dem iPhone funktionieren Zugbenachrichtigungen nur, wenn diese Seite zum Home-Bildschirm hinzugefügt wird.",
     "pwa_step_share": "Tippe in der Safari-Symbolleiste auf das Symbol <strong>Teilen</strong>.",
     "pwa_step_home": "Wähle <strong>Zum Home-Bildschirm</strong>.",
-    "pwa_step_open": "Tippe auf <strong>Hinzufügen</strong> und öffne Back to the Past dann von deinem Home-Bildschirm.",
+    "pwa_step_open": "Tippe auf <strong>Hinzufügen</strong> und öffne Dig the Past dann von deinem Home-Bildschirm.",
     "pwa_got_it": "Verstanden",
     "players_ready": "({ready}/{total} Spieler bereit)",
     "select_all": "Alle auswählen",
@@ -640,7 +640,7 @@
     "confirm_email_sent": "Prüfe deine E-Mail, um dein Konto zu bestätigen.",
     "remember_me": "Angemeldet bleiben",
     "confirm_password": "Passwort bestätigen",
-    "cookies_blocked_notice": "Cookies sind in deinem Browser blockiert, daher bleibst du nicht angemeldet. Erlaube Cookies für guess-history.com und versuche es erneut.",
+    "cookies_blocked_notice": "Cookies sind in deinem Browser blockiert, daher bleibst du nicht angemeldet. Erlaube Cookies für digthepast.org und versuche es erneut.",
     "invite_banner": "Ein Freund hat dich zu einem Live-Spiel eingeladen. Melde dich an oder erstelle ein Konto, um mitzuspielen."
   },
   "leaderboard": {
@@ -757,7 +757,7 @@
     "notif_push_hint": "Push ist in diesem Browser deaktiviert — aktiviere Benachrichtigungen, um Pushes zu erhalten.",
     "notif_save_error": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
     "android_apk_title": "Android-App (Beta)",
-    "android_apk_body": "Installiere die App Back to the Past auf deinem Android-Smartphone.",
+    "android_apk_body": "Installiere die App Dig the Past auf deinem Android-Smartphone.",
     "android_apk_button": "APK herunterladen",
     "android_apk_step1": "1. Tippe auf „APK herunterladen“ und öffne die Datei.",
     "android_apk_step2": "2. Wenn Android fragt, erlaube Installationen aus diesem Browser.",
@@ -801,7 +801,7 @@
     "push_unexpected": "Ein unerwarteter Fehler ist aufgetreten."
   },
   "welcome": {
-    "title": "Willkommen bei Back to the Past!",
+    "title": "Willkommen bei Dig the Past!",
     "your_historical_avatar": "Dein historischer Avatar",
     "choose_different_avatar": "Anderen Avatar wählen",
     "your_username": "Dein Benutzername",
@@ -812,9 +812,9 @@
     "username_label_3": "ANDERE SEHEN DIESEN NAMEN"
   },
   "landing": {
-    "meta_title": "Back to the Past — Teste dein Wissen über Wann und Wo",
+    "meta_title": "Dig the Past — Teste dein Wissen über Wann und Wo",
     "meta_description": "Ein Geschichts-Ratespiel. Sieh echte historische Ereignisse und rate das genaue Jahr und den Ort. Fordere Freunde heraus, steige in der Bestenliste auf und beweise dein Geschichtswissen.",
-    "logo_alt": "Back to the Past",
+    "logo_alt": "Dig the Past",
     "rank_label": "Rang",
     "tagline": "Wo und wann ist es passiert?",
     "hero_description": "Teste dein Geschichtswissen. Sieh echte Ereignisse und rate das genaue Jahr und den Ort. Fordere Freunde heraus, steige in der Bestenliste auf und beweise, dass du Geschichte kennst.",
@@ -969,11 +969,11 @@
     "gate_rounds_needed": "Noch {count} Runden bis zur Qualifikation"
   },
   "grow": {
-    "meta_title": "Wachse mit uns — Back to the Past",
-    "meta_description": "Entdecke Mission, Vision und Zukunft von Back to the Past und wie du teilnimmst.",
+    "meta_title": "Wachse mit uns — Dig the Past",
+    "meta_description": "Entdecke Mission, Vision und Zukunft von Dig the Past und wie du teilnimmst.",
     "hero": {
       "tagline": "Wird noch festgelegt",
-      "primary_cta": "Back to the Past spielen",
+      "primary_cta": "Dig the Past spielen",
       "secondary_cta": "Entdecken Sie das Projekt"
     },
     "mission": {
@@ -1152,7 +1152,7 @@
         "name": "Corporate Learning",
         "description": "Wird noch festgelegt"
       },
-      "center_label": "Back to the Past"
+      "center_label": "Dig the Past"
     },
     "business_model": {
       "title": "Geschäftsmodell",
@@ -1199,7 +1199,7 @@
       "title": "Auf Langfristigkeit ausgelegt",
       "subtitle": "Wird noch festgelegt",
       "left_header": "Traditionelle Startups optimieren für",
-      "right_header": "Back to the Past optimiert für",
+      "right_header": "Dig the Past optimiert für",
       "left_1": "Bewertung",
       "right_1": "Nachhaltigkeit",
       "left_2": "Finanzierung",
@@ -1242,7 +1242,7 @@
         "detail": "Wird noch festgelegt"
       },
       "future_projects_title": "Zukünftige Projekte",
-      "future_project_1": "Back to the Past",
+      "future_project_1": "Dig the Past",
       "future_project_2": "VR History",
       "future_project_3": "Ratet mal, Wissenschaft",
       "future_project_4": "Raten Sie Kunst",
@@ -1548,11 +1548,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "Datenschutzrichtlinie — Back to the Past",
-      "meta_description": "Datenschutzrichtlinie für Back to the Past",
+      "meta_title": "Datenschutzrichtlinie — Dig the Past",
+      "meta_description": "Datenschutzrichtlinie für Dig the Past",
       "title": "Datenschutzrichtlinie",
       "last_updated": "Zuletzt aktualisiert: 4. August 2026",
-      "intro": "Back to the Past (\"wir,\" \"uns,\" \"unser\") betreibt die Website www.guess-history.com (der \"Dienst\"), ein Mehrspieler-Spiel zur historischen Geographie und Jahre-Schätzung. Diese Datenschutzrichtlinie erklärt, welche Informationen wir erheben, wie wir sie verwenden und welche Rechte Sie in Bezug auf diese Informationen haben.",
+      "intro": "Dig the Past (\"wir,\" \"uns,\" \"unser\") betreibt die Website www.digthepast.org (der \"Dienst\"), ein Mehrspieler-Spiel zur historischen Geographie und Jahre-Schätzung. Diese Datenschutzrichtlinie erklärt, welche Informationen wir erheben, wie wir sie verwenden und welche Rechte Sie in Bezug auf diese Informationen haben.",
       "section1_title": "1. Informationen, die wir sammeln",
       "account_info_label": "Kontoinformationen:",
       "account_info_text": "Wenn Sie sich über Google oder E-Mail/Passwort anmelden, erhalten wir Ihre E-Mail-Adresse, Ihren Anzeigenamen und Ihr Profilbild (sofern von Google bereitgestellt). Die Authentifizierung erfolgt über Supabase.",
@@ -1571,7 +1571,7 @@
       "use_communicate": "Mit Ihnen über Ihr Konto oder den Dienst zu kommunizieren, wenn notwendig",
       "no_sell": "Wir verkaufen Ihre persönlichen Daten nicht. Wir verwenden Ihre Daten nicht für Werbung von Dritten.",
       "section3_title": "3. Dienste Dritter",
-      "providers_intro": "Wir verwenden die folgenden Drittanbieter-Dienstleister, um Back to the Past zu betreiben:",
+      "providers_intro": "Wir verwenden die folgenden Drittanbieter-Dienstleister, um Dig the Past zu betreiben:",
       "supabase_name": "Supabase",
       "supabase_desc": "— Authentifizierung und Datenbank-Hosting",
       "google_name": "Google OAuth",
@@ -1597,13 +1597,13 @@
       "changes_text": "Wir können diese Datenschutzrichtlinie von Zeit zu Zeit aktualisieren. Wesentliche Änderungen werden durch ein aktualisiertes \"Zuletzt aktualisiert\"-Datum auf dieser Seite angezeigt."
     },
     "terms": {
-      "meta_title": "Nutzungsbedingungen — Back to the Past",
-      "meta_description": "Nutzungsbedingungen für Back to the Past",
+      "meta_title": "Nutzungsbedingungen — Dig the Past",
+      "meta_description": "Nutzungsbedingungen für Dig the Past",
       "title": "Nutzungsbedingungen",
       "last_updated": "Zuletzt aktualisiert: 4. August 2026",
-      "intro": "Willkommen bei Back to the Past (\"Dienst\"), betrieben unter www.guess-history.com. Durch den Zugriff auf oder die Nutzung des Dienstes erklären Sie sich mit den Nutzungsbedingungen (\"Bedingungen\") einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst nicht.",
+      "intro": "Willkommen bei Dig the Past (\"Dienst\"), betrieben unter www.digthepast.org. Durch den Zugriff auf oder die Nutzung des Dienstes erklären Sie sich mit den Nutzungsbedingungen (\"Bedingungen\") einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst nicht.",
       "section1_title": "1. Beschreibung des Dienstes",
-      "section1_text": "Back to the Past ist ein Mehrspieler- und Einzelspielerspiel, bei dem Spieler das Jahr und den Ort historischer Ereignisse erraten, die in Bildern dargestellt sind, auf Ranglisten konkurrieren und gegen Freunde oder die Gemeinschaft spielen.",
+      "section1_text": "Dig the Past ist ein Mehrspieler- und Einzelspielerspiel, bei dem Spieler das Jahr und den Ort historischer Ereignisse erraten, die in Bildern dargestellt sind, auf Ranglisten konkurrieren und gegen Freunde oder die Gemeinschaft spielen.",
       "section2_title": "2. Konten",
       "section2_text": "Sie müssen ein Konto (über Google oder E-Mail/Passwort) erstellen, um auf die meisten Funktionen zugreifen zu können. Sie sind verantwortlich für die Wahrung der Vertraulichkeit Ihres Kontos und für alle Aktivitäten, die unter diesem stattfinden. Sie müssen genaue Informationen bereitstellen und sind dafür verantwortlich, diese aktuell zu halten.",
       "section3_title": "3. Zulässige Nutzung",
@@ -1617,11 +1617,11 @@
       "section4_title": "4. Benutzerinhalte",
       "section4_text": "Alle von Ihnen eingereichten Anzeigenamen, Avatare oder andere Inhalte dürfen nicht anstößig, verletzend oder ungesetzlich sein. Wir behalten uns das Recht vor, solche Inhalte nach eigenem Ermessen zu entfernen oder zu moderieren.",
       "section5_title": "5. Geistiges Eigentum",
-      "section5_text": "Der Dienst, einschließlich seines Spieldesigns, seiner Software und seiner Marken, gehört Back to the Past und seinen Erstellern. Die Bilder von historischen Ereignissen, die im Spiel verwendet werden, dienen Bildungs-/Informationszwecken; die Rechte an den zugrunde liegenden Quellbildern verbleiben bei ihren jeweiligen Eigentümern, wo dies zutrifft.",
+      "section5_text": "Der Dienst, einschließlich seines Spieldesigns, seiner Software und seiner Marken, gehört Dig the Past und seinen Erstellern. Die Bilder von historischen Ereignissen, die im Spiel verwendet werden, dienen Bildungs-/Informationszwecken; die Rechte an den zugrunde liegenden Quellbildern verbleiben bei ihren jeweiligen Eigentümern, wo dies zutrifft.",
       "section6_title": "6. Haftungsausschluss",
       "section6_text": "Der Dienst wird \"so wie er ist\" und \"so verfügbar\" ohne Garantien jeglicher Art, weder ausdrücklich noch stillschweigend, bereitgestellt. Wir garantieren nicht, dass der Dienst jederzeit unterbrochungsfrei, fehlerfrei oder sicher ist.",
       "section7_title": "7. Haftungsbeschränkung",
-      "section7_text": "Soweit gesetzlich zulässig, haften Back to the Past und dessen Betreiber nicht für indirekte, zufällige, besondere oder Folgeschäden, die aus Ihrer Nutzung des Dienstes entstehen.",
+      "section7_text": "Soweit gesetzlich zulässig, haften Dig the Past und dessen Betreiber nicht für indirekte, zufällige, besondere oder Folgeschäden, die aus Ihrer Nutzung des Dienstes entstehen.",
       "section8_title": "8. Änderungen am Dienst",
       "section8_text": "Wir können jederzeit Teile des Dienstes, einschließlich Spielmodi, Funktionen oder Punktesysteme, ohne vorherige Ankündigung ändern, aussetzen oder einstellen.",
       "section9_title": "9. Änderungen an diesen Bedingungen",
@@ -1632,20 +1632,20 @@
   },
   "pwa": {
     "title": "Vollbild & Installation",
-    "tagline": "Wähle, wie Back to the Past hier startet.",
+    "tagline": "Wähle, wie Dig the Past hier startet.",
     "install_app": "App installieren",
     "ios_intro": "<strong>Zum Home-Bildschirm</strong> zum Installieren:",
     "install_unavailable": "Installation in diesem Browser nicht möglich.",
     "remember_choice": "Auswahl merken"
   },
   "grow_deck": {
-    "meta_title": "Back to the Past — Investoren-Deck",
+    "meta_title": "Dig the Past — Investoren-Deck",
     "meta_description": "Cineastisches Investor-Deck: vom Geschichtsspiel zum menschenverankerten KI-Benchmark.",
-    "meta_image_alt": "Back to the Past Investoren-Deck",
-    "title": "Back to the Past",
+    "meta_image_alt": "Dig the Past Investoren-Deck",
+    "title": "Dig the Past",
     "progress_label": "BACK TO THE PAST",
     "cta_register": "Interesse anmelden",
-    "cta_play": "Back to the Past spielen",
+    "cta_play": "Dig the Past spielen",
     "cta_test": "Interesse anmelden",
     "status_verified": "VERIFIZIERT",
     "status_illustrative": "ILLUSTRATIV",
@@ -1655,7 +1655,7 @@
     "s01": {
       "headline": "Was, wenn ein Spiel zum KI-Benchmark würde?",
       "body": [
-        "Back to the Past: Spieler rekonstruieren Ort und Zeit historischer Ereignisse.",
+        "Dig the Past: Spieler rekonstruieren Ort und Zeit historischer Ereignisse.",
         "Doch das Spiel kann viel mehr: einen menschenverankerten visuellen KI-Benchmark."
       ],
       "statements": [
@@ -1910,7 +1910,7 @@
       ],
       "final": "Kann KI Geschichte so gut verstehen wie Menschen?"
     },
-    "footer_link_home": "Back to the Past",
+    "footer_link_home": "Dig the Past",
     "footer_link_contact": "Kontakt",
     "footer_link_privacy": "Datenschutz",
     "footer_link_terms": "AGB",
