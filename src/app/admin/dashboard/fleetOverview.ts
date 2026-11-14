@@ -274,12 +274,14 @@ export type RecommendationModelInput = {
   ownCapUsd: number | null;
   /** Epoch ms of the model's last LLM call today (cap stop time), or null. */
   capStoppedAtMs: number | null;
-  /** Distinct UTC days with deferrals in the last 3 days (rate-limit streak). */
+  /** Distinct UTC days with deferrals across the last 3 UTC calendar days (rate-limit streak, max 3). */
   rateLimitDays3d: number;
   /** classifyPlayer role === 'player' AND paid tier (flags actually gate it). */
   suggestible: boolean;
   dailyOn: boolean;
   practiceOn: boolean;
+  /** True when the model's catalog price derives to "free". */
+  isFree: boolean;
 };
 
 export type RecommendationAlertInput = {
@@ -412,7 +414,9 @@ export function buildRecommendations(
       severity: "warning",
       title: `${m.name} is being held back by its provider`,
       text: `Its provider has refused calls (rate limit) on ${m.rateLimitDays3d} of the last 3 days — nothing is broken on our side.`,
-      todo: "No action needed — or swap it for another free vision model.",
+      todo: m.isFree
+        ? "No action needed — it retries automatically. Or swap it for another free vision model that is still available."
+        : "No action needed — it retries automatically. If it persists, lower this model's requests per minute in the fleet settings.",
     });
   }
 
