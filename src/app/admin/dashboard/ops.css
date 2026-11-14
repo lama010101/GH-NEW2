@@ -166,6 +166,28 @@
   color: var(--ops-accent);
 }
 
+.ops-navtoggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  background: none;
+  color: var(--ops-ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ops-navtoggle:hover {
+  background: var(--ops-hover);
+}
+
 /* ≥1024px: docked icon rail (tooltips via title attr) */
 @media (min-width: 1024px) {
   .ops-sidebar {
@@ -182,6 +204,12 @@
   }
 
   .ops-navlink {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .ops-navtoggle {
+    display: flex;
     justify-content: center;
     padding: 8px 0;
   }
@@ -207,6 +235,50 @@
   }
 
   .ops-navlink {
+    justify-content: flex-start;
+    padding: 6px 8px;
+  }
+
+  .ops-navtoggle {
+    justify-content: flex-start;
+    padding: 6px 8px;
+  }
+}
+
+/* ≥1024px explicit expand/collapse preference (ADM-FIX-FLEETUI-1112-301):
+   once the user toggles, their choice wins at every width ≥1024px. */
+@media (min-width: 1024px) {
+  .ops-sidebar--collapsed {
+    width: 56px;
+    padding: 12px 4px;
+  }
+
+  .ops-sidebar--collapsed .ops-navheading,
+  .ops-sidebar--collapsed .ops-navlabel {
+    display: none;
+  }
+
+  .ops-sidebar--collapsed .ops-navlink,
+  .ops-sidebar--collapsed .ops-navtoggle {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .ops-sidebar--expanded {
+    width: 232px;
+    padding: 12px 8px;
+  }
+
+  .ops-sidebar--expanded .ops-navheading {
+    display: block;
+  }
+
+  .ops-sidebar--expanded .ops-navlabel {
+    display: inline;
+  }
+
+  .ops-sidebar--expanded .ops-navlink,
+  .ops-sidebar--expanded .ops-navtoggle {
     justify-content: flex-start;
     padding: 6px 8px;
   }
@@ -357,7 +429,7 @@
 
 .ops-table th {
   position: sticky;
-  top: 48px;
+  top: 0;
   z-index: 10;
   background: var(--ops-panel);
   border-bottom: 1px solid var(--ops-line);
@@ -998,6 +1070,17 @@
   border: 1px solid var(--ops-line, #dde4ec);
   border-radius: 8px;
   background: var(--ops-panel, #ffffff);
+}
+
+/* ≥1024px: bound the table scroll wrappers vertically so the sticky thead
+   binds to a real scrollport (overflow-x alone made them scroll containers
+   on both axes with no height bound — the header was offset 48px down). */
+@media (min-width: 1024px) {
+  .ops-panel-flush,
+  .ops-table-wrap {
+    overflow-y: auto;
+    max-height: 70vh;
+  }
 }
 
 .ops-table {
