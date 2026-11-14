@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyPartyKitSecret } from "@/server/partykitAuth";
-import { AUTH_COOKIE_DOMAIN } from "@/core/authCookie";
+import { authCookieDomainForHost } from "@/core/authCookie";
 
 /**
  * Routes that do NOT require authentication.
@@ -92,9 +92,10 @@ function isPkceVerifierCookie(name: string): boolean {
 // as the setAll handler below; no document.cookie (unavailable at Edge).
 function clearPoisonedAuthCookies(
   response: NextResponse,
-  requestCookies: { name: string; value: string }[]
+  requestCookies: { name: string; value: string }[],
+  authCookieDomain: string | undefined
 ): void {
-  const cookieDomain = AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {};
+  const cookieDomain = authCookieDomain ? { domain: authCookieDomain } : {};
   for (const { name } of requestCookies) {
     if (name.startsWith("sb-") && !isPkceVerifierCookie(name)) {
       response.cookies.set(name, "", {
@@ -118,6 +119,17 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // DOMAIN-MIGRATE-DIGTHEPAST-1114-001: derive the auth-cookie Domain from
+  // the actual request host. x-forwarded-host carries the original
+  // client-facing host on Vercel (it survives internal rewrites/aliases);
+  // fall back to nextUrl.hostname. authCookieDomainForHost returns undefined
+  // outside production and for non-allowlisted hosts, keeping dev and
+  // *.vercel.app previews host-only.
+  const requestHost =
+    request.headers.get("x-forwarded-host")?.split(",")[0].trim() ||
+    request.nextUrl.hostname;
+  const authCookieDomain = authCookieDomainForHost(requestHost);
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -135,7 +147,7 @@ export async function middleware(request: NextRequest) {
           // share auth cookies across apex and www in production so the
           // vercel.json apex→www 308 does not drop the session on
           // soft-navigation RSC fetches. Omitted in dev for localhost.
-          const cookieDomain = AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {};
+          const cookieDomain = authCookieDomain ? { domain: authCookieDomain } : {};
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, { ...options, ...cookieDomain })
           );
@@ -193,7 +205,7 @@ export async function middleware(request: NextRequest) {
       ({ name }) => name.startsWith("sb-") && !isPkceVerifierCookie(name)
     );
   if (poisonedAuthCookie) {
-    clearPoisonedAuthCookies(response, requestCookies);
+    clearPoisonedAuthCookies(response, requestCookies, authCookieDomain);
   }
 
   // Root path: signed-in users go to /home. Signed-out users see the
@@ -250,7 +262,7 @@ export async function middleware(request: NextRequest) {
     // Re-apply the poisoned-cookie clear to the fresh redirect response;
     // NextResponse.redirect() does not inherit cookies set on `response`.
     if (poisonedAuthCookie) {
-      clearPoisonedAuthCookies(loginRedirect, requestCookies);
+      clearPoisonedAuthCookies(loginRedirect, requestCookies, authCookieDomain);
     }
     return loginRedirect;
   }
