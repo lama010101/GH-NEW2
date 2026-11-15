@@ -10,6 +10,17 @@ import { RATE_LIMIT_DEFERRED_MARKER } from "@/core/aiFailureCauses";
 import { parseHintReviews, type HintReviewRow } from "@/core/aiHintReview";
 import { sumUsage, type UsageTotals } from "@/core/aiUsage";
 import { assertPracticeHintsOff } from "@/core/aiWorkQueue";
+import {
+  BENCH_PROMPT_VERSION,
+  buildBenchCritiqueMessages,
+  buildBenchTurn1Messages,
+  extractBenchReasoning,
+  gateBenchTurn1Response,
+  parseBenchPostReveal,
+  type BenchPostReveal,
+  type BenchPreReveal,
+  type BenchTurn1Ok,
+} from "./benchmarkPrompt";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -101,6 +112,8 @@ function parseArgs(): {
   playerName: string;
   mode: string;
   noHints: boolean;
+  promptVersion: string | undefined;
+  benchmarkRunId: string | undefined;
 } {
   const args = process.argv.slice(2);
   const flags = new Map<string, string>();
@@ -122,6 +135,8 @@ function parseArgs(): {
     playerName: flags.get("player-name") ?? DEFAULT_AI_PLAYER_NAME,
     mode: flags.get("mode") ?? "daily",
     noHints: flags.has("no-hints"),
+    promptVersion: flags.get("prompt-version"),
+    benchmarkRunId: flags.get("benchmark-run-id"),
   };
 }
 
@@ -133,6 +148,13 @@ const AI_PLAYER_NAME = parsedArgs.playerName;
 // The raw string is validated inside main() before any write can run.
 const MODE: "daily" | "practice" = parsedArgs.mode === "practice" ? "practice" : "daily";
 const HINTS_OFF = MODE === "practice" || parsedArgs.noHints;
+
+// AIP-BUILD-REASONINGGATE-1115-306: bench-v1 benchmark mode — structured
+// pre/post-reveal output + reasoning gate. OFF unless
+// --prompt-version=bench-v1; the legacy path stays byte-identical without it.
+const BENCH_V1 = parsedArgs.promptVersion === "bench-v1";
+const BENCHMARK_RUN_ID = parsedArgs.benchmarkRunId ?? null;
+const BENCH_RUN_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function main(): Promise<void> {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -153,6 +175,37 @@ async function main(): Promise<void> {
 
   if (parsedArgs.mode !== "daily" && parsedArgs.mode !== "practice") {
     console.error(`Invalid --mode=${parsedArgs.mode} (expected daily|practice)`);
+    process.exit(1);
+    return;
+  }
+
+  // AIP-BUILD-REASONINGGATE-1115-306: --prompt-version accepts only
+  // 'bench-v1' besides absent; bench-v1 requires practice mode (hints OFF),
+  // the standard AI player timer, and a valid uuid for --benchmark-run-id.
+  // All checks run before any LLM call or DB write.
+  if (parsedArgs.promptVersion !== undefined && parsedArgs.promptVersion !== "bench-v1") {
+    console.error(`Invalid --prompt-version=${parsedArgs.promptVersion} (expected bench-v1)`);
+    process.exit(1);
+    return;
+  }
+  if (BENCH_V1) {
+    if (MODE !== "practice" || !HINTS_OFF) {
+      console.error("--prompt-version=bench-v1 requires --mode=practice (hints off)");
+      process.exit(1);
+      return;
+    }
+    if (DEADLINE_MS !== DAILY_TIMER_MS) {
+      console.error("--prompt-version=bench-v1 requires the default AI player timer (AI_PLAYER_TIMER_MS)");
+      process.exit(1);
+      return;
+    }
+    if (BENCHMARK_RUN_ID !== null && !BENCH_RUN_ID_RE.test(BENCHMARK_RUN_ID)) {
+      console.error(`Invalid --benchmark-run-id=${BENCHMARK_RUN_ID} (expected uuid)`);
+      process.exit(1);
+      return;
+    }
+  } else if (parsedArgs.benchmarkRunId !== undefined) {
+    console.error("--benchmark-run-id requires --prompt-version=bench-v1");
     process.exit(1);
     return;
   }
@@ -277,7 +330,9 @@ async function main(): Promise<void> {
   const usageSoFar = (): UsageTotals => sumUsage(calls.map((c) => c.response_payload));
   const latencySoFarMs = (): number => calls.reduce((acc, c) => acc + c.duration_ms, 0);
 
-  const turn1Messages = buildTurn1Messages(row.image_url, hints, HINTS_OFF);
+  const turn1Messages = BENCH_V1
+    ? buildBenchTurn1Messages(row.image_url, DETAIL_MODE)
+    : buildTurn1Messages(row.image_url, hints, HINTS_OFF);
   const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls, Math.max(DEADLINE_MS - (Date.now() - turnStart), 1));
   // Manifest provenance: record the max_tokens of the attempt that produced
   // this content (a retry means MAX_TOKENS_RETRY), not a fixed first-attempt budget.
@@ -345,9 +400,126 @@ async function main(): Promise<void> {
     }
   }
 
+  // AIP-BUILD-REASONINGGATE-1115-306: bench-v1 guess turn — structured
+  // pre-reveal parse + reasoning gate + exactly ONE in-worker retry of the
+  // guess turn (guess=turn 1, retry=turn 2, review=turn 3 → max 3 calls,
+  // matching ai_calls_per_play=3). Gate failures write error_class
+  // 'no_reasoning'/'missing_fields' via writeErrorResult; the legacy parse
+  // path below is untouched when BENCH_V1 is off.
+  let benchPreReveal: BenchPreReveal | null = null;
+  let benchPostReveal: BenchPostReveal | null = null;
+  let benchTurn1Result: TurnResult | null = null;
+
+  if (BENCH_V1 && !timedOut) {
+    const benchReasoningInfo = (call: OpenRouterCallResult) => {
+      const r = extractBenchReasoning(call.rawResponse);
+      call.reasoning = r.reasoning;
+      call.reasoningAvailable = r.reasoning !== null;
+      return { text: r.reasoning, tokens: call.usage.reasoning_tokens };
+    };
+
+    const adoptBenchGuess = (call: OpenRouterCallResult, manifestId: string, evald: BenchTurn1Ok): void => {
+      finalCall = call;
+      finalManifestId = manifestId;
+      benchPreReveal = evald.preReveal;
+      benchTurn1Result = { kind: "guess", finalGuess: evald.finalGuess, reasoning: evald.reasoning };
+    };
+
+    const firstInfo = benchReasoningInfo(turn1);
+    const firstEval = gateBenchTurn1Response(turn1.content, firstInfo);
+    if (firstEval.kind === "ok") {
+      adoptBenchGuess(turn1, turn1ManifestId, firstEval);
+    } else {
+      const retry = await callOpenRouter(apiKey, turn1Messages, 2, calls, Math.max(DEADLINE_MS - (Date.now() - turnStart), 1));
+      const retryManifestId = await resolveManifest(pool, {
+        provider: PROVIDER,
+        model_id: MODEL_ID,
+        messages: turn1Messages,
+        temperature: 0.2,
+        max_tokens: retry.maxTokensUsed,
+      });
+      const retryInfo = benchReasoningInfo(retry);
+      finalCall = retry;
+      finalManifestId = retryManifestId;
+      if (retry.error) {
+        if (retry.error.startsWith("TIMEOUT_DEADLINE:")) {
+          timedOut = true;
+          console.log(`Timer deadline hit during bench-v1 guess retry: ${retry.error}`);
+        } else {
+          const deferredText = isRateLimitErrorText(retry.error)
+            ? buildRateLimitDeferredText(retry.error, retry.rawResponse)
+            : null;
+          const evaluationId = await writeErrorEvalFact(pool, {
+            eventId: row.event_id,
+            aiPlayerId: await ensureAiPlayer(pool),
+            manifestId: retryManifestId,
+            groundTruthVersionId,
+            stimulusId,
+            callResult: retry,
+            suppliedHints: [],
+            imageQualityScore: null,
+            imageQualityNotes: null,
+            critiqueError: `OpenRouter turn 2 failed: ${retry.error}`,
+            difficultyScore: null,
+            difficultyNotes: null,
+            authenticityScore: null,
+            authenticityNotes: null,
+            authenticityError: null,
+            finalGuess: null,
+            error: `OpenRouter turn 2 failed: ${retry.error}`,
+            usageTotals: usageSoFar(),
+          });
+          if (!retry.error.startsWith("TRUNCATED_LENGTH:")) {
+            await writeErrorResult(pool, evaluationId, row.event_id, calls, deferredText ?? `OpenRouter turn 2 failed: ${retry.error}`);
+          }
+          if (deferredText !== null) {
+            console.error(deferredText);
+            process.exit(75);
+            return;
+          }
+          console.error(`OpenRouter turn 2 failed: ${retry.error}`);
+          process.exit(1);
+          return;
+        }
+      } else {
+        const retryEval = gateBenchTurn1Response(retry.content, retryInfo);
+        if (retryEval.kind === "ok") {
+          adoptBenchGuess(retry, retryManifestId, retryEval);
+        } else {
+          const evaluationId = await writeErrorEvalFact(pool, {
+            eventId: row.event_id,
+            aiPlayerId: await ensureAiPlayer(pool),
+            manifestId: retryManifestId,
+            groundTruthVersionId,
+            stimulusId,
+            callResult: retry,
+            suppliedHints: [],
+            imageQualityScore: null,
+            imageQualityNotes: null,
+            critiqueError: null,
+            difficultyScore: null,
+            difficultyNotes: null,
+            authenticityScore: null,
+            authenticityNotes: null,
+            authenticityError: null,
+            finalGuess: null,
+            error: retryEval.error,
+            usageTotals: usageSoFar(),
+          });
+          await writeErrorResult(pool, evaluationId, row.event_id, calls, retryEval.error, retryEval.errorClass);
+          console.error(retryEval.error);
+          process.exit(1);
+          return;
+        }
+      }
+    }
+  }
+
   const turn1Parse = timedOut
     ? ({ kind: "hints", hintRequests: [] } as TurnResult)
-    : parseTurn1Response(turn1.content, HINTS_OFF);
+    : BENCH_V1
+      ? (benchTurn1Result ?? ({ kind: "hints", hintRequests: [] } as TurnResult))
+      : parseTurn1Response(turn1.content, HINTS_OFF);
   if (turn1Parse.kind === "error") {
     const deferredText = isRateLimitErrorText(turn1Parse.error)
       ? buildRateLimitDeferredText(turn1Parse.error, turn1.rawResponse)
@@ -550,14 +722,24 @@ async function main(): Promise<void> {
     }
   }
 
-  const critiqueMessages = buildCritiqueMessages(
-    row.image_url,
-    trueAnswer,
-    row.title ?? "",
-    row.location_name ?? "",
-    row.description ?? null,
-    hints
-  );
+  const critiqueMessages = BENCH_V1
+    ? buildBenchCritiqueMessages(
+        row.image_url,
+        trueAnswer,
+        row.title ?? "",
+        row.location_name ?? "",
+        row.description ?? null,
+        hints,
+        DETAIL_MODE
+      )
+    : buildCritiqueMessages(
+        row.image_url,
+        trueAnswer,
+        row.title ?? "",
+        row.location_name ?? "",
+        row.description ?? null,
+        hints
+      );
   const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls, CRITIQUE_TIMEOUT_MS);
   const critiqueManifestId = await resolveManifest(pool, {
     provider: PROVIDER,
@@ -641,6 +823,19 @@ async function main(): Promise<void> {
     } catch (hintReviewErr) {
       const note = `hint review parse failed: ${hintReviewErr instanceof Error ? hintReviewErr.message : String(hintReviewErr)}`;
       critiqueError = critiqueError === null ? note : `${critiqueError}; ${note}`;
+    }
+  }
+
+  // bench-v1: the REQUIRED postReveal block of the review turn. Extracted
+  // only when the legacy critique parse fully succeeded — a review-turn
+  // failure never fails the play; postReveal columns stay NULL and any
+  // postReveal deficiency is noted in critique_error.
+  if (BENCH_V1 && critiqueParse.error === undefined) {
+    const post = parseBenchPostReveal(critique.content);
+    if (post.postReveal !== null) {
+      benchPostReveal = post.postReveal;
+    } else if (post.error !== null) {
+      critiqueError = critiqueError === null ? post.error : `${critiqueError}; ${post.error}`;
     }
   }
 
@@ -749,8 +944,11 @@ async function main(): Promise<void> {
     validHintCount: suppliedHints.length,
   };
 
-  const finalGuessResponsePayload =
-    turn1Parse.kind === "guess" ? calls[0]?.response_payload : calls[1]?.response_payload ?? null;
+  const finalGuessResponsePayload = BENCH_V1
+    ? finalCall.rawResponse
+    : turn1Parse.kind === "guess"
+      ? calls[0]?.response_payload
+      : calls[1]?.response_payload ?? null;
 
   const evaluationId = await writeEvalFact(pool, {
     eventId: row.event_id,
@@ -800,6 +998,22 @@ async function main(): Promise<void> {
     confidence: finalGuess.confidence,
     usageTotals: usageSoFar(),
     latencyMs: latencySoFarMs(),
+    // bench-v1 only: prompt_version + structured_payload + typed postReveal
+    // scores + optional benchmark_run_id. NULL on the legacy path.
+    bench:
+      BENCH_V1 && benchPreReveal !== null
+        ? {
+            promptVersion: BENCH_PROMPT_VERSION,
+            structuredPayload: {
+              prompt_version: BENCH_PROMPT_VERSION,
+              preReveal: benchPreReveal,
+              postReveal: benchPostReveal,
+            },
+            aiImageDepictionScore: benchPostReveal?.ai_image_depiction_score ?? null,
+            fameScore: benchPostReveal?.fame_score ?? null,
+            benchmarkRunId: BENCHMARK_RUN_ID,
+          }
+        : null,
   });
   await writeCalls(pool, answerBankId, calls);
   await insertHintReviews(pool, row.event_id, aiPlayerId, evaluationId, hintReviewRows);
@@ -1822,12 +2036,123 @@ type ResultWriteInput = {
   usageTotals: UsageTotals;
   /** D6: sum of calls.duration_ms. */
   latencyMs: number;
+  /** AIP-BUILD-REASONINGGATE-1115-306: bench-v1 payload — absent on legacy. */
+  bench?: {
+    promptVersion: string;
+    structuredPayload: unknown;
+    aiImageDepictionScore: number | null;
+    fameScore: number | null;
+    benchmarkRunId: string | null;
+  } | null;
 };
 
 async function writeResult(
   pool: Awaited<ReturnType<typeof getDbPool>>,
   input: ResultWriteInput
 ): Promise<string> {
+  if (input.bench) {
+    // AIP-BUILD-REASONINGGATE-1115-306: bench-v1 success row — adds
+    // prompt_version, benchmark_run_id, structured_payload and the typed
+    // postReveal scores. The legacy INSERT below is untouched (byte-identical
+    // DB writes when --prompt-version is absent).
+    // NOTE: ai_image_depiction_score must NEVER be aggregated with the
+    // user-facing round-results image rating — it measures image-to-event
+    // depiction quality only.
+    const benchRes = await pool.query<{ id: string }>(
+      `INSERT INTO ai_answer_bank (
+        event_id, ai_player_id, guess_lat, guess_lng, guess_year,
+        distance_km, year_diff, location_accuracy, year_accuracy,
+        round_accuracy, round_xp, raw_llm_response, error,
+        reference_year, reasoning, hints_requested, hint_penalty_applied,
+        time_to_guess_ms, image_quality_score, image_quality_notes, critique_error,
+        evaluation_id,
+        play_mode, hints_off, total_cost_usd, total_tokens, reasoning_tokens,
+        latency_ms, timer_ms, model_slug, confidence, error_class,
+        prompt_version, benchmark_run_id, structured_payload,
+        ai_image_depiction_score, fame_score
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
+                $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37)
+      ON CONFLICT (event_id, ai_player_id)
+      DO UPDATE SET
+        guess_lat = EXCLUDED.guess_lat,
+        guess_lng = EXCLUDED.guess_lng,
+        guess_year = EXCLUDED.guess_year,
+        distance_km = EXCLUDED.distance_km,
+        year_diff = EXCLUDED.year_diff,
+        location_accuracy = EXCLUDED.location_accuracy,
+        year_accuracy = EXCLUDED.year_accuracy,
+        round_accuracy = EXCLUDED.round_accuracy,
+        round_xp = EXCLUDED.round_xp,
+        raw_llm_response = EXCLUDED.raw_llm_response,
+        error = EXCLUDED.error,
+        reference_year = EXCLUDED.reference_year,
+        reasoning = EXCLUDED.reasoning,
+        hints_requested = EXCLUDED.hints_requested,
+        hint_penalty_applied = EXCLUDED.hint_penalty_applied,
+        time_to_guess_ms = EXCLUDED.time_to_guess_ms,
+        image_quality_score = EXCLUDED.image_quality_score,
+        image_quality_notes = EXCLUDED.image_quality_notes,
+        critique_error = EXCLUDED.critique_error,
+        evaluation_id = EXCLUDED.evaluation_id,
+        play_mode = EXCLUDED.play_mode,
+        hints_off = EXCLUDED.hints_off,
+        total_cost_usd = EXCLUDED.total_cost_usd,
+        total_tokens = EXCLUDED.total_tokens,
+        reasoning_tokens = EXCLUDED.reasoning_tokens,
+        latency_ms = EXCLUDED.latency_ms,
+        timer_ms = EXCLUDED.timer_ms,
+        model_slug = EXCLUDED.model_slug,
+        confidence = EXCLUDED.confidence,
+        error_class = EXCLUDED.error_class,
+        prompt_version = EXCLUDED.prompt_version,
+        benchmark_run_id = EXCLUDED.benchmark_run_id,
+        structured_payload = EXCLUDED.structured_payload,
+        ai_image_depiction_score = EXCLUDED.ai_image_depiction_score,
+        fame_score = EXCLUDED.fame_score,
+        created_at = now()
+      RETURNING id`,
+      [
+        input.eventId,
+        input.aiPlayerId,
+        input.result.guess.location?.lat ?? null,
+        input.result.guess.location?.lng ?? null,
+        input.result.guess.year,
+        input.result.distanceKm,
+        input.result.yearDiff,
+        input.result.locationAccuracy,
+        input.result.yearAccuracy,
+        input.result.roundAccuracy,
+        input.result.roundXp,
+        input.rawLlmResponse,
+        null, // error
+        input.referenceYear,
+        input.reasoning,
+        JSON.stringify(input.hintsRequested),
+        JSON.stringify(input.hintPenaltyApplied),
+        input.timeToGuessMs,
+        input.imageQualityScore,
+        input.imageQualityNotes,
+        input.critiqueError,
+        input.evaluationId,
+        MODE,
+        HINTS_OFF,
+        input.usageTotals.cost,
+        input.usageTotals.total_tokens,
+        input.usageTotals.reasoning_tokens,
+        input.latencyMs,
+        DEADLINE_MS,
+        MODEL_ID,
+        input.confidence,
+        null, // error_class — success rows carry no classification
+        input.bench.promptVersion,
+        input.bench.benchmarkRunId,
+        JSON.stringify(input.bench.structuredPayload),
+        input.bench.aiImageDepictionScore,
+        input.bench.fameScore,
+      ]
+    );
+    return benchRes.rows[0].id;
+  }
   const res = await pool.query<{ id: string }>(
     `INSERT INTO ai_answer_bank (
       event_id, ai_player_id, guess_lat, guess_lng, guess_year,
@@ -1944,7 +2269,11 @@ async function writeErrorResult(
     duration_ms: number;
     error: string | null;
   }>,
-  errorMsg: string
+  errorMsg: string,
+  // AIP-BUILD-REASONINGGATE-1115-306: explicit error_class for bench-v1 gate
+  // failures ('no_reasoning'/'missing_fields'); anything else falls back to
+  // classifyOutcome — unrecognized classes FAIL CLOSED to the outcome map.
+  errorClass?: string | null
 ): Promise<void> {
   const aiPlayerId = await ensureAiPlayer(pool);
   // D6: error rows carry the usage/cost/latency summed over the calls made so
@@ -2018,7 +2347,9 @@ async function writeErrorResult(
       DEADLINE_MS,
       MODEL_ID,
       null, // confidence — error rows carry no guess confidence
-      classifyOutcome(errorMsg),
+      errorClass === "no_reasoning" || errorClass === "missing_fields"
+        ? errorClass
+        : classifyOutcome(errorMsg),
     ]
   );
   await writeCalls(pool, res.rows[0].id, calls);
