@@ -85,7 +85,7 @@ self.addEventListener('push', (event) => {
       console.warn('[sw] push event data could not be parsed as JSON', err);
     }
 
-    const title = payload.title || 'Back to the Past';
+    const title = payload.title || 'Dig the Past';
     const options = {
       body: payload.body || '',
       icon: payload.icon,
