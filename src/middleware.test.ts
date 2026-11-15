@@ -67,7 +67,7 @@ function createMockRequest(
     headers?: Record<string, string>;
   }
 ) {
-  const baseUrl = "https://www.guess-history.com";
+  const baseUrl = "https://www.digthepast.org";
   const fullUrl = new URL(baseUrl + pathname);
   if (options?.searchParams) {
     for (const [key, value] of Object.entries(options.searchParams)) {
