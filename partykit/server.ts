@@ -45,6 +45,7 @@
 // ============================================================================
 
 import { TransitionCause } from "../src/core/transitionCause";
+import { resolveTrustedBaseUrl } from "../src/core/trustedOrigin";
 import { z } from "zod";
 
 interface Room {
@@ -1803,8 +1804,9 @@ export default class GameServer {
     // Detect base URL from Origin header for production correctness
     if (!this.detectedBaseUrl && ctx.request) {
       const origin = ctx.request.headers.get("origin");
-      if (origin && (origin.includes("localhost") || origin.includes("vercel.app") || origin.includes(".partykit.dev") || origin.includes("guess-history.com") || origin.includes("digthepast.org"))) {
-        this.detectedBaseUrl = origin;
+      const trustedBaseUrl = resolveTrustedBaseUrl(origin);
+      if (trustedBaseUrl) {
+        this.detectedBaseUrl = trustedBaseUrl;
         console.log(`[PartyKit] Detected base URL from origin: ${this.detectedBaseUrl}`);
       }
     }
