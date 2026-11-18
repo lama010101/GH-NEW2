@@ -16,11 +16,11 @@
   padding: 16px; display: flex; flex-direction: column; gap: 12px;
 }
 .cardHead { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-.cardTitle { margin: 0; font-size: 16px; font-weight: 700; }
-.cardDesc { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: #9aa4bd; }
+.cardTitle { margin: 0; font-size: var(--font-base); font-weight: 700; }
+.cardDesc { margin: 4px 0 0; font-size: var(--font-xs); line-height: 1.4; color: #9aa4bd; }
 .replay {
   flex: none; cursor: pointer; border: 1px solid rgba(255,255,255,.25); background: transparent;
-  color: #f4f6fb; border-radius: 999px; padding: 6px 12px; font-size: 13px;
+  color: #f4f6fb; border-radius: 999px; padding: 6px 12px; font-size: var(--font-xs);
 }
 .replay:hover { background: rgba(255,255,255,.08); }
 .stage {
@@ -28,7 +28,7 @@
   background: radial-gradient(120% 120% at 50% 30%, #1a2550 0%, #0b1020 70%);
   border-radius: 12px; padding: 20px; min-height: 220px; overflow: hidden;
 }
-.tag { margin: 0; font-size: 12px; color: #6f7a96; text-transform: uppercase; letter-spacing: .08em; }
+.tag { margin: 0; font-size: var(--font-2xs); color: #6f7a96; text-transform: uppercase; letter-spacing: .08em; }
 
 .logo { width: 100%; max-width: 280px; height: auto; overflow: visible; }
 
