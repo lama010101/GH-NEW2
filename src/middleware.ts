@@ -11,7 +11,11 @@ import { authCookieDomainForHost } from "@/core/authCookie";
 // file from public/. It must be reachable without auth so stale SWs from prior
 // deployments can update/unregister instead of receiving a /login HTML redirect.
 // BRAND-BUILD-PURPLEICONS-1015-003: manifest must be fetchable pre-login (installs from the public landing page).
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow", "/manifest.json"];
+// /sitemap.xml, /robots.txt and /events(+/*) are the SEO surface: they must be
+// reachable by anonymous crawlers or the sitemap can never be indexed.
+// "/events" is an exact match; the "/events/" prefix below covers slugs.
+const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow", "/manifest.json",
+  "/sitemap.xml", "/robots.txt", "/events"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
@@ -42,6 +46,7 @@ function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/_next/")) return true;
   if (pathname.startsWith("/favicon")) return true;
   if (pathname.startsWith("/prototype")) return true;
+  if (pathname.startsWith("/events/")) return true;
   if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) return true;
   if (PARTYKIT_SECRET_ROUTES.some((route) => route.test(pathname))) return true;
   if (/^\/compete\/[0-9a-f-]{36}\/opengraph-image$/.test(pathname)) return true;

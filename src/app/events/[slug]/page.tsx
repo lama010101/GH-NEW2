@@ -1,0 +1,217 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { fetchSeoEventBySlug, fetchRelatedSeoEvents, fetchAllEligibleSlugs } from "@/server/seoEvents";
+import { SITE_ORIGIN, BRAND_NAME } from "@/core/brand";
+import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { EventCard } from "../EventCard";
+import { EventsMap } from "../EventsMap";
+import { HeroImage } from "../HeroImage";
+import { EventsThemeToggle } from "../EventsThemeToggle";
+import styles from "../events.module.css";
+
+export const revalidate = 3600;
+
+type EventPageProps = {
+  params: { slug: string };
+};
+
+// Pre-render every currently-eligible event at build time; any event added
+// later (or newly eligible) is rendered on first request and cached (ISR).
+// If the DB isn't reachable at build time (e.g. a CI build job that only has
+// public env vars, no DB credentials), degrade to an empty param list rather
+// than failing the whole build — every page still renders correctly and gets
+// cached on its first real request, since dynamicParams defaults to true.
+export async function generateStaticParams() {
+  try {
+    const slugs = await fetchAllEligibleSlugs();
+    return slugs.map(({ slug }) => ({ slug }));
+  } catch (error) {
+    console.warn(
+      "[events/[slug]] generateStaticParams: DB unavailable at build time, skipping pre-render",
+      error instanceof Error ? error.message : error
+    );
+    return [];
+  }
+}
+
+export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {
+  const event = await fetchSeoEventBySlug(params.slug);
+  if (!event) {
+    const t = await getTranslations("events");
+    return { title: t("not_found_title") };
+  }
+
+  const place = event.location.name || event.location.country || "an unknown location";
+  const title = `${event.title} (${event.year}) | ${BRAND_NAME}`;
+  const description = truncate(
+    event.description || `${event.title} — ${event.year}, ${place}. Learn the story behind this historical event.`,
+    160
+  );
+  const canonical = `${SITE_ORIGIN}/events/${event.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "article",
+      images: event.imageUrl ? [{ url: event.imageUrl }] : undefined,
+    },
+    twitter: {
+      card: event.imageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: event.imageUrl ? [event.imageUrl] : undefined,
+    },
+  };
+}
+
+function truncate(text: string, max: number): string {
+  const clean = text.trim().replace(/\s+/g, " ");
+  return clean.length <= max ? clean : `${clean.slice(0, max - 1).trimEnd()}…`;
+}
+
+export default async function EventDetailPage({ params }: EventPageProps) {
+  const event = await fetchSeoEventBySlug(params.slug);
+  if (!event) {
+    notFound();
+  }
+
+  const t = await getTranslations("events");
+  const tNav = await getTranslations("nav");
+  const cookieStore = await cookies();
+  const rawLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale: Locale =
+    rawLocale && (locales as readonly string[]).includes(rawLocale)
+      ? (rawLocale as Locale)
+      : defaultLocale;
+
+  const place = event.location.name || event.location.country || "Unknown location";
+  const related = await fetchRelatedSeoEvents(event, 12);
+  const canonical = `${SITE_ORIGIN}/events/${event.slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    description: event.description,
+    startDate: String(event.year),
+    url: canonical,
+    ...(event.imageUrl ? { image: [event.imageUrl] } : {}),
+    location: {
+      "@type": "Place",
+      name: place,
+      ...(Number.isFinite(event.location.lat) && Number.isFinite(event.location.lng)
+        ? {
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: event.location.lat,
+              longitude: event.location.lng,
+            },
+          }
+        : {}),
+    },
+    ...(event.category ? { about: event.category } : {}),
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: BRAND_NAME, item: SITE_ORIGIN },
+      { "@type": "ListItem", position: 2, name: "Events", item: `${SITE_ORIGIN}/events` },
+      { "@type": "ListItem", position: 3, name: event.title, item: canonical },
+    ],
+  };
+
+  return (
+    <main className={styles.page}>
+      <div className={styles.container}>
+        {/* eslint-disable-next-line react/no-danger -- static JSON-LD, no user input rendered as HTML */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        {/* eslint-disable-next-line react/no-danger -- static JSON-LD, no user input rendered as HTML */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        />
+
+        <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
+          <Link href="/">{tNav("home")}</Link>
+          <span>/</span>
+          <Link href="/events">{t("breadcrumb")}</Link>
+          <span>/</span>
+          <span className={styles.breadcrumbCurrent}>{event.title}</span>
+          <span className={styles.breadcrumbToggle}>
+            <LanguageSwitcher initialLocale={locale} />
+            <EventsThemeToggle />
+          </span>
+        </nav>
+
+        {event.imageUrl ? (
+          <HeroImage src={event.imageUrl} alt={event.title} />
+        ) : null}
+
+        <h1 className={styles.pageTitle}>{event.title}</h1>
+
+        <div className={styles.metaRow}>
+          <span className={`${styles.metaPill} ${styles.metaPillAccent}`}>{event.year}</span>
+          <span className={`${styles.metaPill} ${styles.metaPillAccent}`}>{place}</span>
+          {event.category ? <span className={styles.metaPill}>{event.category}</span> : null}
+        </div>
+
+        <p className={styles.body}>{event.description}</p>
+
+        {Number.isFinite(event.location.lat) && Number.isFinite(event.location.lng) ? (
+          <EventsMap
+            markers={[
+              {
+                slug: event.slug,
+                title: event.title,
+                year: event.year,
+                lat: event.location.lat,
+                lng: event.location.lng,
+              },
+            ]}
+            height={300}
+            linkMarkers={false}
+          />
+        ) : null}
+
+        <div className={styles.cta}>
+          <div className={styles.ctaText}>
+            <p className={styles.ctaTitle}>{t("cta_title")}</p>
+            <p className={styles.ctaSubtitle}>{t("cta_subtitle")}</p>
+          </div>
+          <Link href="/home" className={styles.ctaButton}>
+            {t("cta_button")}
+          </Link>
+        </div>
+
+        {related.length > 0 ? (
+          <section>
+            <h2 className={styles.sectionTitle}>
+              {t("same_category", { category: event.category ?? "" })}
+            </h2>
+            <div className={styles.relatedRail}>
+              {related.map((r) => (
+                <div key={r.slug} className={styles.relatedRailItem}>
+                  <EventCard event={r} />
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
+    </main>
+  );
+}
