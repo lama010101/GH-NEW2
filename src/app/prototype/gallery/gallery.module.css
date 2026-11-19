@@ -355,7 +355,7 @@
   margin: 0;
   padding: 14px 16px 14px 14px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   line-height: 1.55;
   color: #c9d1d9;
   white-space: pre;

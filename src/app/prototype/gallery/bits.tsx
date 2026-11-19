@@ -5,29 +5,38 @@ import styles from "./gallery.module.css";
 
 /** Clipboard button with transient "Copied!" state. */
 export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+
+  const flash = (next: "copied" | "failed") => {
+    setState(next);
+    setTimeout(() => setState("idle"), 1500);
+  };
 
   const copy = async () => {
+    let ok = false;
     try {
       await navigator.clipboard.writeText(text);
+      ok = true;
     } catch {
       // Clipboard API unavailable (non-secure context) — textarea fallback.
       const ta = document.createElement("textarea");
       ta.value = text;
       ta.style.position = "fixed";
       ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
+      try {
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+      } finally {
+        ta.remove();
+      }
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    flash(ok ? "copied" : "failed");
   };
 
   return (
     <button type="button" className={styles.copyBtn} onClick={copy}>
-      {copied ? "Copied!" : label}
+      {state === "copied" ? "Copied!" : state === "failed" ? "Failed" : label}
     </button>
   );
 }
