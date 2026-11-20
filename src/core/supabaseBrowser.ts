@@ -2,7 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient, Session } from "@supabase/supabase-js";
-import { AUTH_COOKIE_DOMAIN, authCookieDeletionStrings } from "./authCookie";
+import { authCookieDomainForHost, authCookieDeletionStrings } from "./authCookie";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -14,6 +14,15 @@ if (!SUPABASE_ANON_KEY) {
   throw new Error("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is not set");
 }
 
+// DOMAIN-MIGRATE-DIGTHEPAST-1114-001: production auth-cookie Domain derived
+// from the actual page host so it is correct on both digthepast.org and
+// guess-history.com; undefined in dev and on non-allowlisted hosts
+// (localhost, *.vercel.app previews) where cookies stay host-only.
+const authCookieDomain =
+  typeof window !== "undefined"
+    ? authCookieDomainForHost(window.location.hostname)
+    : undefined;
+
 export const supabaseBrowser: SupabaseClient = createBrowserClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -24,14 +33,17 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
     },
     cookieOptions: {
       secure: process.env.NODE_ENV === "production",
-      // Share auth cookies across apex (guess-history.com) and www
-      // (www.guess-history.com). vercel.json force-redirects apex→www on
-      // full page loads, but Next.js soft-navigations issue same-origin RSC
-      // fetches that follow that 308 and lose host-only cookies on the hop.
-      // A leading-dot domain makes the session portable across both hosts.
-      // Omitted in dev so localhost keeps working (browsers reject cookies
-      // whose domain does not match the actual host).
-      ...(AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {}),
+      // Share auth cookies across apex and www of the serving domain
+      // (digthepast.org and guess-history.com). vercel.json force-redirects
+      // apex→www on full page loads, but Next.js soft-navigations issue
+      // same-origin RSC fetches that follow that 308 and lose host-only
+      // cookies on the hop. A leading-dot domain makes the session portable
+      // across both hosts. Derived from window.location.hostname via
+      // authCookieDomainForHost so it matches whichever production domain
+      // served the page; omitted in dev and on non-allowlisted hosts so
+      // localhost and previews keep working (browsers reject cookies whose
+      // domain does not match the actual host).
+      ...(authCookieDomain ? { domain: authCookieDomain } : {}),
     },
   }
 );
@@ -195,10 +207,11 @@ export function forceClearAuthStorage(): void {
         // AUTH-FIX-COOKIECLEAR-IDENTITY-1013-004: emit BOTH the host-only and
         // the Domain-scoped deletion strings per cookie name (chunked
         // .0/.1 names included — they are enumerated individually from
-        // document.cookie). The production cookie is written with
-        // Domain=.guess-history.com and cannot be removed by the host-only
-        // string; the domain variant is omitted in dev.
-        authCookieDeletionStrings(name).forEach((deletionCookie) => {
+        // document.cookie). The production cookie is written with a
+        // host-derived Domain (.digthepast.org or .guess-history.com) and
+        // cannot be removed by the host-only string; the domain variant is
+        // omitted in dev and on non-allowlisted hosts.
+        authCookieDeletionStrings(name, window.location.hostname).forEach((deletionCookie) => {
           document.cookie = deletionCookie;
         });
       }
