@@ -74,6 +74,12 @@ const GROUPS: NavGroup[] = [
         match: "/admin/dashboard/events",
         icon: <Icon d="M3 5h18v16H3zM8 3v4M16 3v4M3 10h18" />,
       },
+      {
+        label: "Reports",
+        href: "/admin/dashboard/reports",
+        match: "/admin/dashboard/reports",
+        icon: <Icon d="M5 21V4m0 1h13l-2.5 4L18 13H5" />,
+      },
     ],
   },
   {
