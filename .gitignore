@@ -72,3 +72,15 @@ supabase/.temp/
 /test-sim-run.log
 /scripts/test/_scratch/theme-capture.log
 /docs/baseline/*.log
+
+# REPO-CLEAN-ROOTJUNK-1118-601 — scratch-file patterns (root + scripts/diagnose dumps)
+/_temp_*
+/dev-server*.log
+/*-log.txt
+/test-e2e-run.log
+/build_*.txt
+/git_diff*.txt
+/debug-*.png
+/ts_out.txt
+/*.patch
+/scripts/diagnose-*.txt
