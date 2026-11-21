@@ -22,6 +22,6 @@
   // SUPABASE_URL has no tracked non-secret value in this repo (only placeholders),
   // so it is a secret/env value, not a var.
   "vars": {
-    "NEXTJS_BASE_URL": "https://guess-history.com"
+    "NEXTJS_BASE_URL": "https://www.digthepast.org"
   }
 }

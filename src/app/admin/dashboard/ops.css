@@ -26,7 +26,7 @@
   background: var(--ops-canvas);
   color: var(--ops-ink);
   min-height: 100vh;
-  font-size: 14px;
+  font-size: var(--font-sm);
 }
 
 /* ---------------------------------------------------------------- shell */
@@ -46,13 +46,13 @@
 
 .ops-brand {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-sm);
   letter-spacing: 0.01em;
 }
 
 .ops-env {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
   border: 1px solid var(--ops-line);
   border-radius: 2px;
@@ -118,7 +118,7 @@
 }
 
 .ops-navheading {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--ops-mute);
   padding: 0 10px 4px;
@@ -139,7 +139,7 @@
   border-left: 2px solid transparent;
   border-radius: 2px;
   color: var(--ops-ink);
-  font-size: 13px;
+  font-size: var(--font-xs);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -178,7 +178,7 @@
   background: none;
   color: var(--ops-ink);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--font-xs);
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
@@ -303,14 +303,14 @@
 
 .ops-h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: var(--ops-ink);
 }
 
 .ops-pagesub {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -328,14 +328,14 @@
 
 .ops-panel-title {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--ops-ink);
 }
 
 .ops-panel-sub {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -347,7 +347,7 @@
   flex-wrap: wrap;
   padding: 10px 16px;
   border-bottom: 1px solid var(--ops-line);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -376,13 +376,13 @@
 }
 
 .ops-kpi-label {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
 .ops-kpi-value {
   margin-top: 2px;
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
@@ -424,7 +424,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .ops-table th {
@@ -434,7 +434,7 @@
   background: var(--ops-panel);
   border-bottom: 1px solid var(--ops-line);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--ops-mute);
   text-align: left;
@@ -517,7 +517,7 @@
   min-width: 20px;
   font-variant-numeric: tabular-nums;
   color: var(--ops-mute);
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 .ops-truncate {
@@ -569,7 +569,7 @@
   padding: 1px 6px;
   border: 1px solid var(--ops-line);
   border-radius: 2px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--ops-ink);
   white-space: nowrap;
 }
@@ -602,7 +602,7 @@
   height: 18px;
   border: 1px solid var(--ops-line);
   border-radius: 2px;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--ops-line);
   background: var(--ops-panel);
@@ -618,7 +618,7 @@
 
 .ops-mono {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 /* ----------------------------------------------------------- mini rows */
@@ -630,7 +630,7 @@
   gap: 12px;
   padding: 6px 0;
   border-bottom: 1px solid var(--ops-line);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .ops-minirow:last-child {
@@ -651,14 +651,14 @@
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   color: var(--ops-mute);
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 .ops-empty {
   padding: 24px 16px;
   text-align: center;
   color: var(--ops-mute);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 /* ------------------------------------------------------- buttons/inputs */
@@ -670,7 +670,7 @@
   border-radius: 2px;
   background: var(--ops-panel);
   color: var(--ops-ink);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   text-decoration: none;
   cursor: pointer;
 }
@@ -695,7 +695,7 @@
   border-radius: 2px;
   background: var(--ops-panel);
   color: var(--ops-ink);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .ops-links {
@@ -706,7 +706,7 @@
 
 .ops-footnote {
   margin-top: 8px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -716,7 +716,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--ops-mute);
 }
 
@@ -765,13 +765,13 @@
 
 .ops-drawer-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 
 .ops-drawer-subtitle {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -801,13 +801,13 @@
 }
 
 .ops-field-label {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
 .ops-field-value {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
@@ -852,7 +852,7 @@
   .ops-table tbody td::before {
     content: attr(data-label);
     color: var(--ops-mute);
-    font-size: 12px;
+    font-size: var(--font-2xs);
     flex-shrink: 0;
   }
 
