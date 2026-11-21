@@ -184,6 +184,7 @@ async function main(): Promise<void> {
      FROM events e
      JOIN locations l ON l.event_id = e.id
      WHERE e.status = 'validated'
+       AND e.retired_at IS NULL
        AND l.latitude IS NOT NULL
        AND l.longitude IS NOT NULL
      ORDER BY e.id`
