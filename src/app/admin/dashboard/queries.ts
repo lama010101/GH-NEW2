@@ -160,7 +160,7 @@ export type DeferralStatRow = {
   ai_player_id: string;
   open_deferrals: number;
   last_deferred_at: string | null;
-  /** Distinct UTC days with a deferral in the last 3 days (rate-limit streak). */
+  /** Distinct UTC days with a deferral across the last 3 UTC calendar days (rate-limit streak, max 3). */
   defer_days_3d: number;
 };
 
@@ -172,7 +172,7 @@ export async function fetchDeferralStats(pool: Pool): Promise<DeferralStatRow[]>
       COUNT(*) FILTER (WHERE resolved_at IS NULL)::int AS open_deferrals,
       MAX(last_deferred_at)::text AS last_deferred_at,
       COUNT(DISTINCT last_deferred_at::date) FILTER (
-        WHERE last_deferred_at >= now() - interval '3 days'
+        WHERE last_deferred_at::date >= (now() AT TIME ZONE 'UTC')::date - 2
       )::int AS defer_days_3d
     FROM ai_play_deferrals
     GROUP BY ai_player_id

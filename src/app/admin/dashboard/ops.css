@@ -26,7 +26,7 @@
   background: var(--ops-canvas);
   color: var(--ops-ink);
   min-height: 100vh;
-  font-size: 14px;
+  font-size: var(--font-sm);
 }
 
 /* ---------------------------------------------------------------- shell */
@@ -46,13 +46,13 @@
 
 .ops-brand {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-sm);
   letter-spacing: 0.01em;
 }
 
 .ops-env {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
   border: 1px solid var(--ops-line);
   border-radius: 2px;
@@ -118,7 +118,7 @@
 }
 
 .ops-navheading {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--ops-mute);
   padding: 0 10px 4px;
@@ -139,7 +139,7 @@
   border-left: 2px solid transparent;
   border-radius: 2px;
   color: var(--ops-ink);
-  font-size: 13px;
+  font-size: var(--font-xs);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -166,6 +166,28 @@
   color: var(--ops-accent);
 }
 
+.ops-navtoggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  background: none;
+  color: var(--ops-ink);
+  font: inherit;
+  font-size: var(--font-xs);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ops-navtoggle:hover {
+  background: var(--ops-hover);
+}
+
 /* ≥1024px: docked icon rail (tooltips via title attr) */
 @media (min-width: 1024px) {
   .ops-sidebar {
@@ -182,6 +204,12 @@
   }
 
   .ops-navlink {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .ops-navtoggle {
+    display: flex;
     justify-content: center;
     padding: 8px 0;
   }
@@ -210,6 +238,50 @@
     justify-content: flex-start;
     padding: 6px 8px;
   }
+
+  .ops-navtoggle {
+    justify-content: flex-start;
+    padding: 6px 8px;
+  }
+}
+
+/* ≥1024px explicit expand/collapse preference (ADM-FIX-FLEETUI-1112-301):
+   once the user toggles, their choice wins at every width ≥1024px. */
+@media (min-width: 1024px) {
+  .ops-sidebar--collapsed {
+    width: 56px;
+    padding: 12px 4px;
+  }
+
+  .ops-sidebar--collapsed .ops-navheading,
+  .ops-sidebar--collapsed .ops-navlabel {
+    display: none;
+  }
+
+  .ops-sidebar--collapsed .ops-navlink,
+  .ops-sidebar--collapsed .ops-navtoggle {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .ops-sidebar--expanded {
+    width: 232px;
+    padding: 12px 8px;
+  }
+
+  .ops-sidebar--expanded .ops-navheading {
+    display: block;
+  }
+
+  .ops-sidebar--expanded .ops-navlabel {
+    display: inline;
+  }
+
+  .ops-sidebar--expanded .ops-navlink,
+  .ops-sidebar--expanded .ops-navtoggle {
+    justify-content: flex-start;
+    padding: 6px 8px;
+  }
 }
 
 /* <1024px: off-canvas drawer + hamburger */
@@ -231,14 +303,14 @@
 
 .ops-h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: var(--ops-ink);
 }
 
 .ops-pagesub {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -256,14 +328,14 @@
 
 .ops-panel-title {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--ops-ink);
 }
 
 .ops-panel-sub {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -275,7 +347,7 @@
   flex-wrap: wrap;
   padding: 10px 16px;
   border-bottom: 1px solid var(--ops-line);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -304,13 +376,13 @@
 }
 
 .ops-kpi-label {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
 .ops-kpi-value {
   margin-top: 2px;
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
@@ -352,17 +424,17 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .ops-table th {
   position: sticky;
-  top: 48px;
+  top: 0;
   z-index: 10;
   background: var(--ops-panel);
   border-bottom: 1px solid var(--ops-line);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--ops-mute);
   text-align: left;
@@ -445,7 +517,7 @@
   min-width: 20px;
   font-variant-numeric: tabular-nums;
   color: var(--ops-mute);
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 .ops-truncate {
@@ -497,7 +569,7 @@
   padding: 1px 6px;
   border: 1px solid var(--ops-line);
   border-radius: 2px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--ops-ink);
   white-space: nowrap;
 }
@@ -530,7 +602,7 @@
   height: 18px;
   border: 1px solid var(--ops-line);
   border-radius: 2px;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--ops-line);
   background: var(--ops-panel);
@@ -546,7 +618,7 @@
 
 .ops-mono {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 /* ----------------------------------------------------------- mini rows */
@@ -558,7 +630,7 @@
   gap: 12px;
   padding: 6px 0;
   border-bottom: 1px solid var(--ops-line);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .ops-minirow:last-child {
@@ -579,14 +651,14 @@
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   color: var(--ops-mute);
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 .ops-empty {
   padding: 24px 16px;
   text-align: center;
   color: var(--ops-mute);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 /* ------------------------------------------------------- buttons/inputs */
@@ -598,7 +670,7 @@
   border-radius: 2px;
   background: var(--ops-panel);
   color: var(--ops-ink);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   text-decoration: none;
   cursor: pointer;
 }
@@ -623,7 +695,7 @@
   border-radius: 2px;
   background: var(--ops-panel);
   color: var(--ops-ink);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .ops-links {
@@ -634,7 +706,7 @@
 
 .ops-footnote {
   margin-top: 8px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -644,7 +716,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--ops-mute);
 }
 
@@ -693,13 +765,13 @@
 
 .ops-drawer-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 
 .ops-drawer-subtitle {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
@@ -729,13 +801,13 @@
 }
 
 .ops-field-label {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--ops-mute);
 }
 
 .ops-field-value {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
@@ -780,7 +852,7 @@
   .ops-table tbody td::before {
     content: attr(data-label);
     color: var(--ops-mute);
-    font-size: 12px;
+    font-size: var(--font-2xs);
     flex-shrink: 0;
   }
 
@@ -1000,6 +1072,17 @@
   background: var(--ops-panel, #ffffff);
 }
 
+/* ≥1024px: bound the table scroll wrappers vertically so the sticky thead
+   binds to a real scrollport (overflow-x alone made them scroll containers
+   on both axes with no height bound — the header was offset 48px down). */
+@media (min-width: 1024px) {
+  .ops-panel-flush,
+  .ops-table-wrap {
+    overflow-y: auto;
+    max-height: 70vh;
+  }
+}
+
 .ops-table {
   width: 100%;
   border-collapse: collapse;
@@ -1011,13 +1094,13 @@
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--ops-mute, #5a6b80);
-  padding: 8px 8px;
+  padding: 8px 6px;
   border-bottom: 1px solid var(--ops-line, #dde4ec);
   white-space: nowrap;
 }
 
 .ops-table td {
-  padding: 8px 8px;
+  padding: 8px 6px;
   border-bottom: 1px solid var(--ops-line, #dde4ec);
   color: var(--ops-ink, #14202b);
   vertical-align: top;
@@ -1073,7 +1156,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 120px;
+  min-width: 104px;
 }
 
 .fleet-modelid {
@@ -1083,9 +1166,19 @@
 }
 
 .fleet-why {
+  display: block;
   font-size: var(--font-xs);
   color: var(--ops-mute, #5a6b80);
   max-width: 420px;
+}
+
+.fleet-alwayson {
+  /* Previously unstyled — rendered as ~200px of inline text and inflated
+     its column's preferred width past the wrap at ~1024px viewports. */
+  display: block;
+  font-size: var(--font-2xs);
+  color: var(--ops-mute, #5a6b80);
+  max-width: 132px;
 }
 
 .fleet-numcell {
@@ -1093,7 +1186,7 @@
   flex-direction: column;
   gap: 3px;
   align-items: flex-end;
-  min-width: 64px;
+  min-width: 56px;
 }
 
 .fleet-sub {

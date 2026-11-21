@@ -27,6 +27,7 @@ import type { LearnClueItem, LearnMode } from "@/core/learnTypes";
 import { splitClueList } from "@/core/learnFormat";
 import { pointColor } from "@/core/learnMapColors";
 import { useEventLearn } from "./useEventLearn";
+import { ReportEventForm } from "./ReportEventForm";
 import styles from "./EventLearnModal.module.css";
 
 const LearnLocationMap = dynamic(
@@ -363,6 +364,8 @@ export function EventLearnModal({
               ) : null}
             </>
           ) : null}
+
+          <ReportEventForm eventId={eventId} />
         </div>
       </div>
     </div>

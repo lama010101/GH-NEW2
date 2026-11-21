@@ -530,6 +530,60 @@ describe("buildT3Item", () => {
     expect(answer?.title).toBe("The [year] Games");
   });
 
+  // AIP-FIX-DEDUCTAPOS-1117-504: quote chars left wrapping the [year]
+  // placeholder by quoted source years ('1984', '84) are stripped; genuine
+  // possessives and placeholder-free titles are untouched.
+  it("strips stray quotes around a scrubbed 4-digit year in the true title", () => {
+    const trueLeak: DeductionPoolEvent = {
+      ...T3_TRUE,
+      title: "Apple's Iconic '1984' Super Bowl Commercial",
+    };
+    const r = buildT3Item(trueLeak, T3_POOL, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const answer = r.options.find((o) => o.id === r.answerId);
+    expect(answer?.title).toBe("Apple's Iconic [year] Super Bowl Commercial");
+  });
+
+  it("strips a stray apostrophe prefix left by an '84-style year", () => {
+    const trueLeak: DeductionPoolEvent = { ...T3_TRUE, title: "''84 Games" };
+    const r = buildT3Item(trueLeak, T3_POOL, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const answer = r.options.find((o) => o.id === r.answerId);
+    expect(answer?.title).toBe("[year] Games");
+  });
+
+  it("strips curly quotes around a scrubbed year in the true title", () => {
+    const trueLeak: DeductionPoolEvent = { ...T3_TRUE, title: "The ‘1984’ Games" };
+    const r = buildT3Item(trueLeak, T3_POOL, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const answer = r.options.find((o) => o.id === r.answerId);
+    expect(answer?.title).toBe("The [year] Games");
+  });
+
+  it("keeps a possessive apostrophe while stripping placeholder quotes", () => {
+    const trueLeak: DeductionPoolEvent = {
+      ...T3_TRUE,
+      title: "Apple's '1984' Breakthrough",
+    };
+    const r = buildT3Item(trueLeak, T3_POOL, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const answer = r.options.find((o) => o.id === r.answerId);
+    expect(answer?.title).toBe("Apple's [year] Breakthrough");
+  });
+
+  it("leaves a title with no placeholder unchanged", () => {
+    const trueLeak: DeductionPoolEvent = { ...T3_TRUE, title: "The Glass Orchestra" };
+    const r = buildT3Item(trueLeak, T3_POOL, "salt-1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const answer = r.options.find((o) => o.id === r.answerId);
+    expect(answer?.title).toBe("The Glass Orchestra");
+  });
+
   it("fails closed on option_title_leak when a scrubbed title still leaks", () => {
     // "40s Files" keeps a bare "40s" (no the/early/mid/late prefix, no era
     // suffix) which survives R2 and trips the R5 decade residual for year 44.

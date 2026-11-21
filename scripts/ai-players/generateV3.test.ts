@@ -567,3 +567,303 @@ describe("generate-answers-v3 worker SQL hardening (AIP-FIX-WORKERHARDEN-V3-1107
     expect(manifestSelectsRecorded.length).toBeGreaterThanOrEqual(2);
   }, 25000);
 });
+
+// AIP-BUILD-REASONINGGATE-1115-306 — bench-v1 worker proof. Same mocked
+// harness; every bench reply carries message.reasoning so the provider-side
+// reasoning trace exists (TURN1_USAGE reports reasoning_tokens=2).
+describe("generate-answers-v3 bench-v1 mode", () => {
+  const BENCH_RUN_ID = "123e4567-e89b-42d3-a456-426614174000";
+  const BENCH_ARGS = [
+    "--mode=practice",
+    "--prompt-version=bench-v1",
+    "--benchmark-run-id=" + BENCH_RUN_ID,
+    "evt-1",
+  ];
+  const BENCH_REASONING =
+    "The banner text and period dress suggest a 1960s civic event; the neoclassical facade and avenue layout place it in Washington DC.";
+  const BENCH_TURN1 = {
+    finalGuess: { latitude: 40.1, longitude: -70.2, year: 1969, confidence: 0.7 },
+    reasoning: BENCH_REASONING,
+    preReveal: {
+      image_description: "A parade crowd in period dress",
+      detected_clues: ["banner", "architecture"],
+      year_reasoning: "vehicles and dress suggest 1960s",
+      location_reasoning: "neoclassical buildings suggest DC",
+    },
+  };
+  const BENCH_CRITIQUE = {
+    imageQualityScore: 8,
+    imageQualityNotes: "sharp",
+    difficultyScore: 6,
+    difficultyNotes: "mid",
+    authenticityScore: 9,
+    authenticityNotes: "real",
+    postReveal: {
+      difficulty_year: 7,
+      difficulty_location: 6,
+      hard_factors: ["generic crowd", "no landmark"],
+      event_plausibility: 8,
+      ai_image_depiction_score: 85,
+      fame_score: 90,
+      difficulty_notes: "crowd shots are ambiguous",
+    },
+  };
+
+  function benchReply(payload: unknown, usage: unknown, reasoningText?: string) {
+    return orJson({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content: JSON.stringify(payload),
+            ...(reasoningText !== undefined ? { reasoning: reasoningText } : {}),
+          },
+        },
+      ],
+      usage,
+    });
+  }
+
+  it("happy path: 2 calls, bench columns populated, prompt_version=bench-v1", async () => {
+    mocks.orQueue = [
+      benchReply(BENCH_TURN1, TURN1_USAGE, "provider trace text"),
+      benchReply(BENCH_CRITIQUE, CRITIQUE_USAGE),
+    ];
+    await runWorker(BENCH_ARGS);
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const bankInserts = queries("INSERT INTO ai_answer_bank (");
+    expect(bankInserts).toHaveLength(1);
+    const p = bankInserts[0].params;
+    // 37-column bench INSERT: indices 32..36 are the new columns.
+    expect(p).toHaveLength(37);
+    expect(p[12]).toBeNull(); // error
+    expect(p[22]).toBe("practice");
+    expect(p[23]).toBe(true);
+    expect(p[31]).toBeNull(); // error_class
+    expect(p[32]).toBe("bench-v1"); // prompt_version
+    expect(p[33]).toBe(BENCH_RUN_ID); // benchmark_run_id
+    const sp = JSON.parse(String(p[34])); // structured_payload
+    expect(sp.prompt_version).toBe("bench-v1");
+    expect(sp.preReveal.image_description).toBe("A parade crowd in period dress");
+    expect(sp.preReveal.detected_clues).toEqual(["banner", "architecture"]);
+    expect(sp.postReveal.ai_image_depiction_score).toBe(85);
+    expect(sp.postReveal.fame_score).toBe(90);
+    expect(p[35]).toBe(85); // ai_image_depiction_score
+    expect(p[36]).toBe(90); // fame_score
+
+    // guess=turn1 + review=turn3 only (no retry needed).
+    const callRows = queries("INSERT INTO ai_answer_bank_calls");
+    expect(callRows).toHaveLength(2);
+    expect(callRows.map((q) => q.params[1]).sort()).toEqual([1, 3]);
+    const t1 = callRows.find((q) => q.params[1] === 1)!;
+    const sysPrompt = String(
+      (t1.params[2] as { messages: Array<{ content: string }> }).messages[0].content
+    );
+    expect(sysPrompt).toContain("preReveal");
+    expect(sysPrompt).not.toContain("hintRequests");
+    expect(sysPrompt).not.toContain("Available hints");
+
+    // eval_facts reasoning_trace carries the provider reasoning text.
+    const ef = queries("INSERT INTO eval_facts")[0].params;
+    expect(ef[15]).toBe(true); // reasoning_trace_available
+    expect(String(ef[16])).toContain("provider trace text");
+  }, 25000);
+
+  it("gate failure retries the guess turn once: fail then success = 3 calls", async () => {
+    const bad = { hintRequests: [{ tier: 1, type: "when" }] }; // -> missing_fields
+    mocks.orQueue = [
+      benchReply(bad, TURN1_USAGE, "trace"),
+      benchReply(BENCH_TURN1, TURN1_USAGE, "trace"),
+      benchReply(BENCH_CRITIQUE, CRITIQUE_USAGE),
+    ];
+    await runWorker(BENCH_ARGS);
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const callRows = queries("INSERT INTO ai_answer_bank_calls");
+    expect(callRows).toHaveLength(3);
+    expect(callRows.map((q) => q.params[1]).sort()).toEqual([1, 2, 3]);
+    const bankInserts = queries("INSERT INTO ai_answer_bank (");
+    expect(bankInserts).toHaveLength(1);
+    expect(bankInserts[0].params[32]).toBe("bench-v1");
+  }, 25000);
+
+  it("gate failure twice writes a final error row with explicit error_class", async () => {
+    const shortReasoning = { ...BENCH_TURN1, reasoning: "tiny" };
+    mocks.orQueue = [
+      benchReply(shortReasoning, TURN1_USAGE, "trace"),
+      benchReply(shortReasoning, TURN1_USAGE, "trace"),
+    ];
+    await runWorker(BENCH_ARGS);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const bankInserts = queries("INSERT INTO ai_answer_bank (");
+    expect(bankInserts).toHaveLength(1);
+    const p = bankInserts[0].params;
+    // writeErrorResult 23-column layout: error(3), error_class(22).
+    expect(String(p[3]).startsWith("NO_REASONING: ")).toBe(true);
+    expect(p[22]).toBe("no_reasoning");
+    // guess + retry only — the review turn never ran.
+    const callRows = queries("INSERT INTO ai_answer_bank_calls");
+    expect(callRows).toHaveLength(2);
+    expect(callRows.map((q) => q.params[1]).sort()).toEqual([1, 2]);
+  }, 25000);
+
+  it("missing_fields gate failure writes error_class=missing_fields", async () => {
+    const noPreReveal = { ...BENCH_TURN1 };
+    delete (noPreReveal as Record<string, unknown>).preReveal;
+    mocks.orQueue = [
+      benchReply(noPreReveal, TURN1_USAGE, "trace"),
+      benchReply(noPreReveal, TURN1_USAGE, "trace"),
+    ];
+    await runWorker(BENCH_ARGS);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const p = queries("INSERT INTO ai_answer_bank (")[0].params;
+    expect(String(p[3]).startsWith("MISSING_FIELDS: ")).toBe(true);
+    expect(String(p[3])).toContain("preReveal");
+    expect(p[22]).toBe("missing_fields");
+  }, 25000);
+
+  it("rejects hints-on / non-practice / bad prompt-version before any call", async () => {
+    // daily mode => hints on => hard error before DB/fetch.
+    await runWorker(["--prompt-version=bench-v1", "evt-1"]);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mocks.fetchImpl).not.toHaveBeenCalled();
+    expect(mocks.recorded).toHaveLength(0);
+
+    exitSpy.mockClear();
+    mocks.fetchImpl.mockClear();
+    await runWorker(["--mode=practice", "--prompt-version=bench-v2", "evt-1"]);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mocks.fetchImpl).not.toHaveBeenCalled();
+
+    exitSpy.mockClear();
+    mocks.fetchImpl.mockClear();
+    await runWorker(["--mode=practice", "--prompt-version=bench-v1", "--timer-sec=5", "evt-1"]);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mocks.fetchImpl).not.toHaveBeenCalled();
+  }, 25000);
+});
+
+describe("generate-answers-v3 legacy path unchanged (bench flag absent)", () => {
+  it("buildTurn1Messages(hintsOff) and buildCritiqueMessages are byte-identical to pre-change output", async () => {
+    vi.resetModules();
+    process.argv = ["node", "generate-answers-v3.ts"]; // no event id -> early exit
+    const mod = await import("./generate-answers-v3");
+    const hints = [
+      {
+        id: "hint-1",
+        event_id: "evt-1",
+        tier: 1,
+        type: "when",
+        content: "It happened in spring",
+        metadata: null,
+        display_order: 1,
+      },
+    ];
+
+    // Exact pre-change turn-1 (hints OFF) messages.
+    const turn1 = mod.buildTurn1Messages("https://img/x", hints, true);
+    expect(JSON.stringify(turn1)).toBe(
+      JSON.stringify([
+        {
+          role: "system",
+          content:
+            "You are a geospatial and historical reasoning assistant. You will be shown an image. " +
+            "Your task is to determine where (latitude and longitude) and when (year) the depicted historical event occurred.\n\n" +
+            "Submit a final guess. Respond with JSON only (no markdown). Use exactly this shape:\n\n" +
+            "Final guess:\n" +
+            '{"finalGuess": {"latitude": number, "longitude": number, "year": integer, "confidence": number 0-1 (optional)}, "reasoning": "your concise reasoning"}',
+        },
+        {
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: "https://img/x", detail: "auto" } },
+            { type: "text", text: "What is your guess?" },
+          ],
+        },
+      ])
+    );
+
+    // Exact pre-change critique messages (with one hint -> hintReviews block).
+    const critique = mod.buildCritiqueMessages(
+      "https://img/x",
+      { lat: 38.9, lng: -77.0, year: 1969, locationName: "Washington DC" },
+      "Moon landing parade",
+      "Washington DC",
+      "A test description",
+      hints
+    );
+    expect(JSON.stringify(critique)).toBe(
+      JSON.stringify([
+        {
+          role: "system",
+          content:
+            "You are evaluating the provided historical image after the true answer has been revealed. " +
+            "Assess three things and return a single JSON object with exactly these keys:\n" +
+            "  - imageQualityScore (integer 1-10): how accurately the image depicts the known historical event.\n" +
+            "  - imageQualityNotes (string): brief explanation for the image quality score.\n" +
+            "  - difficultyScore (integer 1-10): how hard the image would be for a skilled player to geolocate and date correctly before seeing the answer, considering visual ambiguity, common/generic subject matter, lack of identifying landmarks, etc.\n" +
+            "  - difficultyNotes (string): brief explanation for the difficulty score.\n" +
+            "  - authenticityScore (integer 1-10): how confident you are that the depicted event is a real historical event, as opposed to a staged photo, movie/TV still, reenactment, or AI-generated image.\n" +
+            "  - authenticityNotes (string): brief explanation for the authenticity score.\n" +
+            "  - hintReviews (array): one entry per hint listed in the user prompt, each " +
+            '{"hintId": string (the hint\'s id), "verdict": "correct" | "incorrect" | "unverifiable" | "partially_correct", ' +
+            '"confidence": number 0-1, "explanation": string, "suggestedCorrection": string | null} ' +
+            "judging whether the hint text is accurate given the image and the revealed truth.\n" +
+            "\nRespond with JSON only (no markdown).",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: "https://img/x", detail: "auto" } },
+            {
+              type: "text",
+              text:
+                "The correct answer is: latitude 38.9, longitude -77, year 1969 (Washington DC). " +
+                'Event title: "Moon landing parade". Event description: "A test description".\n\n' +
+                "Rate the image quality, guess difficulty, and authenticity of the depicted event. " +
+                "Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes, and hintReviews." +
+                "\n\nThe event's hints (id — tier — type — content). Review each against the image and the revealed answer:\n" +
+                '- id="hint-1" (tier 1 when): "It happened in spring"',
+            },
+          ],
+        },
+      ])
+    );
+  }, 25000);
+
+  it("legacy success run writes the original 32-column row — no bench fields", async () => {
+    mocks.orQueue = [
+      modelReply(
+        {
+          finalGuess: { latitude: 40.1, longitude: -70.2, year: 1969, confidence: 0.7 },
+          reasoning: "reasoning here",
+        },
+        TURN1_USAGE
+      ),
+      modelReply(
+        {
+          imageQualityScore: 8,
+          imageQualityNotes: "sharp",
+          difficultyScore: 6,
+          difficultyNotes: "mid",
+          authenticityScore: 9,
+          authenticityNotes: "real",
+        },
+        CRITIQUE_USAGE
+      ),
+    ];
+    await runWorker(["--mode=practice", "evt-1"]);
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const bankInserts = queries("INSERT INTO ai_answer_bank (");
+    expect(bankInserts).toHaveLength(1);
+    // Original writeResult has exactly 32 bound params — no bench columns.
+    expect(bankInserts[0].params).toHaveLength(32);
+    expect(bankInserts[0].sql).not.toContain("prompt_version");
+    expect(bankInserts[0].sql).not.toContain("structured_payload");
+    expect(bankInserts[0].sql).not.toContain("benchmark_run_id");
+  }, 25000);
+});
