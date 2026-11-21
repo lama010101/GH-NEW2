@@ -391,6 +391,7 @@ export default async function AiFleetPage({
       suggestible: m.suggestible,
       dailyOn: m.dailyOn,
       practiceOn: m.practiceOn,
+      isFree: m.price === "free",
     })),
   });
 
