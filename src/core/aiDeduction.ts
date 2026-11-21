@@ -66,6 +66,8 @@ const PLACE_PLACEHOLDER = "[place]";
 const EVENT_PLACEHOLDER = "[event]";
 const PLACEHOLDER_RE = /\[(?:year|place|event)\]/g;
 const PLACEHOLDER_MERGE_RE = /\[(year|place|event)\](?:(?:[ \t,]+|\band\b)*\[\1\])+/g;
+const PLACEHOLDER_QUOTE_RESIDUE_RE =
+  /(?<![A-Za-z0-9])['‘’"“”](?=\[(?:year|place|event)\])|(?<=\[(?:year|place|event)\])['‘’"“”](?![A-Za-z0-9])/g;
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -269,6 +271,7 @@ function collapseResidue(s: string): string {
     .replace(/[ \t]*\n[ \t]*/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(PLACEHOLDER_MERGE_RE, "[$1]")
+    .replace(PLACEHOLDER_QUOTE_RESIDUE_RE, "")
     .replace(/ +([,.;:!?)\]}])/g, "$1")
     .replace(/([(\[]) +/g, "$1")
     .replace(/(^|\n) +/g, "$1")
