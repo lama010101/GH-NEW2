@@ -52,14 +52,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -70,7 +70,7 @@
 }
 
 .protoLink {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-teal);
   text-decoration: none;
@@ -443,7 +443,7 @@
   background: var(--gh-danger);
   color: var(--gh-text-primary);
   border-radius: var(--gh-radius-pill);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   padding: 1px 5px;
   margin-inline-start: 4px;
@@ -581,7 +581,7 @@
   border: none;
   cursor: pointer;
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   line-height: 1;
   opacity: 0.8;
@@ -628,7 +628,7 @@
 .playBadge {
   background: var(--gh-blue);
   color: var(--gh-text-primary);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--gh-radius-pill);
@@ -659,7 +659,7 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-text-primary);
   margin-inline-end: 6px;
@@ -917,7 +917,7 @@
 }
 
 .langFlag {
-  font-size: 16px;
+  font-size: var(--font-base);
   line-height: 1;
 }
 
