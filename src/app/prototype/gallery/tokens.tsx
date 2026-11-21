@@ -265,7 +265,7 @@ export function TypographySection() {
               <div
                 className={styles.fontSpecimen}
                 style={{
-                  fontFamily: `${font.varName}, sans-serif`,
+                  fontFamily: `var(${font.varName}), sans-serif`,
                   fontSize: font.name === "Bebas Neue" ? 44 : 22,
                 }}
               >
@@ -295,7 +295,7 @@ export function TypographySection() {
                   {step.px} / {step.lh}
                 </span>
               </span>
-              <span className={styles.typeSpecimen} style={{ fontSize: `var(${cssVarFor(step.cls)})` }}>
+              <span className={`${styles.typeSpecimen} ${step.cls}`}>
                 Dig the Past — 1815
               </span>
               <span className={styles.typeValue}>
@@ -314,31 +314,6 @@ export function TypographySection() {
       </p>
     </Section>
   );
-}
-
-// Map Tailwind class to the equivalent CSS var for live rendering. The scales
-// intentionally differ; this only aligns names for the specimen preview.
-function cssVarFor(cls: string): string {
-  switch (cls) {
-    case "text-xs":
-      return "--font-2xs";
-    case "text-sm":
-      return "--font-sm";
-    case "text-base":
-      return "--font-base";
-    case "text-lg":
-      return "--font-lg";
-    case "text-xl":
-      return "--font-xl";
-    case "text-2xl":
-      return "--font-2xl";
-    case "text-3xl":
-      return "--font-3xl";
-    case "text-4xl":
-      return "--font-4xl";
-    default:
-      return "--font-base";
-  }
 }
 
 // ── Surface tokens (radius, shadow, blur, glass, modal) ─────────────────────
