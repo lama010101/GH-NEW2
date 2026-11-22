@@ -328,7 +328,7 @@ eligible AS (
     loc.continent,
     d.avg_difficulty_score AS difficulty,
     COALESCE(loc.continent, 'unknown') AS region,
-    md5(e.id::text || '|' || $2) AS h
+    md5(e.id::text || '|' || $1) AS h
   FROM public.events e
   JOIN loc ON loc.event_id = e.id
   LEFT JOIN public.ai_event_ai_difficulty d ON d.event_id = e.id
@@ -462,7 +462,7 @@ async function main(): Promise<void> {
 
   const pool = getDbPool();
 
-  const eligibleResult = await pool.query<EligibleDbRow>(ELIGIBLE_QUERY, [size, salt]);
+  const eligibleResult = await pool.query<EligibleDbRow>(ELIGIBLE_QUERY, [salt]);
   const eligible: EligibleEventRow[] = eligibleResult.rows.map((r) => ({
     ...r,
     era: eraBucket(r.event_year),
