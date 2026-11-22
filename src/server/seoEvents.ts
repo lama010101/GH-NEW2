@@ -1,5 +1,6 @@
 import { dbPool } from "./db";
 import type { Pool } from "pg";
+import { SERVABLE_IMAGE_URL_LIKE } from "@/core/servableImage";
 
 type DbExecutor = Pick<Pool, "query">;
 
@@ -41,7 +42,7 @@ const ELIGIBILITY_WHERE = `
   AND EXISTS (
     SELECT 1 FROM images i
     WHERE i.event_id = e.id
-      AND i.url LIKE 'https://firebasestorage.googleapis.com/%'
+      AND ${SERVABLE_IMAGE_URL_LIKE}
   )
   AND NOT EXISTS (
     SELECT 1 FROM event_reports r
@@ -111,7 +112,7 @@ const SELECT_EVENT_COLUMNS = `
   (
     SELECT i.url FROM images i
     WHERE i.event_id = e.id
-      AND i.url LIKE 'https://firebasestorage.googleapis.com/%'
+      AND ${SERVABLE_IMAGE_URL_LIKE}
     ORDER BY i.display_order NULLS LAST, i.created_at
     LIMIT 1
   ) AS image_url
