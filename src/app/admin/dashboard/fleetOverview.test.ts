@@ -208,6 +208,7 @@ function recModel(
     suggestible: false,
     dailyOn: true,
     practiceOn: true,
+    isFree: true,
     ...over,
   };
 }
@@ -280,14 +281,29 @@ describe("buildRecommendations", () => {
     expect(it0?.todo).toContain("fleet cap is the limit");
   });
 
-  it("rate-limit streak >=3 days -> warning, nothing broken", () => {
+  it("rate-limit streak >=3 days -> warning, nothing broken (free + paid wording)", () => {
+    const freeItems = buildRecommendations(
+      recInput({ models: [recModel({ rateLimitDays3d: 3, isFree: true })] })
+    );
+    const paidItems = buildRecommendations(
+      recInput({ models: [recModel({ rateLimitDays3d: 3, isFree: false })] })
+    );
+    const freeIt = freeItems.find((i) => i.title.includes("held back"));
+    const paidIt = paidItems.find((i) => i.title.includes("held back"));
+    expect(freeIt?.severity).toBe("warning");
+    expect(freeIt?.text).toContain("nothing is broken");
+    expect(freeIt?.todo).toContain("swap");
+    expect(paidIt?.severity).toBe("warning");
+    expect(paidIt?.text).toContain("nothing is broken");
+    expect(paidIt?.todo).toContain("requests per minute");
+  });
+
+  it("rate-limit streak >=3 days, paid model -> todo has no swap advice", () => {
     const items = buildRecommendations(
-      recInput({ models: [recModel({ rateLimitDays3d: 3 })] })
+      recInput({ models: [recModel({ rateLimitDays3d: 3, isFree: false })] })
     );
     const it0 = items.find((i) => i.title.includes("held back"));
-    expect(it0?.severity).toBe("warning");
-    expect(it0?.text).toContain("nothing is broken");
-    expect(it0?.todo).toContain("swap");
+    expect(it0?.todo).not.toContain("swap");
   });
 
   it("rate-limit streak 2 days -> no item", () => {

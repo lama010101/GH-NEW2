@@ -25,7 +25,7 @@
   border-radius: 50%;
   background: var(--gh-glass-bg);
   color: var(--gh-text-primary);
-  font-size: 18px;
+  font-size: var(--font-lg);
   cursor: pointer;
   transition: background 0.15s ease;
 }

@@ -404,7 +404,7 @@ export async function loadEventLearn(params: {
     `SELECT e.id, e.title, e.event_year, l.display_name, l.latitude, l.longitude
      FROM events e
      LEFT JOIN locations l ON l.event_id = e.id
-     WHERE e.status = 'validated' AND e.id <> $1::uuid`,
+     WHERE e.status = 'validated' AND e.retired_at IS NULL AND e.id <> $1::uuid`,
     [eventId]
   );
   const candidates: LearnCandidate[] = candidatesRes.rows.map((c) => ({
