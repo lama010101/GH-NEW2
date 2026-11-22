@@ -245,6 +245,13 @@ async function fetchClosure(candidateQids: string[]): Promise<void> {
 
 const SPARQL_URL = "https://query.wikidata.org/sparql";
 
+/** WDQS bindings carry full entity URIs; reduce to the bare QID. */
+function qidOf(uri: string | undefined): string | null {
+  if (!uri) return null;
+  const m = /\/(Q\d+)$/.exec(uri);
+  return m ? m[1] : null;
+}
+
 function eraFilter(era: string): string {
   switch (era) {
     case "BCE":
@@ -290,8 +297,8 @@ LIMIT 500`;
     (r.body as { results?: { bindings?: Array<Record<string, { value?: string }>> } })
       ?.results?.bindings ?? [];
   const qids = bindings
-    .map((b) => b.item?.value)
-    .filter((v): v is string => typeof v === "string" && /^Q\d+$/.test(v));
+    .map((b) => qidOf(b.item?.value))
+    .filter((v): v is string => v != null);
   return { qids: [...new Set(qids)], truncated: bindings.length >= 500 };
 }
 
@@ -312,7 +319,7 @@ LIMIT ${limit}`;
     (r?.body as { results?: { bindings?: Array<Record<string, { value?: string }>> } } | null)
       ?.results?.bindings ?? [];
   return bindings
-    .map((b) => ({ qid: b.class?.value ?? "", label: b.classLabel?.value ?? "" }))
+    .map((b) => ({ qid: qidOf(b.class?.value) ?? "", label: b.classLabel?.value ?? "" }))
     .filter((c) => /^Q\d+$/.test(c.qid));
 }
 
