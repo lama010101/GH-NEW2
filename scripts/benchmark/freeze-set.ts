@@ -314,7 +314,7 @@ WITH loc AS (
     l.event_id, l.latitude, l.longitude, l.display_name, l.country, l.continent
   FROM public.locations l
   WHERE l.latitude IS NOT NULL AND l.longitude IS NOT NULL
-  ORDER BY l.event_id, l.created_at ASC, l.id ASC
+  ORDER BY l.event_id, l.id ASC
 ),
 eligible AS (
   SELECT
