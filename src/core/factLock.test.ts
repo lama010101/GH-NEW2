@@ -121,6 +121,16 @@ describe("factLock helpers", () => {
     expect(containsYear("fought in 153 BC", -53)).toBe(false);
     expect(yearNeedles(-53)).toContain("53 BC");
   });
+
+  it("containsYear normalizes NBSP/narrow/thin spaces before BCE/CE matching", () => {
+    expect(containsYear("fought on 2 August 216\u00A0BC near Cannae", -216)).toBe(true);
+    expect(containsYear("fought on 2 August 216\u202FBC near Cannae", -216)).toBe(true);
+    expect(containsYear("fought on 2 August 216\u2009BC near Cannae", -216)).toBe(true);
+    expect(containsYear("fought in 1216 BC", -216)).toBe(false);
+    expect(containsYear("the year 1347 was eventful", 1347)).toBe(true);
+    expect(containsYear("the year 1347\u00A0AD was eventful", 1347)).toBe(true);
+    expect(containsYear("the year 13470 was different", 1347)).toBe(false);
+  });
 });
 
 describe("certifyFacts G1-G5", () => {

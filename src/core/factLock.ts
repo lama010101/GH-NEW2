@@ -254,9 +254,10 @@ export function yearNeedles(year: number): string[] {
 
 /** True when `text` contains the year as a standalone token (digit-bounded). */
 export function containsYear(text: string, year: number): boolean {
+  const normalized = text.replace(/[\u00A0\u202F\u2009]/g, " ");
   for (const needle of yearNeedles(year)) {
     const re = new RegExp(`(?<![0-9])${escapeRe(needle)}(?![0-9])`);
-    if (re.test(text)) return true;
+    if (re.test(normalized)) return true;
   }
   return false;
 }
