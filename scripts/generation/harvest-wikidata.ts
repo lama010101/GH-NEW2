@@ -1187,7 +1187,7 @@ async function runExisting(flags: Flags) {
       stats,
       nominatimCalls,
       total: res.rows.length,
-      gatesPass,
+      gatesPass: passGates,
       passAndMatch: matchBoth,
       writes: 0,
     },
