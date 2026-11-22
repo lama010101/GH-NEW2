@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { requireAdmin } from "@/core/adminAuth";
 import { getDbPool } from "@/server/db";
+import { IMAGE_GEN_REGISTRY } from "@/core/imageGen/registry";
 import { CandidateTable, type CandidateRow } from "./CandidateTable";
 import { CANDIDATE_STATUSES, statusChipClass } from "./formatCandidates";
+import { GeneratorPanel, type HeldRow } from "./GeneratorPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +72,36 @@ export default async function GeneratorCandidatesPage({
     ),
   ]);
 
+  // EDQ-BUILD-ADMINGEN-1122-815 — image generator panel data. hasKey is
+  // computed server-side from env presence (never sent to the client as a
+  // value). The chrono-holds view may not exist yet (its migration applies
+  // post-merge) — a missing view degrades to an empty list, never an error.
+  const models = IMAGE_GEN_REGISTRY.map((m) => ({
+    id: m.id,
+    label: m.label,
+    price_usd_est: m.price_usd_est,
+    enabled: m.enabled,
+    hasKey: m.enabled ? Boolean(process.env[m.requiredKeyName]) : false,
+    notes: m.notes,
+  }));
+
+  let holds: HeldRow[] = [];
+  try {
+    const holdsRes = await pool.query<HeldRow>(
+      `
+      SELECT h.event_id, h.image_id, h.element_category, h.flagger_count,
+             e.title, e.slug
+      FROM public.ai_image_chrono_holds h
+      LEFT JOIN public.events e ON e.id = h.event_id
+      WHERE h.held
+      ORDER BY h.event_id, h.element_category
+      `
+    );
+    holds = holdsRes.rows;
+  } catch {
+    holds = [];
+  }
+
   const rows = rowsRes.rows;
   const total = countRes.rows[0]?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -126,6 +158,8 @@ export default async function GeneratorCandidatesPage({
           )}
         </span>
       </div>
+
+      <GeneratorPanel models={models} holds={holds} />
 
       <CandidateTable rows={rows} />
 

@@ -2,6 +2,7 @@ import { mapEventRowToEventRecord } from "./mappers/eventMapper";
 import { dbPool } from "./db";
 import type { Pool } from "pg";
 import type { EventRecord } from "@/core/types";
+import { SERVABLE_IMAGE_URL_LIKE } from "@/core/servableImage";
 
 type DbExecutor = Pick<Pool, "query">;
 
@@ -42,7 +43,7 @@ export async function fetchEventsWithDetails(options: {
     "e.retired_at IS NULL",
     "l.latitude IS NOT NULL",
     "l.longitude IS NOT NULL",
-    "EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id AND i.url LIKE 'https://firebasestorage.googleapis.com/%')"
+    `EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id AND ${SERVABLE_IMAGE_URL_LIKE})`
   ];
   const params: (string | number | string[])[] = [];
   let paramIndex = 1;

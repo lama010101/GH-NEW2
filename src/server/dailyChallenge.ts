@@ -7,6 +7,7 @@ import { dbPool } from "./db";
 import { dailySeed, selectDailyEventIds } from "@/core/dailySeed";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { VALID_CONTINENTS } from "./events";
+import { SERVABLE_IMAGE_URL_LIKE } from "@/core/servableImage";
 
 export interface DailyChallengeRow {
   date: string;
@@ -195,7 +196,7 @@ async function fetchAllEligibleEventIds(): Promise<string[]> {
        AND l.latitude IS NOT NULL
        AND l.longitude IS NOT NULL
        AND l.continent = ANY($1::text[])
-       AND EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id AND i.url LIKE 'https://firebasestorage.googleapis.com/%')`,
+       AND EXISTS (SELECT 1 FROM images i WHERE i.event_id = e.id AND ${SERVABLE_IMAGE_URL_LIKE})`,
     [[...VALID_CONTINENTS]]
   );
   return result.rows.map(r => r.id);
