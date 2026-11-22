@@ -269,8 +269,6 @@ export async function generateAndStoreImage(input: {
       durationMs,
     };
   } catch (err) {
-    const providerStatus =
-      err instanceof RunwareHttpError ? err.status : null;
     const durationMs = Date.now() - started;
     try {
       await markLogFailed(input.pool, logId, shortMessage(err), durationMs);
