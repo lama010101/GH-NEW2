@@ -1,5 +1,5 @@
 /*
-  Timeline (14 letters, --i = 0..13):
+  Timeline (10 letters, --i = 0..9):
     B  pop & wobble   0.0s  -> ~1.2s   (letters pop in, one wobble each)
     G  wave           1.0s  -> ~2.7s   (2 ripples through the letters)
     F  shine sweep    2.7s  -> forever (the only permanent animation):
