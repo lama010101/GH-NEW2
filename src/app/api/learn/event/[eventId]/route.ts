@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { loadEventLearn } from "@/server/learnEvent";
+import { resolveOverlayLocale } from "@/server/contentTranslations";
+import { LOCALE_COOKIE } from "@/i18n/config";
 import { LEARN_MODES, type LearnMode } from "@/core/learnTypes";
 
 export const runtime = "nodejs";
@@ -44,11 +47,15 @@ export async function GET(
       return formatError("Invalid mode", 400);
     }
 
+    const cookieStore = await cookies();
+    const lang = resolveOverlayLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+
     const result = await loadEventLearn({
       eventId,
       gameId,
       playerId: user.id,
       mode: rawMode as LearnMode,
+      lang,
     });
 
     if (result.status === "forbidden") {

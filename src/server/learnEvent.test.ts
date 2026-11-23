@@ -3,17 +3,24 @@
 // Pure-function tests for learnEvent.ts ranking/exclusion/metadata helpers.
 // No DB access — dbPool is a lazy proxy and is never queried here.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { learnModeForSession } from "@/core/learnTypes";
 import {
   computeExcludedEventIds,
   haversineKm,
+  loadEventLearn,
   rankByLocation,
   rankTimeline,
   sanitizeHintMetadata,
   type LearnCandidate,
   type LearnSelf,
 } from "./learnEvent";
+
+const mockDbQuery = vi.hoisted(() => vi.fn());
+
+vi.mock("./db", () => ({
+  dbPool: { query: mockDbQuery },
+}));
 
 const cand = (
   id: string,
@@ -250,5 +257,242 @@ describe("rankByLocation", () => {
   it("current event alone when nothing else has coordinates", () => {
     const out = rankByLocation([cand("a", 1800)], self, NO_EXCLUDED);
     expect(out.map((p) => p.id)).toEqual(["self"]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// loadEventLearn i18n overlay (I18N-BUILD-OVERLAYCORE-1123-852)
+// dbPool is mocked; translation queries are served by the same mock so the
+// full loadEventLearn path (English queries + overlay fetch) is exercised.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type MockRow = Record<string, unknown>;
+
+const LEARN_EVENT_ROW: MockRow = {
+  description: "Self desc EN",
+  title: "Self Title EN",
+  event_year: 1900,
+  latitude: 0,
+  longitude: 0,
+  display_name: "Self Loc EN",
+};
+
+const LEARN_HINT_ROWS: MockRow[] = [
+  { id: "h-t2", tier: 2, type: "when", content: "Tier2 EN", metadata: null },
+  { id: "h-t4w", tier: 4, type: "when", content: "Contemp EN", metadata: { km: 5 } },
+  { id: "h-t4l", tier: 4, type: "where", content: "Nearby EN", metadata: { km: 9 } },
+  { id: "h-t5w", tier: 5, type: "when", content: "Year clues EN", metadata: null },
+  { id: "h-t5l", tier: 5, type: "where", content: "Loc clues EN", metadata: null },
+];
+
+const LEARN_CANDIDATE_ROWS: MockRow[] = [
+  { id: "c1", title: "Cand One EN", event_year: 1950, display_name: "Loc C1 EN", latitude: 1, longitude: 0 },
+  { id: "c2", title: "Cand Two EN", event_year: 1920, display_name: "Loc C2 EN", latitude: 2, longitude: 0 },
+  { id: "c3", title: "Cand Three EN", event_year: 1850, display_name: "Loc C3 EN", latitude: 3, longitude: 0 },
+  { id: "c4", title: "Cand Four EN", event_year: 1800, display_name: "Loc C4 EN", latitude: 4, longitude: 0 },
+  { id: "c5", title: "Cand Five EN", event_year: 1700, display_name: "Loc C5 EN", latitude: 40, longitude: 40 },
+];
+
+const LEARN_EVENT_TR: MockRow[] = [
+  { event_id: "e0", title: "Self Title FR", description: "Self desc FR", category: "Cat FR", theme: "Theme FR" },
+  { event_id: "c1", title: "Cand One FR", description: "D1 FR", category: null, theme: null },
+  { event_id: "c2", title: "", description: null, category: null, theme: null },
+  { event_id: "c3", title: "Cand Three FR", description: null, category: null, theme: null },
+  { event_id: "c4", title: "Cand Four FR", description: null, category: null, theme: null },
+];
+
+const LEARN_HINT_TR: MockRow[] = [
+  { hint_id: "h-t5w", content: "Year clues FR" },
+  { hint_id: "h-t5l", content: "Loc clues FR" },
+  { hint_id: "h-t4w", content: "   " },
+  { hint_id: "h-t4l", content: "Nearby FR" },
+];
+
+const LEARN_LOCATION_TR: MockRow[] = [
+  { event_id: "e0", display_name: "Self Loc FR", country: "France" },
+  { event_id: "c1", display_name: "Loc C1 FR", country: "C1" },
+  { event_id: "c2", display_name: "Loc C2 FR", country: "C2" },
+  { event_id: "c3", display_name: null, country: null },
+  { event_id: "c4", display_name: "Loc C4 FR", country: "C4" },
+];
+
+function installLearnFixture() {
+  mockDbQuery.mockImplementation(async (sql: string, params?: unknown[]) => {
+    const ids = Array.isArray(params?.[0]) ? (params[0] as string[]) : [];
+    if (sql.includes("event_translations")) {
+      return {
+        rows: LEARN_EVENT_TR.filter((r) => ids.includes(r.event_id as string)),
+      };
+    }
+    if (sql.includes("hint_translations")) {
+      return { rows: ids.includes("e0") ? LEARN_HINT_TR : [] };
+    }
+    if (sql.includes("location_translations")) {
+      return {
+        rows: LEARN_LOCATION_TR.filter((r) => ids.includes(r.event_id as string)),
+      };
+    }
+    if (sql.includes("FROM sessions")) return { rows: [{ ok: true }] };
+    if (sql.includes("SESSION_CREATED")) {
+      return { rows: [{ event_ids: ["e0", "e1", "e2"] }] };
+    }
+    if (sql.includes("round_results")) {
+      return { rows: [0, 1, 2].map((round_index) => ({ round_index })) };
+    }
+    if (sql.includes("FROM hints")) return { rows: LEARN_HINT_ROWS };
+    if (sql.includes("e.id <> $1::uuid")) return { rows: LEARN_CANDIDATE_ROWS };
+    if (sql.includes("FROM events e")) return { rows: [LEARN_EVENT_ROW] };
+    return { rows: [] };
+  });
+}
+
+function learnParams(lang?: string | null) {
+  return {
+    eventId: "e0",
+    gameId: "game-1",
+    playerId: "player-1",
+    mode: "practice" as const,
+    ...(lang !== undefined ? { lang } : {}),
+  };
+}
+
+const ORIGIN = { lat: 0, lng: 0 };
+const mapPt = (
+  id: string,
+  title: string,
+  year: number,
+  location: string | null,
+  lat: number,
+  lng: number,
+  isCurrent: boolean
+) => ({
+  id,
+  title,
+  year,
+  location,
+  lat,
+  lng,
+  km: isCurrent ? 0 : Math.round(haversineKm(ORIGIN, { lat, lng })),
+  isCurrent,
+});
+
+const EN_DATA = {
+  title: "Self Title EN",
+  description: "Self desc EN",
+  yearClues: "Year clues EN",
+  locationClues: "Loc clues EN",
+  contemporaryEvent: { content: "Contemp EN", metadata: { km: 5 } },
+  nearbyLandmark: { content: "Nearby EN", metadata: { km: 9 } },
+  timeline: [
+    { id: "c1", title: "Cand One EN", year: 1950, location: "Loc C1 EN", isCurrent: false },
+    { id: "c2", title: "Cand Two EN", year: 1920, location: "Loc C2 EN", isCurrent: false },
+    { id: "e0", title: "Self Title EN", year: 1900, location: "Self Loc EN", isCurrent: true },
+    { id: "c3", title: "Cand Three EN", year: 1850, location: "Loc C3 EN", isCurrent: false },
+    { id: "c4", title: "Cand Four EN", year: 1800, location: "Loc C4 EN", isCurrent: false },
+  ],
+  mapPoints: [
+    mapPt("e0", "Self Title EN", 1900, "Self Loc EN", 0, 0, true),
+    mapPt("c1", "Cand One EN", 1950, "Loc C1 EN", 1, 0, false),
+    mapPt("c2", "Cand Two EN", 1920, "Loc C2 EN", 2, 0, false),
+    mapPt("c3", "Cand Three EN", 1850, "Loc C3 EN", 3, 0, false),
+    mapPt("c4", "Cand Four EN", 1800, "Loc C4 EN", 4, 0, false),
+  ],
+};
+
+const FR_DATA = {
+  title: "Self Title FR",
+  description: "Self desc FR",
+  yearClues: "Year clues FR",
+  locationClues: "Loc clues FR",
+  contemporaryEvent: { content: "Contemp EN", metadata: { km: 5 } },
+  nearbyLandmark: { content: "Nearby FR", metadata: { km: 9 } },
+  timeline: [
+    { id: "c1", title: "Cand One FR", year: 1950, location: "Loc C1 EN", isCurrent: false },
+    { id: "c2", title: "Cand Two EN", year: 1920, location: "Loc C2 EN", isCurrent: false },
+    { id: "e0", title: "Self Title FR", year: 1900, location: "Self Loc EN", isCurrent: true },
+    { id: "c3", title: "Cand Three FR", year: 1850, location: "Loc C3 EN", isCurrent: false },
+    { id: "c4", title: "Cand Four FR", year: 1800, location: "Loc C4 EN", isCurrent: false },
+  ],
+  mapPoints: [
+    mapPt("e0", "Self Title FR", 1900, "Self Loc FR", 0, 0, true),
+    mapPt("c1", "Cand One FR", 1950, "Loc C1 FR", 1, 0, false),
+    mapPt("c2", "Cand Two EN", 1920, "Loc C2 FR", 2, 0, false),
+    mapPt("c3", "Cand Three FR", 1850, "Loc C3 EN", 3, 0, false),
+    mapPt("c4", "Cand Four FR", 1800, "Loc C4 FR", 4, 0, false),
+  ],
+};
+
+describe("loadEventLearn i18n overlay", () => {
+  beforeEach(() => {
+    mockDbQuery.mockReset();
+    installLearnFixture();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("without lang returns the English payload and runs no translation queries", async () => {
+    const result = await loadEventLearn(learnParams());
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+
+    const sqls = mockDbQuery.mock.calls.map((c) => String(c[0]));
+    expect(sqls.filter((s) => s.includes("_translations"))).toHaveLength(0);
+    expect(sqls).toHaveLength(6);
+    expect(result.data).toEqual(EN_DATA);
+  });
+
+  it("with lang=null behaves identically to no lang", async () => {
+    const result = await loadEventLearn(learnParams(null));
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    const sqls = mockDbQuery.mock.calls.map((c) => String(c[0]));
+    expect(sqls.filter((s) => s.includes("_translations"))).toHaveLength(0);
+    expect(result.data).toEqual(EN_DATA);
+  });
+
+  it("with lang='fr' overlays title, description, hints and rendered items", async () => {
+    const result = await loadEventLearn(learnParams("fr"));
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+
+    const sqls = mockDbQuery.mock.calls.map((c) => String(c[0]));
+    expect(sqls.filter((s) => s.includes("_translations"))).toHaveLength(3);
+    expect(sqls).toHaveLength(9);
+
+    expect(result.data).toEqual(FR_DATA);
+
+    // Response shape is unchanged.
+    expect(Object.keys(result.data).sort()).toEqual(
+      [
+        "contemporaryEvent",
+        "description",
+        "locationClues",
+        "mapPoints",
+        "nearbyLandmark",
+        "timeline",
+        "title",
+        "yearClues",
+      ].sort()
+    );
+    for (const item of result.data.timeline) {
+      expect(Object.keys(item).sort()).toEqual(
+        ["id", "isCurrent", "location", "title", "year"].sort()
+      );
+    }
+    for (const item of result.data.mapPoints) {
+      expect(Object.keys(item).sort()).toEqual(
+        ["id", "isCurrent", "km", "lat", "lng", "location", "title", "year"].sort()
+      );
+    }
+
+    // Only the rendered item ids were requested for translation (c5 is
+    // truncated by ranking and never fetched).
+    const trCall = mockDbQuery.mock.calls.find((c) =>
+      String(c[0]).includes("event_translations")
+    );
+    expect(trCall).toBeDefined();
+    expect([...(trCall![1] as [string[], string])[0]].sort()).toEqual(
+      ["c1", "c2", "c3", "c4", "e0"].sort()
+    );
   });
 });
