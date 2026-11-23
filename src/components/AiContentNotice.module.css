@@ -1,0 +1,46 @@
+/* Slim always-on AI-content notice — V1-BUILD-AIDISCLAIMER-1123-843.
+   Primary colour = the Journey purple token (--gh-journey-stage-gradient);
+   text sits on that gradient so it uses the same white-on-purple convention
+   as JourneyCard.module.css (the gradient is identical in both themes).
+   Font sizes use var(--font-*) tokens only
+   (ENFORCE-CSS-NO-HARDCODED-TOKENS-001). */
+
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 8px 14px;
+  border-radius: var(--gh-radius-pill);
+  background: var(--gh-journey-stage-gradient);
+  color: #ffffff;
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 800;
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link:hover {
+  opacity: 0.85;
+}
+
+.link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

@@ -1980,5 +1980,14 @@
     "footer_link_sources": "Quellen",
     "footer_link_disclaimer": "Haftungsausschluss",
     "footer_disclaimer": "Diese Seite dient nur der Information und ist kein Angebot zum Wertpapierkauf. Zukunftsaussagen sind Ziele, keine Garantien."
+  },
+  "aiNotice": {
+    "short": "KI-generierte Inhalte. Manche Ereignisse können Fehler enthalten.",
+    "link": "So arbeiten wir",
+    "title": "Wie {appName} entsteht",
+    "body1": "Jedes Ereignis, jedes Bild und jeder Hinweis in diesem Spiel wird mit KI erstellt. Dadurch können Fehler vorkommen: ein falsches Jahr, ein falsch eingeordneter Ort oder ein Bild mit einem Detail aus einer anderen Epoche.",
+    "body2": "Wir reduzieren sie aktiv. Automatische Abgleiche mit Wikidata, KI-Spieler, die jedes Ereignis spielen und verdächtige markieren, sowie eine Prüfung von Bildern auf Anachronismen werden ausgerollt, und die Abdeckung wächst weiter. Du kannst jedes Ereignis direkt im Spiel melden.",
+    "body3": "{appName} ist eine frühe Version. Es wird mit der Zeit immer genauer werden.",
+    "close": "Verstanden"
   }
 }

@@ -1980,5 +1980,14 @@
     "footer_link_sources": "Fuentes",
     "footer_link_disclaimer": "Aviso legal",
     "footer_disclaimer": "Página solo informativa; no constituye oferta de valores. Las afirmaciones prospectivas son metas, no garantías."
+  },
+  "aiNotice": {
+    "short": "Contenido generado por IA. Algunos eventos pueden contener errores.",
+    "link": "Cómo funciona",
+    "title": "Cómo se crea {appName}",
+    "body1": "Cada evento, imagen y pista de este juego se crea con IA. Por eso pueden colarse errores: un año equivocado, un lugar mal situado o una imagen con un detalle de otra época.",
+    "body2": "Estamos reduciéndolos activamente. Se están desplegando contrastes automáticos con Wikidata, jugadores de IA que juegan cada evento y señalan los sospechosos, y una revisión de anacronismos en las imágenes; la cobertura sigue ampliándose. Puedes reportar cualquier evento desde el juego.",
+    "body3": "{appName} es una versión inicial. Espera que gane precisión con el tiempo.",
+    "close": "Entendido"
   }
 }

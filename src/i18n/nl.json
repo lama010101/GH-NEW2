@@ -1980,5 +1980,14 @@
     "footer_link_sources": "Bronnen",
     "footer_link_disclaimer": "Juridische disclaimer",
     "footer_disclaimer": "Deze pagina is louter informatief en geen aanbod van effecten. Toekomstverklaringen zijn doelen, geen garanties."
+  },
+  "aiNotice": {
+    "short": "AI-gegenereerde content. Sommige gebeurtenissen kunnen fouten bevatten.",
+    "link": "Hoe we werken",
+    "title": "Hoe {appName} wordt gemaakt",
+    "body1": "Elke gebeurtenis, afbeelding en hint in dit spel wordt met AI gemaakt. Daardoor kunnen er fouten insluipen: een verkeerd jaar, een verkeerd geplaatste locatie of een afbeelding met een detail uit een andere tijd.",
+    "body2": "We zijn ze actief aan het terugdringen. Automatische kruistchecks met Wikidata, AI-spelers die elke gebeurtenis spelen en verdachte signaleren, en een controle op anachronismen in afbeeldingen worden uitgerold, en de dekking blijft groeien. Je kunt elke gebeurtenis vanuit het spel melden.",
+    "body3": "{appName} is een vroege versie. Verwacht dat het in de loop van de tijd accurater wordt.",
+    "close": "Begrepen"
   }
 }

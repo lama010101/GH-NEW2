@@ -1,0 +1,77 @@
+/* "How we work" modal — V1-BUILD-AIDISCLAIMER-1123-843.
+   Reuses the --gh-modal-* token set (same as WelcomeModal/RankModal/
+   PracticeSettingsModal). Font sizes use var(--font-*) tokens only
+   (ENFORCE-CSS-NO-HARDCODED-TOKENS-001). */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-modal-blur);
+  -webkit-backdrop-filter: var(--gh-modal-blur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.card {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: var(--gh-modal-bg);
+  border: var(--gh-modal-border);
+  border-radius: var(--gh-modal-radius);
+  box-shadow: var(--gh-modal-shadow);
+  padding: 28px 20px 20px;
+}
+
+.title {
+  margin: 0 0 14px;
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--gh-modal-text-primary);
+  text-align: center;
+}
+
+.body {
+  margin: 0 0 12px;
+  font-size: var(--font-sm);
+  line-height: 1.55;
+  color: var(--gh-modal-text-secondary);
+}
+
+.body:last-of-type {
+  margin-bottom: 20px;
+}
+
+.closeButton {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-radius: var(--gh-radius-sm);
+  background: var(--gh-primary);
+  color: var(--gh-text-primary);
+  font-size: var(--font-base);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  opacity: 0.85;
+}
+
+.closeButton:active {
+  opacity: 0.7;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--gh-text-primary);
+  outline-offset: 2px;
+}
