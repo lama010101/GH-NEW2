@@ -1353,7 +1353,7 @@ export default function LandingV2Prototype() {
           <a href="/privacy">{tgd("footer_link_privacy")}</a>
           <a href="/terms">{tgd("footer_link_terms")}</a>
         </div>
-        <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
+        <p className={styles.footerCopy}>© {new Date().getFullYear()} Dig the Past</p>
       </footer>
     </div>
   );
