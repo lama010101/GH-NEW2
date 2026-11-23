@@ -18,6 +18,11 @@
 // tnpb11): dbPool + parameterized SQL, events LEFT JOIN locations.
 
 import { dbPool } from "./db";
+import {
+  fetchContentTranslations,
+  overlayNullableText,
+  overlayText,
+} from "./contentTranslations";
 import type {
   EventLearnResponse,
   LearnClueItem,
@@ -291,8 +296,9 @@ export async function loadEventLearn(params: {
   gameId: string;
   playerId: string;
   mode: LearnMode;
+  lang?: string | null;
 }): Promise<EventLearnResult> {
-  const { eventId, gameId, playerId, mode } = params;
+  const { eventId, gameId, playerId, mode, lang = null } = params;
 
   if (!(await sessionMatchesMode(gameId, playerId, mode))) {
     return { status: "forbidden" };
@@ -354,12 +360,13 @@ export async function loadEventLearn(params: {
   }
 
   const hintsRes = await dbPool.query<{
+    id: string;
     tier: number;
     type: string;
     content: string;
     metadata: unknown;
   }>(
-    `SELECT tier, type, content, metadata
+    `SELECT id, tier, type, content, metadata
      FROM hints
      WHERE event_id = $1::uuid AND type IN ('when', 'where')
      ORDER BY tier ASC, display_order ASC`,
@@ -371,14 +378,21 @@ export async function loadEventLearn(params: {
   // comma-separated clue string per type (split client side by splitClueList).
   // Tiers 1/3 are not part of the new contract.
   let yearClues: string | null = null;
+  let yearCluesHintId: string | null = null;
   let locationClues: string | null = null;
+  let locationCluesHintId: string | null = null;
   let contemporaryEvent: LearnClueItem | null = null;
+  let contemporaryEventHintId: string | null = null;
   let nearbyLandmark: LearnClueItem | null = null;
+  let nearbyLandmarkHintId: string | null = null;
   for (const h of hintsRes.rows) {
     if (h.tier === 5) {
-      if (h.type === "when" && yearClues === null) yearClues = h.content;
-      else if (h.type === "where" && locationClues === null) {
+      if (h.type === "when" && yearClues === null) {
+        yearClues = h.content;
+        yearCluesHintId = h.id;
+      } else if (h.type === "where" && locationClues === null) {
         locationClues = h.content;
+        locationCluesHintId = h.id;
       }
       continue;
     }
@@ -389,8 +403,15 @@ export async function loadEventLearn(params: {
       ...(metadata ? { metadata } : {}),
     };
     if (h.tier !== 4) continue;
-    if (h.type === "when") contemporaryEvent = contemporaryEvent ?? item;
-    else nearbyLandmark = nearbyLandmark ?? item;
+    if (h.type === "when") {
+      if (contemporaryEvent === null) {
+        contemporaryEvent = item;
+        contemporaryEventHintId = h.id;
+      }
+    } else if (nearbyLandmark === null) {
+      nearbyLandmark = item;
+      nearbyLandmarkHintId = h.id;
+    }
   }
 
   const candidatesRes = await dbPool.query<{
@@ -439,6 +460,57 @@ export async function loadEventLearn(params: {
   for (const item of [...data.timeline, ...data.mapPoints]) {
     if (excluded.has(item.id)) {
       throw new Error("[learnEvent] exclusion invariant violated");
+    }
+  }
+
+  // I18N-BUILD-OVERLAYCORE-1123-852: hash-checked translation overlay.
+  // lang null/English -> fetchContentTranslations runs zero queries and the
+  // payload stays byte-identical English. Translations are applied AFTER
+  // ranking/truncation so only rendered items are fetched and overlaid;
+  // ordering stays the English ordering.
+  if (lang) {
+    const overlay = await fetchContentTranslations(
+      [
+        eventId,
+        ...data.timeline.map((item) => item.id),
+        ...data.mapPoints.map((item) => item.id),
+      ],
+      lang
+    );
+    const hintTr = (id: string | null) =>
+      id === null ? undefined : overlay.hints.get(id)?.content;
+    const selfOverlay = overlay.events.get(eventId);
+    data.title = overlayNullableText(data.title, selfOverlay?.title);
+    data.description = overlayNullableText(
+      data.description,
+      selfOverlay?.description
+    );
+    data.yearClues = overlayNullableText(yearClues, hintTr(yearCluesHintId));
+    data.locationClues = overlayNullableText(
+      locationClues,
+      hintTr(locationCluesHintId)
+    );
+    if (contemporaryEvent !== null && contemporaryEventHintId !== null) {
+      contemporaryEvent.content = overlayText(
+        contemporaryEvent.content,
+        hintTr(contemporaryEventHintId)
+      );
+    }
+    if (nearbyLandmark !== null && nearbyLandmarkHintId !== null) {
+      nearbyLandmark.content = overlayText(
+        nearbyLandmark.content,
+        hintTr(nearbyLandmarkHintId)
+      );
+    }
+    for (const item of data.timeline) {
+      item.title = overlayText(item.title, overlay.events.get(item.id)?.title);
+    }
+    for (const item of data.mapPoints) {
+      item.title = overlayText(item.title, overlay.events.get(item.id)?.title);
+      item.location = overlayNullableText(
+        item.location,
+        overlay.locations.get(item.id)?.displayName
+      );
     }
   }
 

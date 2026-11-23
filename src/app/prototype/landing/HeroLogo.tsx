@@ -9,7 +9,7 @@ import { LETTERS, OUTLINE } from "../logo-animations/logoData";
 export default function HeroLogo({
   className,
   shineOnly,
-  label = "Guess History",
+  label = "Dig the Past",
 }: {
   className?: string;
   shineOnly?: boolean;
