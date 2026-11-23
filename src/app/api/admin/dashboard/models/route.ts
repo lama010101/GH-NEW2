@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
-import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { requireAdmin } from "@/core/adminAuth";
 import { fetchOpenRouterModels } from "@/server/openrouter";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const authSupabase = createAuthenticatedServerClient();
-  const {
-    data: { session },
-  } = await authSupabase.auth.getSession();
+function authError(e: unknown): NextResponse {
+  const msg = e instanceof Error ? e.message : "";
+  return NextResponse.json(
+    { error: msg === "Forbidden" ? "Forbidden" : "Unauthorized" },
+    { status: msg === "Forbidden" ? 403 : 401 }
+  );
+}
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  try {
+    await requireAdmin();
+  } catch (e) {
+    return authError(e);
   }
 
   try {
