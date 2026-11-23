@@ -448,3 +448,60 @@ describe("certifyFacts G1-G5", () => {
     expect(r.gates.G5.reason).toContain("place_country_mismatch");
   });
 });
+
+describe("containsYear language-aware era markers (EDQ-FIX-FACTLOCK-1123-830)", () => {
+  it("BCE -216 matches each language's native marker form", () => {
+    expect(containsYear("fought in 216 BC", -216, "en")).toBe(true);
+    expect(containsYear("fought in 216\u00A0BC", -216, "en")).toBe(true);
+    expect(containsYear("fought in 216 B.C.", -216, "en")).toBe(true);
+    expect(containsYear("die Schlacht fand 216 v. Chr. statt", -216, "de")).toBe(true);
+    expect(containsYear("la bataille a eu lieu en 216 av. J.-C.", -216, "fr")).toBe(true);
+    expect(containsYear("la batalla ocurrió en 216 a. C.", -216, "es")).toBe(true);
+    expect(containsYear("a batalha ocorreu em 216 a.C.", -216, "pt")).toBe(true);
+    expect(containsYear("la battaglia avvenne nel 216 a.C.", -216, "it")).toBe(true);
+    expect(containsYear("битва произошла в 216 года до н. э.", -216, "ru")).toBe(true);
+    expect(containsYear("坎尼战役发生于前216年", -216, "zh")).toBe(true);
+    expect(containsYear("カンナエの戦いは紀元前216年にあった", -216, "ja")).toBe(true);
+  });
+
+  it("BCE -216 rejects wrong digits, CE markers and missing markers", () => {
+    expect(containsYear("fought in 1216 BC", -216, "en")).toBe(false);
+    expect(containsYear("fought in 216 AD", -216, "en")).toBe(false);
+    expect(containsYear("die Schlacht fand 216 n. Chr. statt", -216, "de")).toBe(false);
+    expect(containsYear("カンナエの戦いは紀元後216年にあった", -216, "ja")).toBe(false);
+    expect(containsYear("坎尼战役发生于公元216年", -216, "zh")).toBe(false);
+    expect(containsYear("カンナエの戦いは216年にあった", -216, "ja")).toBe(false);
+    expect(containsYear("坎尼战役发生于216年", -216, "zh")).toBe(false);
+  });
+
+  it("CE year 216 rejects digits carrying a BCE marker", () => {
+    expect(containsYear("in 216 BC", 216, "en")).toBe(false);
+    expect(containsYear("216 v. Chr.", 216, "de")).toBe(false);
+    expect(containsYear("in 216 AD", 216, "en")).toBe(true);
+    expect(containsYear("the year 216", 216, "en")).toBe(true);
+    expect(containsYear("216", 216, "en")).toBe(true);
+    expect(containsYear("公元前216年", 216, "zh")).toBe(false);
+    expect(containsYear("紀元前216年", 216, "ja")).toBe(false);
+    expect(containsYear("公元216年", 216, "zh")).toBe(true);
+  });
+
+  it("certifyFacts: BCE event passes G3 with en + 2 native support extracts", () => {
+    const r = certifyFacts(
+      baseInput({
+        entity: baseEntity({
+          claims: { P585: [timeClaim("-0216-00-00T00:00:00Z", 9)] },
+          sitelinks: sitelinks(25),
+        }),
+        extracts: {
+          en: "The Battle of Cannae was fought in 216 BC.",
+          de: "Die Schlacht von Cannae fand 216 v. Chr. statt.",
+          fr: "La bataille de Cannes a eu lieu en 216 av. J.-C.",
+        },
+      })
+    );
+    expect(r.year).toBe(-216);
+    expect(r.gates.G3.ok).toBe(true);
+    expect(r.langsAgreed).toEqual(["en", "de", "fr"]);
+    expect(r.pass).toBe(true);
+  });
+});

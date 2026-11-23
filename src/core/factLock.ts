@@ -252,14 +252,49 @@ export function yearNeedles(year: number): string[] {
   return [`${a} BC`, `${a} BCE`, `${a}BC`, `${a}BCE`];
 }
 
-/** True when `text` contains the year as a standalone token (digit-bounded). */
-export function containsYear(text: string, year: number): boolean {
+/**
+ * Per-language BCE/CE year markers for G3. `post` markers FOLLOW the digits
+ * (latin + cyrillic scripts); `pre` markers PRECEDE them (zh/ja). Values are
+ * regex fragments; the digit string is escaped via escapeRe per call and the
+ * lead text is never interpolated into a pattern.
+ */
+const YEAR_LANG_SPECS: Record<string, { post?: string; pre?: string }> = {
+  en: { post: String.raw`B\.C\.E\.|B\.C\.|BCE|BC` },
+  de: { post: String.raw`v\.\s*Chr\.` },
+  fr: { post: String.raw`av\.\s*J\.-?C\.|avant\s+J\.-?C\.` },
+  es: { post: String.raw`a\.\s*de\s+C\.|a\.\s*C\.` },
+  pt: { post: String.raw`a\.\s*C\.` },
+  it: { post: String.raw`a\.\s*C\.|avanti\s+Cristo` },
+  ru: { post: String.raw`(?:года|г\.)\s+до\s+н\.\s*э\.|до\s+н\.\s*э\.` },
+  zh: { pre: String.raw`公元前|前` },
+  ja: { pre: String.raw`紀元前|前` },
+};
+
+/**
+ * True when `text` contains the year as a standalone token (digit-bounded)
+ * written in `lang`'s own era convention. BCE years (Wikidata -N == N BCE)
+ * require that language's BCE marker — after the digits for post-marker
+ * languages, before them for zh/ja. CE years reject a digit match that is
+ * followed by a BCE marker of the same language, or (zh/ja) immediately
+ * preceded by 前 / 公元前 / 紀元前 — so "216 BC" never confirms year 216.
+ */
+export function containsYear(text: string, year: number, lang = "en"): boolean {
   const normalized = text.replace(/[\u00A0\u202F\u2009]/g, " ");
-  for (const needle of yearNeedles(year)) {
-    const re = new RegExp(`(?<![0-9])${escapeRe(needle)}(?![0-9])`);
-    if (re.test(normalized)) return true;
+  const spec = YEAR_LANG_SPECS[lang] ?? YEAR_LANG_SPECS.en;
+  const num = escapeRe(String(Math.abs(year)));
+  if (year > 0) {
+    const re = spec.post
+      ? new RegExp(
+          `(?<![0-9])${num}(?![0-9])(?!\\s*(?:${spec.post})(?![\\p{L}]))`,
+          "iu"
+        )
+      : new RegExp(`(?<![0-9])(?<!前)${num}(?![0-9])`, "u");
+    return re.test(normalized);
   }
-  return false;
+  const re = spec.post
+    ? new RegExp(`(?<![0-9])${num}\\s*(?:${spec.post})(?![\\p{L}])`, "iu")
+    : new RegExp(`(?:${spec.pre})(?<![0-9])${num}(?![0-9])年?`, "u");
+  return re.test(normalized);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -395,7 +430,10 @@ export function certifyFacts(input: FactLockInput): FactLockResult {
     g3 = { ok: false, reason: "no_date_year" };
   } else {
     const en = extracts.en;
-    const enOk = typeof en === "string" && en.trim().length > 0 && containsYear(en, year);
+    const enOk =
+      typeof en === "string" &&
+      en.trim().length > 0 &&
+      containsYear(en, year, "en");
     if (typeof en !== "string" || en.trim().length === 0) {
       g3 = { ok: false, reason: "missing_en_extract" };
     } else if (!enOk) {
@@ -403,7 +441,11 @@ export function certifyFacts(input: FactLockInput): FactLockResult {
     } else {
       for (const lang of SUPPORT_LANGS) {
         const text = extracts[lang];
-        if (typeof text === "string" && text.trim().length > 0 && containsYear(text, year)) {
+        if (
+          typeof text === "string" &&
+          text.trim().length > 0 &&
+          containsYear(text, year, lang)
+        ) {
           langsAgreed.push(lang);
         }
       }
