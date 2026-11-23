@@ -283,11 +283,31 @@ describe("middleware redirect logic — KC-007", () => {
       expect(nextCalls).toHaveLength(1);
     });
 
-    it("passes through /api/events without redirect", async () => {
+    it("redirects bare /api/events to /login (route removed, not public)", async () => {
       const middleware = await loadMiddleware();
 
       const req = createMockRequest("/api/events");
       await middleware(req);
+
+      expect(redirectCalls).toHaveLength(1);
+      expect(redirectCalls[0].url).toContain("/login");
+      expect(redirectCalls[0].url).toContain("next=%2Fapi%2Fevents");
+    });
+
+    it("bare /api/events is NOT public while /api/events/metadata IS", async () => {
+      const middleware = await loadMiddleware();
+
+      const bareReq = createMockRequest("/api/events");
+      await middleware(bareReq);
+
+      expect(redirectCalls).toHaveLength(1);
+      expect(redirectCalls[0].url).toContain("/login");
+
+      redirectCalls.length = 0;
+      nextCalls.length = 0;
+
+      const metaReq = createMockRequest("/api/events/metadata");
+      await middleware(metaReq);
 
       expect(redirectCalls).toHaveLength(0);
       expect(nextCalls).toHaveLength(1);
