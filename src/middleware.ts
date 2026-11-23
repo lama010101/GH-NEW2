@@ -20,7 +20,7 @@ const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/te
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
 const PUBLIC_API_ROUTES = [
-  "/api/events",
+  "/api/events/metadata",
   "/api/compete/join",
   "/api/compete/create",
   "/api/geocode",

@@ -1,20 +1,25 @@
 import { NextResponse } from "next/server";
-import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { requireAdmin } from "@/core/adminAuth";
 import { getDbPool } from "@/server/db";
 
 export const dynamic = "force-dynamic";
+
+function authError(e: unknown): NextResponse {
+  const msg = e instanceof Error ? e.message : "";
+  return NextResponse.json(
+    { error: msg === "Forbidden" ? "Forbidden" : "Unauthorized" },
+    { status: msg === "Forbidden" ? 403 : 401 }
+  );
+}
 
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const authSupabase = createAuthenticatedServerClient();
-  const {
-    data: { session },
-  } = await authSupabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    await requireAdmin();
+  } catch (e) {
+    return authError(e);
   }
 
   const { id } = params;
