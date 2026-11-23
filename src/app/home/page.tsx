@@ -8,6 +8,7 @@ import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { PushSoftAsk } from '@/components/PushSoftAsk'
 import GetAppCard from '@/components/GetAppCard'
+import { AiContentNotice } from '@/components/AiContentNotice'
 import { JourneyCard } from '@/components/home/JourneyCard'
 import { DailyCard } from '@/components/home/DailyCard'
 import { ChallengeCard } from '@/components/home/ChallengeCard'
@@ -450,6 +451,10 @@ function HomePageInner() {
             style={{ marginBlockStart: 16 }}
             suppress={welcomeData !== null || (pushSoftAskDismissed === false && !identity.isAnonymous)}
           />
+          {/* V1-BUILD-AIDISCLAIMER-1123-843: slim always-on AI-content notice;
+              sits below the mode cards so it never pushes them off narrow
+              viewports. */}
+          <AiContentNotice />
         </div>
       </div>
 

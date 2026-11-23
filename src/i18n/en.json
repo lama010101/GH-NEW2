@@ -1980,5 +1980,14 @@
     "footer_link_sources": "Sources",
     "footer_link_disclaimer": "Legal disclaimer",
     "footer_disclaimer": "This page is for informational purposes only and does not constitute an offer or solicitation to purchase securities. Forward-looking statements represent goals and opportunities, not guarantees or projections."
+  },
+  "aiNotice": {
+    "short": "AI-generated content. Some events may contain errors.",
+    "link": "How we work",
+    "title": "How {appName} is made",
+    "body1": "Every event, image and clue in this game is created with AI. That means mistakes can slip in: a wrong year, a misplaced location, or an image with an out-of-period detail.",
+    "body2": "We are actively reducing them. Automated cross-checks against Wikidata, AI players that play every event and flag suspicious ones, and an anachronism check on images are being rolled out, and coverage is still growing. You can report any event from the game.",
+    "body3": "{appName} is an early version. Expect it to get more accurate over time.",
+    "close": "Got it"
   }
 }

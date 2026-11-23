@@ -1980,5 +1980,14 @@
     "footer_link_sources": "Sources",
     "footer_link_disclaimer": "Mention légale",
     "footer_disclaimer": "Cette page est informative et ne constitue pas une offre de titres. Les déclarations prospectives sont des objectifs, pas des garanties."
+  },
+  "aiNotice": {
+    "short": "Contenu généré par IA. Certains événements peuvent contenir des erreurs.",
+    "link": "Comment ça marche",
+    "title": "Comment {appName} est fabriqué",
+    "body1": "Chaque événement, image et indice de ce jeu est créé par IA. Des erreurs peuvent donc s'y glisser : une année fausse, un lieu mal placé ou une image comportant un détail d'une autre époque.",
+    "body2": "Nous les réduisons activement. Des recoupements automatiques avec Wikidata, des joueurs IA qui jouent chaque événement et signalent ceux qui semblent douteux, ainsi qu'un contrôle des anachronismes dans les images sont en cours de déploiement, et la couverture continue de s'étendre. Vous pouvez signaler n'importe quel événement depuis le jeu.",
+    "body3": "{appName} est une version préliminaire. Attendez-vous à ce qu'elle gagne en précision avec le temps.",
+    "close": "Compris"
   }
 }
