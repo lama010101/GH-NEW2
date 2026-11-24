@@ -34,6 +34,7 @@ import { ensureGuestSession } from "@/core/guestSession";
 import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import BrandMark from "@/components/brand/BrandMark";
+import { AiContentNotice } from "@/components/AiContentNotice";
 import { detectCookiesBlocked, mapAuthError } from "@/components/AuthModal";
 import HeroLogo from "./HeroLogo";
 import styles from "./landing.module.css";
@@ -1329,6 +1330,10 @@ export default function LandingV2Prototype() {
           </div>
         </div>
       </section>
+
+      <div className={styles.wrap}>
+        <AiContentNotice />
+      </div>
 
       {/* ── FOOTER ── */}
       <footer className={styles.footer}>

@@ -9,6 +9,7 @@ import { AllRoundResult } from "@/core/competeTypes";
 import SessionComplete from "@/components/compete/SessionComplete";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
+import { AiContentNotice } from "@/components/AiContentNotice";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { updateCachedDisplayName, updateCachedAvatarUrl } from "@/core/identity";
 import pageStyles from '@/app/practice/[gameId]/page.module.css';
@@ -154,6 +155,7 @@ export default function DailyResultsPage() {
             sendMessage={() => router.push('/home')}
           />
         </div>
+        <AiContentNotice />
       </div>
     </main>
   );

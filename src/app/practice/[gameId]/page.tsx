@@ -16,6 +16,7 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
+import { AiContentNotice } from "@/components/AiContentNotice";
 import { supabaseBrowser, readSession } from "@/core/supabaseBrowser";
 import { forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl } from "@/core/identity";
 import { computeTimeRemaining } from "@/core/competeUtils";
@@ -834,6 +835,8 @@ export default function PracticeGamePage() {
             )
           ) : null}
         </div>
+
+        {snapshot.status === "SESSION_COMPLETE" && <AiContentNotice />}
 
         <HintModal
           hints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
