@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { submitGuess, getRoundResults, assertParticipantOrPartyKit } from "@/server/sessionCore";
+import { localizeSnapshot } from "@/server/localizedSnapshot";
+import { resolveOverlayLocale } from "@/server/contentTranslations";
+import { LOCALE_COOKIE } from "@/i18n/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +58,10 @@ export async function POST(
       results = await getRoundResults(gameId, body.roundIndex);
     }
 
-    return NextResponse.json({ ...snapshot, results });
+    const cookieStore = await cookies();
+    const lang = resolveOverlayLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+    const localized = await localizeSnapshot(snapshot, lang);
+    return NextResponse.json({ ...localized, results });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to submit guess";
     const status = message.includes("Session not found") ? 404 : 400;

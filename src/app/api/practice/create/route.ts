@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import type { CreateCompeteSessionInput } from "@/core/types";
 import { createCompeteSession } from "@/server/sessionCore";
+import { localizeSnapshot } from "@/server/localizedSnapshot";
+import { resolveOverlayLocale } from "@/server/contentTranslations";
+import { LOCALE_COOKIE } from "@/i18n/config";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { rejectIfGuest } from "@/server/guestGate";
 
@@ -39,7 +43,9 @@ export async function POST(request: Request) {
       selectedRegions: Array.isArray(body.selectedRegions) ? body.selectedRegions : undefined,
     });
 
-    return NextResponse.json(snapshot);
+    const cookieStore = await cookies();
+    const lang = resolveOverlayLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+    return NextResponse.json(await localizeSnapshot(snapshot, lang));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create practice session";
     return NextResponse.json({ error: message }, { status: 400 });

@@ -81,7 +81,7 @@ export default function DailyRoundPage() {
 
     ;(async () => {
       try {
-        const response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store" });
+        const response = await fetch(`/api/daily/${gameId}/snapshot?playerId=${playerId}`, { cache: "no-store" });
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
           throw new Error(data.error ?? t('failed_load_session'));

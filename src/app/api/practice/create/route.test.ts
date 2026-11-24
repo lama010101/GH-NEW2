@@ -18,6 +18,10 @@ vi.mock("@/server/sessionCore", () => ({
   createCompeteSession: mockFns.createCompeteSession,
 }));
 
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({ get: vi.fn(() => undefined) })),
+}));
+
 vi.mock("next/server", () => ({
   NextResponse: {
     json: vi.fn((body: unknown, init?: { status?: number }) => ({
