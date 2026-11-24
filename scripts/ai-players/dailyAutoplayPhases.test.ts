@@ -142,6 +142,9 @@ async function runAutoplay(
     if (sql.includes("FROM events")) return { rows: mocks.candidates };
     if (sql.includes("INSERT INTO ai_fleet_runs")) return { rows: [{ id: "run-1" }] };
     if (sql.includes("ai_fleet_runs") || sql.includes("ai_fleet_alerts")) return { rows: [] };
+    if (sql.includes("event_reliability")) {
+      return { rows: mocks.eventIds.map((id) => ({ event_id: id })) };
+    }
     throw new Error(`unexpected query: ${sql}`);
   });
   await import("./daily-autoplay");

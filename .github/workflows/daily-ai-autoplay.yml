@@ -7,9 +7,9 @@ concurrency:
 on:
   schedule:
     # 10:17 UTC — Daily-challenge plays only (AIP-BUILD-FLEETFINAL-1103-060).
+    # OPS-GATE-AIFLEET-DAILYTRUE-1124-885: the 20:37 UTC coverage+audit cron
+    # is removed — AI plays ONLY Daily mode; coverage/audit stay manual-only.
     - cron: '17 10 * * *'
-    # 20:37 UTC — coverage backlog fill + text-only event audits.
-    - cron: '37 20 * * *'
   workflow_dispatch:
     inputs:
       phase:
