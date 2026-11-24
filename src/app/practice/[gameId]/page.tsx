@@ -106,7 +106,7 @@ export default function PracticeGamePage() {
         const _snapshotTimeout = setTimeout(() => _snapshotController.abort(), 15_000)
         let response: Response
         try {
-          response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store", signal: _snapshotController.signal })
+          response = await fetch(`/api/practice/${gameId}/snapshot?playerId=${playerId}`, { cache: "no-store", signal: _snapshotController.signal })
         } catch (err: unknown) {
           if (err instanceof Error && err.name === 'AbortError') {
             if (!cancelled) setError(t('load_session_timed_out'))
