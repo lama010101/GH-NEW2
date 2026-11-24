@@ -56,6 +56,23 @@ jobs:
       - name: Run auth tests (middleware + identity + callback + AuthModal)
         run: npx vitest run src/middleware.test.ts src/core/identity.test.ts src/app/auth/callback/route.test.ts src/components/AuthModal.test.tsx
 
+  unit-tests:
+    name: Unit tests (vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run full vitest suite
+        run: npx vitest run
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-publishable-key
+
   build:
     name: Next.js build (ESLint + types)
     runs-on: ubuntu-latest

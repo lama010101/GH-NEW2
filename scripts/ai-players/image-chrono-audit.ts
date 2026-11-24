@@ -55,12 +55,12 @@ import {
   type RateSettings,
 } from "@/core/aiRateBudget";
 import { evaluateBudget, DEFAULT_FLEET_DAILY_CAP_USD } from "@/core/aiBudget";
+import { AI_CHRONO_CALL_TIMEOUT_MS } from "@/core/aiPlayers";
 import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { wrapPool, reportQueryCounts } from "./queryCounter";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const CHRONO_CALL_TIMEOUT_MS = 90_000;
 const CHRONO_MAX_TOKENS = 2048;
 const CHRONO_TEMPERATURE = 0.2;
 /** Worst-case prompt tokens per call for dry-run cost estimates (image+text). */
@@ -329,7 +329,7 @@ async function callOpenRouterChrono(
         temperature: CHRONO_TEMPERATURE,
         max_tokens: CHRONO_MAX_TOKENS,
       }),
-      signal: AbortSignal.timeout(CHRONO_CALL_TIMEOUT_MS),
+      signal: AbortSignal.timeout(AI_CHRONO_CALL_TIMEOUT_MS),
     });
   } catch (err) {
     return {
