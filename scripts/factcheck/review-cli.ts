@@ -27,7 +27,7 @@ import {
 
 const ENV_CANDIDATES = [".env.local", "D:/GH-NEW2/.env.local"];
 for (const p of ENV_CANDIDATES) {
-  if (existsSync(resolve(p))) dotenv.config({ path: resolve(p) });
+  if (existsSync(resolve(p))) dotenv.config({ path: resolve(p), quiet: true });
   if (process.env.SUPABASE_DB_CONNECTION) break;
 }
 const CONN = process.env.SUPABASE_DB_CONNECTION;
@@ -227,7 +227,7 @@ async function recordOne(client: PoolClient, worker: string, rec: RecordIn & { s
   let quarantined = false;
   if (WRONG_SET.has(rel.verdict) && nSources >= 2 && independentDomains >= 2) {
     const q = await client.query(
-      `update public.events set status='rejected', retired_at=now()
+      `update public.events set retired_at=now()
         where id=$1 and status='validated' and retired_at is null`,
       [rec.event_id]
     );
@@ -294,7 +294,7 @@ async function cmdStatus(): Promise<void> {
     "select verdict, count(*)::int as n from public.event_fact_checks group by verdict order by verdict"
   );
   const rel95 = await pool.query("select count(*)::int as n from public.event_reliability where reliability >= 95");
-  const quar = await pool.query("select count(*)::int as n from public.events where status='rejected' and retired_at is not null");
+  const quar = await pool.query("select count(*)::int as n from public.events where retired_at is not null");
   process.stdout.write(JSON.stringify({
     queue: queue.rows[0],
     queue_by_priority: byPrio.rows,
