@@ -10,6 +10,7 @@ import { classifyFailure, RATE_LIMIT_DEFERRED_MARKER } from "@/core/aiFailureCau
 import { shouldHaltFleet, type FleetOutcomeEvent } from "@/core/aiFleetHalt";
 import { evaluateBudget, DEFAULT_FLEET_DAILY_CAP_USD } from "@/core/aiBudget";
 import { fetchSpendTodayByPlayer, getFleetDailyCap } from "@/server/aiSpend";
+import { fetchProvenTrueEventIds } from "@/server/provenTrueEvents";
 import {
   classifyPlayer,
   catalogModelFromRow,
@@ -801,7 +802,7 @@ async function runPlayPhase(
     benchmarkSubsetSize: settings.benchmarkSubsetSize,
     now: Date.now(),
   });
-  const items: WorkItem[] = queue
+  let items: WorkItem[] = queue
     .map((q) => {
       const entry = playerById.get(q.playerId);
       return entry === undefined
@@ -810,6 +811,35 @@ async function runPlayPhase(
     })
     .filter((x): x is WorkItem => x !== null);
   console.log(`[${label}] Work items to process: ${items.length}`);
+
+  // OPS-GATE-AIFLEET-DAILYTRUE-1124-885: Daily plays are restricted to
+  // proven-true events (event_reliability >= 95, not quarantined) and to
+  // 'daily' mode only — product owner: AI plays ONLY Daily mode and ONLY
+  // proven-true events; an empty pool means no play. An empty pool, a lookup
+  // error or a missing relation fails CLOSED: one log line, exit 0, zero
+  // OpenRouter calls, zero writes. This runs before insertFleetRun, so even
+  // the run row is never written.
+  if (phase === "daily") {
+    let provenTrueIds: string[];
+    try {
+      provenTrueIds = await fetchProvenTrueEventIds(pool);
+    } catch (err) {
+      console.log(
+        `[DAILY-GATE] proven-true lookup failed (${err instanceof Error ? err.message : err}) — no plays`
+      );
+      return 0;
+    }
+    if (provenTrueIds.length === 0) {
+      console.log("[DAILY-GATE] proven-true pool empty — no plays");
+      return 0;
+    }
+    const provenTrue = new Set(provenTrueIds);
+    const ungated = items.length;
+    items = items.filter((i) => i.mode === "daily" && provenTrue.has(i.eventId));
+    console.log(
+      `[DAILY-GATE] proven-true pool ${provenTrueIds.length}; work items ${ungated} -> ${items.length}`
+    );
+  }
 
   // -- Dry run (2h): full plan, projected requests vs budgets, coverage. ----
   if (dryRun) {

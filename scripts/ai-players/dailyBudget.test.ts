@@ -179,6 +179,9 @@ function resetState() {
       mocks.alertInserts.push({ sql, params: [] });
       return { rows: [] };
     }
+    if (sql.includes("event_reliability")) {
+      return { rows: mocks.eventIds.map((id) => ({ event_id: id })) };
+    }
     throw new Error(`unexpected query: ${sql}`);
   });
 }
