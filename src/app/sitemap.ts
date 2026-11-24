@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: SITE_ORIGIN, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_ORIGIN}/events`, changeFrequency: "daily", priority: 0.8 },
+    { url: `${SITE_ORIGIN}/how-we-work`, changeFrequency: "monthly", priority: 0.5 },
   ];
 
   let eligible: Awaited<ReturnType<typeof fetchAllEligibleSlugs>> = [];

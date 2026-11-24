@@ -1989,5 +1989,25 @@
     "body2": "Estamos reduzindo-os ativamente. Verificações cruzadas automáticas com o Wikidata, jogadores de IA que jogam cada evento e sinalizam os suspeitos, e uma checagem de anacronismos nas imagens estão sendo implantadas, e a cobertura continua crescendo. Você pode denunciar qualquer evento pelo jogo.",
     "body3": "{appName} é uma versão inicial. Espere que ele fique mais preciso com o tempo.",
     "close": "Entendi"
+  },
+  "howWeWork": {
+    "meta_title": "How we keep improving",
+    "meta_desc": "How {appName} is made: AI-generated events and images, our audit loop, AI players and player reports — an early version that keeps improving.",
+    "title": "How we keep improving",
+    "intro": "{appName} is a history-guessing game. Players study an image and a set of clues, then guess where and when the event took place. Every event, image and clue in the game is created with AI.",
+    "ai_note": "AI-generated content can contain errors: a wrong year, a misplaced location, or an image with an out-of-period detail. We are honest about that — this is an early version, and we expect it to get better over time.",
+    "improve_title": "How we improve",
+    "improve_audit": "We audit batches of events against independent web sources and log what we find for correction.",
+    "improve_ai": "AI players play events and flag problems.",
+    "improve_reports": "Players can report an event from the Learn modal.",
+    "translation_note": "The French translation is in progress and still imperfect.",
+    "early_version": "This is an early version. Expect it to keep improving.",
+    "stats_title": "The game today",
+    "stat_events": "Events in the game",
+    "stat_french": "Events with a French translation",
+    "stat_ai_players": "AI players currently active",
+    "stat_daily": "Daily challenges generated",
+    "learn_more": "Learn more"
   }
+
 }

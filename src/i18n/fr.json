@@ -1989,5 +1989,25 @@
     "body2": "Nous les réduisons activement. Des recoupements automatiques avec Wikidata, des joueurs IA qui jouent chaque événement et signalent ceux qui semblent douteux, ainsi qu'un contrôle des anachronismes dans les images sont en cours de déploiement, et la couverture continue de s'étendre. Vous pouvez signaler n'importe quel événement depuis le jeu.",
     "body3": "{appName} est une version préliminaire. Attendez-vous à ce qu'elle gagne en précision avec le temps.",
     "close": "Compris"
+  },
+  "howWeWork": {
+    "meta_title": "Comment nous continuons à progresser",
+    "meta_desc": "Comment {appName} est conçu : événements et images générés par IA, notre boucle d'audit, les joueurs IA et les signalements des joueurs — une version précoce en amélioration continue.",
+    "title": "Comment nous continuons à progresser",
+    "intro": "{appName} est un jeu de devinettes historiques. Le joueur étudie une image et un ensemble d'indices, puis devine où et quand l'événement a eu lieu. Chaque événement, image et indice du jeu est créé par IA.",
+    "ai_note": "Un contenu généré par IA peut contenir des erreurs : une année erronée, un lieu mal situé ou une image avec un détail anachronique. Nous sommes transparents : il s'agit d'une version précoce, et nous comptons qu'elle s'améliore avec le temps.",
+    "improve_title": "Nos méthodes d'amélioration",
+    "improve_audit": "Nous auditons des lots d'événements en les comparant à des sources web indépendantes et consignons ce que nous trouvons pour correction.",
+    "improve_ai": "Des joueurs IA jouent les événements et signalent les problèmes.",
+    "improve_reports": "Les joueurs peuvent signaler un événement depuis la fenêtre Learn.",
+    "translation_note": "La traduction française est en cours et reste imparfaite.",
+    "early_version": "Ceci est une version précoce. Elle devrait continuer à s'améliorer.",
+    "stats_title": "Le jeu aujourd'hui",
+    "stat_events": "Événements dans le jeu",
+    "stat_french": "Événements avec une traduction française",
+    "stat_ai_players": "Joueurs IA actuellement actifs",
+    "stat_daily": "Défis quotidiens générés",
+    "learn_more": "En savoir plus"
   }
+
 }
