@@ -26,6 +26,7 @@ describe("sitemap generation (SEO-BUILD-REVIVE-DIGTHEPAST-1118-616)", () => {
 
     expect(entries[0].url).toBe(SITE_ORIGIN);
     expect(entries[1].url).toBe(`${SITE_ORIGIN}/events`);
+    expect(entries[2].url).toBe(`${SITE_ORIGIN}/how-we-work`);
     expect(SITE_ORIGIN).toBe("https://digthepast.org");
   });
 
@@ -36,11 +37,11 @@ describe("sitemap generation (SEO-BUILD-REVIVE-DIGTHEPAST-1118-616)", () => {
     ]);
     const entries = await sitemap();
 
-    expect(entries).toHaveLength(4);
-    expect(entries[2].url).toBe(`${SITE_ORIGIN}/events/moon-landing-1969`);
-    expect(entries[2].lastModified).toEqual(new Date("2026-01-01T00:00:00Z"));
-    expect(entries[3].url).toBe(`${SITE_ORIGIN}/events/fall-of-rome`);
-    expect(entries[3].lastModified).toBeUndefined();
+    expect(entries).toHaveLength(5);
+    expect(entries[3].url).toBe(`${SITE_ORIGIN}/events/moon-landing-1969`);
+    expect(entries[3].lastModified).toEqual(new Date("2026-01-01T00:00:00Z"));
+    expect(entries[4].url).toBe(`${SITE_ORIGIN}/events/fall-of-rome`);
+    expect(entries[4].lastModified).toBeUndefined();
     for (const entry of entries) {
       expect(entry.url.startsWith("https://digthepast.org")).toBe(true);
     }
@@ -54,9 +55,9 @@ describe("sitemap generation (SEO-BUILD-REVIVE-DIGTHEPAST-1118-616)", () => {
     mockFetch.mockResolvedValue(slugs);
     const entries = await sitemap();
 
-    // 2 static + 50,000 event entries
-    expect(entries).toHaveLength(50_002);
-    expect(entries[50_001].url).toBe(`${SITE_ORIGIN}/events/event-49999`);
+    // 3 static + 50,000 event entries
+    expect(entries).toHaveLength(50_003);
+    expect(entries[50_002].url).toBe(`${SITE_ORIGIN}/events/event-49999`);
   });
 
   it("falls back to static entries only when the DB is unreachable", async () => {
@@ -64,7 +65,7 @@ describe("sitemap generation (SEO-BUILD-REVIVE-DIGTHEPAST-1118-616)", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const entries = await sitemap();
 
-    expect(entries).toHaveLength(2);
+    expect(entries).toHaveLength(3);
     expect(entries[0].url).toBe(SITE_ORIGIN);
     warn.mockRestore();
   });

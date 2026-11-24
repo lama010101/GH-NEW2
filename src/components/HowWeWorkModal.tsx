@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import styles from './HowWeWorkModal.module.css'
 
@@ -21,6 +22,7 @@ interface HowWeWorkModalProps {
 export function HowWeWorkModal({ isOpen, onClose }: HowWeWorkModalProps) {
   const t = useTranslations('aiNotice')
   const tLanding = useTranslations('landing')
+  const tHow = useTranslations('howWeWork')
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -84,6 +86,9 @@ export function HowWeWorkModal({ isOpen, onClose }: HowWeWorkModalProps) {
         <p className={styles.body}>{t('body1')}</p>
         <p className={styles.body}>{t('body2')}</p>
         <p className={styles.body}>{t('body3', { appName })}</p>
+        <Link href="/how-we-work" className={styles.closeButton}>
+          {tHow('learn_more')}
+        </Link>
         <button
           ref={closeRef}
           type="button"

@@ -1,0 +1,87 @@
+/* /how-we-work — UX-BUILD-V1CLOSE-1124-868 item B.
+   Font sizes use var(--font-*) tokens only
+   (ENFORCE-CSS-NO-HARDCODED-TOKENS-001). */
+
+.page {
+  min-height: 100vh;
+  background: var(--gh-bg-base);
+  color: var(--gh-text-primary);
+  padding: 48px 16px 64px;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.title {
+  margin: 0 0 16px;
+  font-size: var(--font-3xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.intro {
+  margin: 0 0 16px;
+  font-size: var(--font-base);
+  line-height: 1.6;
+  color: var(--gh-text-primary);
+}
+
+.sectionTitle {
+  margin: 28px 0 12px;
+  font-size: var(--font-xl);
+  font-weight: 700;
+}
+
+.body {
+  margin: 0 0 12px;
+  font-size: var(--font-base);
+  line-height: 1.6;
+  color: var(--gh-text-primary);
+}
+
+.note {
+  margin: 0 0 12px;
+  font-size: var(--font-sm);
+  line-height: 1.55;
+  color: var(--gh-text-muted);
+}
+
+.list {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  font-size: var(--font-base);
+  line-height: 1.6;
+}
+
+.list li {
+  margin-bottom: 8px;
+}
+
+.stats {
+  margin-top: 32px;
+  padding: 20px;
+  border: 1px solid var(--gh-border-default);
+  border-radius: 16px;
+  background: var(--gh-bg-surface);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin: 12px 0 0;
+}
+
+.stat dt {
+  font-size: var(--font-xs);
+  color: var(--gh-text-muted);
+  margin-bottom: 4px;
+}
+
+.stat dd {
+  margin: 0;
+  font-size: var(--font-2xl);
+  font-weight: 700;
+}

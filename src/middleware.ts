@@ -15,7 +15,7 @@ import { authCookieDomainForHost } from "@/core/authCookie";
 // reachable by anonymous crawlers or the sitemap can never be indexed.
 // "/events" is an exact match; the "/events/" prefix below covers slugs.
 const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow", "/manifest.json",
-  "/sitemap.xml", "/robots.txt", "/events"];
+  "/sitemap.xml", "/robots.txt", "/events", "/how-we-work"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.

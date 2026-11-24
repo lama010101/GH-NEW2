@@ -283,6 +283,16 @@ describe("middleware redirect logic — KC-007", () => {
       expect(nextCalls).toHaveLength(1);
     });
 
+    it("passes through /how-we-work without redirect", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/how-we-work");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(0);
+      expect(nextCalls).toHaveLength(1);
+    });
+
     it("redirects bare /api/events to /login (route removed, not public)", async () => {
       const middleware = await loadMiddleware();
 
