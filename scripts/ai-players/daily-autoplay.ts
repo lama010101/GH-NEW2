@@ -34,6 +34,7 @@ import {
   type RateSettings,
 } from "@/core/aiRateBudget";
 import { wrapPool, reportQueryCounts } from "./queryCounter";
+import { fetchProvenTrueEventIds } from "@/server/provenTrueEvents";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -624,7 +625,7 @@ const COVERAGE_CANDIDATES_SQL = `SELECT e.id AS event_id,
     )
   GROUP BY e.id`;
 
-async function runPlayPhase(
+export async function runPlayPhase(
   pool: Pick<Pool, "query">,
   phase: PlayPhase,
   dryRun: boolean
@@ -632,6 +633,23 @@ async function runPlayPhase(
   const label = phase === "daily" ? "DAILY" : "COVERAGE";
   const dateIso = todayUtcIso();
   console.log(`[${label}] UTC+14 date: ${dateIso}`);
+
+  // OPS-GATE-AIFLEET-POOLPLAY-1124-886: every play is restricted to the
+  // proven-true pool (event_reliability >= 95, validated, not retired).
+  // FAIL CLOSED: empty pool, query error or missing relation => one log
+  // line, exit 0, zero OpenRouter calls, zero answer writes.
+  let provenTrueIds: Set<string>;
+  try {
+    provenTrueIds = await fetchProvenTrueEventIds(pool);
+  } catch (err) {
+    console.error(`[${label}] proven-true pool query failed: ${err instanceof Error ? err.message : err}`);
+    return 0;
+  }
+  if (provenTrueIds.size === 0) {
+    console.log(`[${label}] proven-true pool is empty — no plays`);
+    return 0;
+  }
+  console.log(`[${label}] Proven-true pool events: ${provenTrueIds.size}`);
 
   // -- Roster (2b): every live ai_player, classified by D1 eligibility ------
   const playersResult = await pool.query<AiPlayer>(ROSTER_SQL);
@@ -714,12 +732,13 @@ async function runPlayPhase(
         [dateIso]
       );
       dailyEventIds = res.rows[0]?.event_ids ?? [];
+      dailyEventIds = dailyEventIds.filter((id) => provenTrueIds.has(id));
       if (dailyEventIds.length === 0) {
         console.log(`[DAILY] no daily_challenges row for ${dateIso} — dry-run plans an empty daily set`);
       }
     } else {
       const challenge = await getOrCreateDailyChallenge(dateIso);
-      dailyEventIds = challenge.event_ids;
+      dailyEventIds = challenge.event_ids.filter((id) => provenTrueIds.has(id));
     }
     console.log(`[DAILY] Challenge events: ${dailyEventIds.length}`);
   } else {
@@ -727,10 +746,12 @@ async function runPlayPhase(
       const candidateResult = await pool.query<{ event_id: string; coverage: string | number }>(
         COVERAGE_CANDIDATES_SQL
       );
-      candidates = candidateResult.rows.map((r) => ({
-        eventId: r.event_id,
-        coverage: Number(r.coverage) || 0,
-      }));
+      candidates = candidateResult.rows
+        .map((r) => ({
+          eventId: r.event_id,
+          coverage: Number(r.coverage) || 0,
+        }))
+        .filter((c) => provenTrueIds.has(c.eventId));
     } catch (err) {
       console.error(`[COVERAGE] candidates query failed: ${err instanceof Error ? err.message : err}`);
     }

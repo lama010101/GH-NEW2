@@ -168,6 +168,10 @@ function resetState() {
     }
     if (sql.includes("ai_play_deferrals")) return { rows: [] };
     if (sql.includes("FROM ai_answer_bank")) return { rows: [] };
+    // OPS-GATE-AIFLEET-POOLPLAY-1124-886: proven-true pool = fixture ids.
+    if (sql.includes("event_reliability")) {
+      return { rows: mocks.eventIds.map((event_id) => ({ event_id })) };
+    }
     if (sql.includes("FROM events")) return { rows: [] };
     if (sql.includes("INSERT INTO ai_fleet_runs")) return { rows: [{ id: "run-1" }] };
     if (sql.includes("UPDATE ai_fleet_runs")) {

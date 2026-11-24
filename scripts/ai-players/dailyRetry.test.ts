@@ -142,6 +142,11 @@ async function runAutoplay(scripted: WorkerResult[]): Promise<void> {
     if (sql.includes("ai_answer_bank_calls")) return { rows: [] }; // USD spend
     if (sql.includes("ai_play_deferrals")) return { rows: [] };
     if (sql.includes("FROM ai_answer_bank")) return { rows: [] };
+    // OPS-GATE-AIFLEET-POOLPLAY-1124-886: proven-true pool = fixture ids.
+    if (sql.includes("event_reliability")) {
+      const ids = [...mocks.eventIds, ...mocks.candidates.map((c) => c.event_id)];
+      return { rows: ids.map((event_id) => ({ event_id })) };
+    }
     if (sql.includes("FROM events")) return { rows: mocks.candidates };
     if (sql.includes("INSERT INTO ai_fleet_runs")) return { rows: [{ id: "run-1" }] };
     if (sql.includes("ai_fleet_runs") || sql.includes("ai_fleet_alerts")) return { rows: [] };
