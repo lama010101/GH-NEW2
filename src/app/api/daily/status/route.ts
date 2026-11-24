@@ -4,6 +4,7 @@ import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { loadCompeteSessionSnapshot } from "@/server/sessionCore";
 import { finalizeStaleDailyAttempts } from "@/server/dailyChallenge";
+import { loadDailyRankedRows } from "@/server/dailyRankedRows";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,15 +58,10 @@ export async function GET() {
 
     let rank: number | null = null;
     if (leaderboard.rows.length > 0) {
-      const row = leaderboard.rows[0];
-      const rankResult = await dbPool.query<{ rank: number }>(
-        `SELECT COUNT(*)::int + 1 AS rank
-         FROM leaderboard_daily
-         WHERE date = $1
-           AND (avg_accuracy, COALESCE(best_round_accuracy, -1.0)) > ($2, COALESCE($3, -1.0))`,
-        [todayIso, row.avg_accuracy, row.best_round_accuracy]
-      );
-      rank = rankResult.rows[0]?.rank ?? null;
+      // Rank basis is humans+AI via the shared loader — the same rows
+      // /api/daily/results and /api/daily/panel rank from (single owner).
+      const rankedRows = await loadDailyRankedRows(todayIso);
+      rank = rankedRows.find((r) => r.player_id === playerId)?.rank ?? null;
     }
 
     return NextResponse.json({
