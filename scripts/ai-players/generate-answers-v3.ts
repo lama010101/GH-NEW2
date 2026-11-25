@@ -839,6 +839,55 @@ async function main(): Promise<void> {
     }
   }
 
+  // OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: review_v1 is REQUIRED on every
+  // non-bench play. The review turn is the only turn that sees the revealed
+  // truth, so the structured review is parsed from ITS response — a missing
+  // response or any missing/violating field rejects the play: eval_fact +
+  // error bank row (calls still recorded => spend still counted), NO success
+  // row, exit 1. 'Failed to parse AI review response' classifies bad_output
+  // -> transient, so the supervisor's existing retry path re-runs it.
+  // bench-v1 keeps its own postReveal schema and never produces review_v1.
+  let reviewV1: ReviewV1 | null = null;
+  if (!BENCH_V1) {
+    let rejectError: string | null = null;
+    if (critique.error) {
+      rejectError = `OpenRouter turn 3 failed: ${critique.error}`;
+    } else {
+      const reviewResult = parseReviewV1(critique.content);
+      if (reviewResult.ok) {
+        reviewV1 = reviewResult.review;
+      } else {
+        rejectError = `Failed to parse AI review response: ${reviewResult.error}`;
+      }
+    }
+    if (rejectError !== null) {
+      const evaluationId = await writeErrorEvalFact(pool, {
+        eventId: row.event_id,
+        aiPlayerId: await ensureAiPlayer(pool),
+        manifestId: critiqueManifestId,
+        groundTruthVersionId,
+        stimulusId,
+        callResult: critique,
+        suppliedHints,
+        imageQualityScore,
+        imageQualityNotes,
+        critiqueError,
+        difficultyScore,
+        difficultyNotes,
+        authenticityScore,
+        authenticityNotes,
+        authenticityError,
+        finalGuess,
+        error: rejectError,
+        usageTotals: usageSoFar(),
+      });
+      await writeErrorResult(pool, evaluationId, row.event_id, calls, rejectError);
+      console.error(rejectError);
+      process.exit(1);
+      return;
+    }
+  }
+
   if (timedOut || !finalGuess) {
     const timeoutMs = DEADLINE_MS;
     const result = evaluateRound(
@@ -900,9 +949,13 @@ async function main(): Promise<void> {
       confidence: null,
       usageTotals: usageSoFar(),
       latencyMs: latencySoFarMs(),
+      reviewPayload: reviewV1 === null ? undefined : { review: reviewV1 },
     });
     await writeCalls(pool, answerBankId, calls);
     await insertHintReviews(pool, row.event_id, aiPlayerId, evaluationId, hintReviewRows);
+    if (reviewV1 !== null && reviewV1.metadata.dispute) {
+      await upsertEventReviewDispute(pool, row.event_id);
+    }
 
     console.log("Stored timeout result for event", row.event_id, "ai_player", aiPlayerId, "time_to_guess_ms", timeoutMs);
     await pool.end();
@@ -1014,9 +1067,13 @@ async function main(): Promise<void> {
             benchmarkRunId: BENCHMARK_RUN_ID,
           }
         : null,
+    reviewPayload: reviewV1 === null ? undefined : { review: reviewV1 },
   });
   await writeCalls(pool, answerBankId, calls);
   await insertHintReviews(pool, row.event_id, aiPlayerId, evaluationId, hintReviewRows);
+  if (reviewV1 !== null && reviewV1.metadata.dispute) {
+    await upsertEventReviewDispute(pool, row.event_id);
+  }
 
   console.log("Stored v3 answer for event", row.event_id, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
   await pool.end();
@@ -1113,6 +1170,12 @@ export function buildCritiqueMessages(
         `"confidence": number 0-1, "explanation": string, "suggestedCorrection": string | null} ` +
         `judging whether the hint text is accurate given the image and the revealed truth.\n`
       : "") +
+    `  - review (object, REQUIRED): the structured play review, exactly this shape:\n` +
+    `    {"v": "review_v1", "reasoning": string (non-empty),\n` +
+    `     "difficulty": {"year": integer 1-5, "location": integer 1-5} (1=easy, 5=very hard),\n` +
+    `     "image": {"anachronism": boolean, "note": string (required when anachronism is true)},\n` +
+    `     "metadata": {"dispute": boolean, "field": "title" | "year" | "place" | "description" (required when dispute is true), "note": string (required when dispute is true)}}\n` +
+    `    Judge difficulty, anachronism and metadata disputes ONLY against the revealed truth and the event metadata shown.\n` +
     `\nRespond with JSON only (no markdown).`;
 
   const locationText = locationName ? ` (${locationName})` : "";
@@ -1125,7 +1188,8 @@ export function buildCritiqueMessages(
     `The correct answer is: latitude ${trueAnswer.lat}, longitude ${trueAnswer.lng}, year ${trueAnswer.year}${locationText}. ` +
     `Event title: "${title || "unknown"}".${descriptionText}\n\n` +
     `Rate the image quality, guess difficulty, and authenticity of the depicted event. Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes` +
-    (hasHints ? `, and hintReviews.` : `.`) +
+    (hasHints ? `, hintReviews` : ``) +
+    `, and review.` +
     hintListText;
 
   return [
@@ -1658,6 +1722,115 @@ function parseCritiqueResponse(text: string): CritiqueParseResult {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// OPS-BUILD-AIFLEET-POOLPLAY2-1125-888 — review_v1 (structured play review).
+// The review turn is the only turn that sees the revealed truth, so the
+// review object is parsed from ITS response. Every required field must be
+// present and valid — a missing/violating field rejects the whole play (no
+// success bank row; the error-row path keeps spend counted via
+// ai_answer_bank_calls and feeds the supervisor's existing retry path).
+// ---------------------------------------------------------------------------
+
+export type ReviewV1 = {
+  v: "review_v1";
+  reasoning: string;
+  difficulty: { year: number; location: number };
+  image: { anachronism: boolean; note: string | null };
+  metadata: {
+    dispute: boolean;
+    field: "title" | "year" | "place" | "description" | null;
+    note: string | null;
+  };
+};
+
+const REVIEW_V1_FIELDS = ["title", "year", "place", "description"] as const;
+
+export function parseReviewV1(
+  text: string
+): { ok: true; review: ReviewV1 } | { ok: false; error: string } {
+  const cleaned = cleanJson(text);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    return { ok: false, error: `review response is not valid JSON: ${(err as Error).message}` };
+  }
+  if (typeof parsed !== "object" || parsed === null) {
+    return { ok: false, error: "review response is not a JSON object" };
+  }
+  const review = (parsed as Record<string, unknown>).review;
+  if (typeof review !== "object" || review === null) {
+    return { ok: false, error: "missing required review object" };
+  }
+  const r = review as Record<string, unknown>;
+  if (r.v !== "review_v1") {
+    return { ok: false, error: 'review.v must be "review_v1"' };
+  }
+  if (typeof r.reasoning !== "string" || r.reasoning.trim().length === 0) {
+    return { ok: false, error: "review.reasoning must be a non-empty string" };
+  }
+  const d = r.difficulty;
+  if (typeof d !== "object" || d === null) {
+    return { ok: false, error: "review.difficulty must be an object" };
+  }
+  const dObj = d as Record<string, unknown>;
+  const dy = toFiniteNumber(dObj.year);
+  const dl = toFiniteNumber(dObj.location);
+  if (dy === null || !Number.isInteger(dy) || dy < 1 || dy > 5) {
+    return { ok: false, error: "review.difficulty.year must be an integer 1-5" };
+  }
+  if (dl === null || !Number.isInteger(dl) || dl < 1 || dl > 5) {
+    return { ok: false, error: "review.difficulty.location must be an integer 1-5" };
+  }
+  const im = r.image;
+  if (typeof im !== "object" || im === null) {
+    return { ok: false, error: "review.image must be an object" };
+  }
+  const imObj = im as Record<string, unknown>;
+  if (typeof imObj.anachronism !== "boolean") {
+    return { ok: false, error: "review.image.anachronism must be a boolean" };
+  }
+  const imNote = typeof imObj.note === "string" ? imObj.note : null;
+  if (imObj.anachronism === true && (imNote === null || imNote.trim().length === 0)) {
+    return { ok: false, error: "review.image.note is required when anachronism is true" };
+  }
+  const md = r.metadata;
+  if (typeof md !== "object" || md === null) {
+    return { ok: false, error: "review.metadata must be an object" };
+  }
+  const mdObj = md as Record<string, unknown>;
+  if (typeof mdObj.dispute !== "boolean") {
+    return { ok: false, error: "review.metadata.dispute must be a boolean" };
+  }
+  const mdField =
+    typeof mdObj.field === "string" &&
+    (REVIEW_V1_FIELDS as readonly string[]).includes(mdObj.field)
+      ? (mdObj.field as ReviewV1["metadata"]["field"])
+      : null;
+  const mdNote = typeof mdObj.note === "string" ? mdObj.note : null;
+  if (mdObj.dispute === true) {
+    if (mdField === null) {
+      return {
+        ok: false,
+        error: 'review.metadata.field is required when dispute is true (one of "title"|"year"|"place"|"description")',
+      };
+    }
+    if (mdNote === null || mdNote.trim().length === 0) {
+      return { ok: false, error: "review.metadata.note is required when dispute is true" };
+    }
+  }
+  return {
+    ok: true,
+    review: {
+      v: "review_v1",
+      reasoning: r.reasoning,
+      difficulty: { year: dy, location: dl },
+      image: { anachronism: imObj.anachronism, note: imNote },
+      metadata: { dispute: mdObj.dispute, field: mdField, note: mdNote },
+    },
+  };
+}
+
 function cleanJson(text: string): string {
   const trimmed = text
     .replace(/^```json\s*/i, "")
@@ -2044,6 +2217,9 @@ type ResultWriteInput = {
     fameScore: number | null;
     benchmarkRunId: string | null;
   } | null;
+  /** OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: legacy-path structured_payload
+   *  ({review: reviewV1}); ignored by the bench INSERT. */
+  reviewPayload?: unknown;
 };
 
 async function writeResult(
@@ -2162,9 +2338,10 @@ async function writeResult(
       time_to_guess_ms, image_quality_score, image_quality_notes, critique_error,
       evaluation_id,
       play_mode, hints_off, total_cost_usd, total_tokens, reasoning_tokens,
-      latency_ms, timer_ms, model_slug, confidence, error_class
+      latency_ms, timer_ms, model_slug, confidence, error_class,
+      structured_payload
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
-              $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
+              $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33)
     ON CONFLICT (event_id, ai_player_id)
     DO UPDATE SET
       guess_lat = EXCLUDED.guess_lat,
@@ -2197,6 +2374,7 @@ async function writeResult(
       model_slug = EXCLUDED.model_slug,
       confidence = EXCLUDED.confidence,
       error_class = EXCLUDED.error_class,
+      structured_payload = EXCLUDED.structured_payload,
       created_at = now()
     RETURNING id`,
     [
@@ -2232,9 +2410,27 @@ async function writeResult(
       MODEL_ID,
       input.confidence,
       null, // error_class — success rows carry no classification
+      input.reviewPayload === undefined ? null : JSON.stringify(input.reviewPayload),
     ]
   );
   return res.rows[0].id;
+}
+
+// OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: a stored play whose review flags a
+// metadata dispute re-queues the event — exactly one upsert, priority 12,
+// claim state reset. NEVER writes event_fact_checks and NEVER touches
+// events.status / events.retired_at / reliability.
+async function upsertEventReviewDispute(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  eventId: string
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO event_review_queue (event_id, priority) VALUES ($1, 12)
+     ON CONFLICT (event_id) DO UPDATE SET
+       done_at = NULL, claimed_by = NULL, claimed_at = NULL, lease_until = NULL,
+       priority = GREATEST(event_review_queue.priority, 12)`,
+    [eventId]
+  );
 }
 
 async function writeCalls(

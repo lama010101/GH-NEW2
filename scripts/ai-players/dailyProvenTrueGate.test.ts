@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   eventIds: ["evt-A", "evt-B", "evt-C"],
   provenRows: [] as Array<{ event_id: string }>,
   provenError: null as Error | null,
+  playsRows: [] as Array<{ event_id: string; plays: number }>,
   deferrals: [] as Array<{
     ai_player_id: string;
     event_id: string;
@@ -136,7 +137,12 @@ async function waitForEnd(): Promise<void> {
 
 async function runDaily(
   scripted: WorkerResult[],
-  opts: { provenRows?: Array<{ event_id: string }>; provenError?: Error | null } = {}
+  opts: {
+    provenRows?: Array<{ event_id: string }>;
+    provenError?: Error | null;
+    challengeIds?: string[];
+    playsRows?: Array<{ event_id: string; plays: number }>;
+  } = {}
 ): Promise<void> {
   vi.resetModules();
   mocks.spawnResults = [...scripted];
@@ -144,9 +150,10 @@ async function runDaily(
   mocks.queries = [];
   mocks.queryParams = [];
   mocks.players = [PLAYER];
-  mocks.eventIds = ["evt-A", "evt-B", "evt-C"];
+  mocks.eventIds = opts.challengeIds ?? ["evt-A", "evt-B", "evt-C"];
   mocks.provenRows = opts.provenRows ?? [];
   mocks.provenError = opts.provenError ?? null;
+  mocks.playsRows = opts.playsRows ?? [];
   mocks.deferrals = [
     { ai_player_id: "p-1", event_id: "evt-P", mode: "practice", retry_after_at: null },
   ];
@@ -174,6 +181,7 @@ async function runDaily(
       if (/^\s*(INSERT|UPDATE)/i.test(sql)) return { rows: [] };
       return { rows: mocks.deferrals };
     }
+    if (sql.includes("GROUP BY event_id")) return { rows: mocks.playsRows };
     if (sql.includes("FROM ai_answer_bank")) return { rows: mocks.bankRows };
     if (sql.includes("FROM events")) return { rows: [] };
     if (sql.includes("INSERT INTO ai_fleet_runs")) return { rows: [{ id: "run-1" }] };
@@ -234,6 +242,37 @@ describe("daily proven-true gate (OPS-GATE-AIFLEET-DAILYTRUE-1124-885)", () => {
     expect(spawnedEventIds()).toEqual([]);
     expect(writeQueries()).toEqual([]);
     expect(logs()).toContain("proven-true lookup failed");
+    expect(exitSpy).not.toHaveBeenCalled();
+  }, 20000);
+
+  it("(iv) OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: pool of 4, challenge shares none -> items drawn from the pool", async () => {
+    // The human daily challenge (getOrCreateDailyChallenge / daily_challenges)
+    // contains NONE of the proven-true pool events. Work items must come
+    // from the pool, fewest-plays-first.
+    const pool = ["pool-1", "pool-2", "pool-3", "pool-4"];
+    await runDaily([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }], {
+      challengeIds: ["human-1", "human-2", "human-3", "human-4"],
+      provenRows: pool.map((id) => ({ event_id: id })),
+      playsRows: [
+        { event_id: "pool-1", plays: 0 },
+        { event_id: "pool-2", plays: 5 },
+        { event_id: "pool-3", plays: 0 },
+        { event_id: "pool-4", plays: 2 },
+      ],
+    });
+    const spawned = spawnedEventIds();
+    expect(spawned.length).toBeGreaterThan(0);
+    for (const id of spawned) expect(pool).toContain(id);
+    expect(spawned).not.toContain("human-1");
+    // fewest-plays-first: pool-1/pool-3 (0 plays) precede pool-4 (2) precede pool-2 (5).
+    expect(spawned).toEqual(["pool-1", "pool-3", "pool-4", "pool-2"]);
+    expect(spawnedModes()).toEqual([
+      "--mode=daily",
+      "--mode=daily",
+      "--mode=daily",
+      "--mode=daily",
+    ]);
+    expect(logs()).toContain("proven-true pool events: 4");
     expect(exitSpy).not.toHaveBeenCalled();
   }, 20000);
 });
