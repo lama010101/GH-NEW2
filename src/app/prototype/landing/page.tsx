@@ -840,7 +840,6 @@ export default function LandingV2Prototype() {
             >
               {guestBusy ? tl("starting") : tl("play_now")}
             </button>
-            <a href="/login" onClick={(e) => { e.preventDefault(); router.push("/login"); }} className={styles.ghostBtn}>{tl("signin_signup")}</a>
           </div>
           {guestError ? (
             <p role="alert" className={styles.errorText}>
@@ -1090,6 +1089,8 @@ export default function LandingV2Prototype() {
             ))}
           </div>
 
+          <AiContentNotice />
+
           <div className={`${styles.aiNote} ${revealed.ai ? styles.in : ""}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
@@ -1275,6 +1276,7 @@ export default function LandingV2Prototype() {
             }}
           >
             <MainLeaderboard />
+            <p className={styles.midCtaNote}>{tl("lb_sample_note")}</p>
           </div>
         </div>
       </section>
@@ -1330,10 +1332,6 @@ export default function LandingV2Prototype() {
           </div>
         </div>
       </section>
-
-      <div className={styles.wrap}>
-        <AiContentNotice />
-      </div>
 
       {/* ── FOOTER ── */}
       <footer className={styles.footer}>
