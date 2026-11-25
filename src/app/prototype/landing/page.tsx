@@ -35,6 +35,7 @@ import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import BrandMark from "@/components/brand/BrandMark";
 import { AiContentNotice } from "@/components/AiContentNotice";
+import { requestConsentReopen } from "@/core/consent";
 import { detectCookiesBlocked, mapAuthError } from "@/components/AuthModal";
 import HeroLogo from "./HeroLogo";
 import styles from "./landing.module.css";
@@ -513,6 +514,7 @@ export default function LandingV2Prototype() {
   const t = useTranslations("auth");
   const tl = useTranslations("landing");
   const tg = useTranslations("game");
+  const tc = useTranslations("consent");
   const tlb = useTranslations("leaderboard");
   const tn = useTranslations("nav");
   const trk = useTranslations("rank");
@@ -1355,6 +1357,12 @@ export default function LandingV2Prototype() {
           <a href="/help">{tn("help")}</a>
           <a href="/privacy">{tgd("footer_link_privacy")}</a>
           <a href="/terms">{tgd("footer_link_terms")}</a>
+          <a
+            href="#consent-settings"
+            onClick={(e) => { e.preventDefault(); requestConsentReopen(); }}
+          >
+            {tc("settings")}
+          </a>
         </div>
         <p className={styles.footerCopy}>© {new Date().getFullYear()} Dig the Past</p>
       </footer>
