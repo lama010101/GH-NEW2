@@ -1982,6 +1982,14 @@
     "footer_link_disclaimer": "法的免責",
     "footer_disclaimer": "本ページは情報提供のみを目的とし、証券購入の勧誘ではありません。将来見通しは目標であり保証ではありません。"
   },
+  "consent": {
+    "title": "プライバシー設定",
+    "body": "ゲームの利用状況を把握するために Google Analytics を使用したいと考えています。分析 Cookie は同意した場合のみ設定されます。選択はいつでも変更できます。",
+    "accept": "同意する",
+    "reject": "拒否する",
+    "settings": "Cookie 設定",
+    "privacy_analytics": "ゲームの利用状況を把握するために Google Analytics 4 を使用しています。同意バナーで分析 Cookie を承認した場合にのみ動作し、分析データは Google に送信されます。フッターの「Cookie 設定」リンクからいつでも選択を変更または撤回できます。"
+  },
   "aiNotice": {
     "short": "AIが生成したコンテンツです。イベントに誤りが含まれる場合があります。",
     "link": "私たちの取り組み",

@@ -1982,6 +1982,14 @@
     "footer_link_disclaimer": "法律声明",
     "footer_disclaimer": "本页面仅供信息参考,不构成证券购买要约。前瞻性陈述仅为目标,不构成保证。"
   },
+  "consent": {
+    "title": "你的隐私选择",
+    "body": "我们希望使用 Google Analytics 来了解游戏的使用情况。仅在你同意后才会设置分析 Cookie。你可以随时更改选择。",
+    "accept": "接受",
+    "reject": "拒绝",
+    "settings": "Cookie 设置",
+    "privacy_analytics": "我们使用 Google Analytics 4 来了解游戏的使用情况。仅当你通过同意横幅接受分析 Cookie 时它才会运行；分析数据会发送给 Google。你可以随时通过页脚中的“Cookie 设置”链接更改或撤回选择。"
+  },
   "aiNotice": {
     "short": "AI 生成的内容。部分事件可能包含错误。",
     "link": "我们的工作方式",

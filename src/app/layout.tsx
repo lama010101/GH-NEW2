@@ -10,6 +10,7 @@ import { BRAND_PRIMARY_HEX } from '@/core/brand';
 import { HapticFeedback } from '@/components/HapticFeedback';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { Analytics } from '@/components/Analytics';
+import { ConsentBanner } from '@/components/ConsentBanner';
 import BrandSplash from '@/components/brand/BrandSplash';
 import "./globals.css";
 
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <HapticFeedback />
         <ServiceWorkerRegistration />
         <Analytics />
+        <ConsentBanner />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>
