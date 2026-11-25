@@ -1982,6 +1982,14 @@
     "footer_link_disclaimer": "Mention légale",
     "footer_disclaimer": "Cette page est informative et ne constitue pas une offre de titres. Les déclarations prospectives sont des objectifs, pas des garanties."
   },
+  "consent": {
+    "title": "Vos choix de confidentialité",
+    "body": "Nous aimerions utiliser Google Analytics pour comprendre comment le jeu est utilisé. Les cookies d'analyse ne sont déposés que si vous acceptez. Vous pouvez modifier votre choix à tout moment.",
+    "accept": "Accepter",
+    "reject": "Refuser",
+    "settings": "Paramètres des cookies",
+    "privacy_analytics": "Nous utilisons Google Analytics 4 pour comprendre comment le jeu est utilisé. Il ne fonctionne que si vous acceptez les cookies d'analyse via la bannière de consentement ; les données d'analyse sont envoyées à Google. Vous pouvez modifier ou retirer votre choix à tout moment via le lien « Paramètres des cookies » en bas de page."
+  },
   "aiNotice": {
     "short": "Contenu généré par IA. Certains événements peuvent contenir des erreurs.",
     "link": "Comment ça marche",

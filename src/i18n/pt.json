@@ -1982,6 +1982,14 @@
     "footer_link_disclaimer": "Aviso legal",
     "footer_disclaimer": "Página apenas informativa; não é oferta de valores. Declarações prospectivas são metas, não garantias."
   },
+  "consent": {
+    "title": "Suas escolhas de privacidade",
+    "body": "Gostaríamos de usar o Google Analytics para entender como o jogo é jogado. Os cookies de análise só são definidos se você aceitar. Você pode mudar sua escolha a qualquer momento.",
+    "accept": "Aceitar",
+    "reject": "Rejeitar",
+    "settings": "Configurações de cookies",
+    "privacy_analytics": "Usamos o Google Analytics 4 para entender como o jogo é usado. Ele só funciona se você aceitar os cookies de análise pelo banner de consentimento; os dados de análise são enviados ao Google. Você pode alterar ou retirar sua escolha a qualquer momento pelo link «Configurações de cookies» no rodapé."
+  },
   "aiNotice": {
     "short": "Conteúdo gerado por IA. Alguns eventos podem conter erros.",
     "link": "Como funcionamos",

@@ -1982,6 +1982,14 @@
     "footer_link_disclaimer": "Legal disclaimer",
     "footer_disclaimer": "This page is for informational purposes only and does not constitute an offer or solicitation to purchase securities. Forward-looking statements represent goals and opportunities, not guarantees or projections."
   },
+  "consent": {
+    "title": "Your privacy choices",
+    "body": "We would like to use Google Analytics to understand how the game is played. Analytics cookies are only set if you accept. You can change your choice at any time.",
+    "accept": "Accept",
+    "reject": "Reject",
+    "settings": "Cookie settings",
+    "privacy_analytics": "We use Google Analytics 4 to understand how the game is used. It runs only if you accept analytics cookies through the consent banner; analytics data is sent to Google. You can change or withdraw your choice at any time via the cookie settings link in the footer."
+  },
   "aiNotice": {
     "short": "AI-generated content. Some events may contain errors.",
     "link": "How we work",

@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { requestConsentReopen } from '@/core/consent'
 
 export default function FooterSection() {
   const t = useTranslations('grow.footer')
+  const tc = useTranslations('consent')
   const router = useRouter()
 
   return (
@@ -32,6 +34,13 @@ export default function FooterSection() {
             className="text-left underline hover:text-[var(--gh-text-primary)]"
           >
             Terms of Service
+          </button>
+          <button
+            type="button"
+            onClick={() => requestConsentReopen()}
+            className="text-left underline hover:text-[var(--gh-text-primary)]"
+          >
+            {tc('settings')}
           </button>
         </div>
       </div>

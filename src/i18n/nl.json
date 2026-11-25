@@ -1982,6 +1982,14 @@
     "footer_link_disclaimer": "Juridische disclaimer",
     "footer_disclaimer": "Deze pagina is louter informatief en geen aanbod van effecten. Toekomstverklaringen zijn doelen, geen garanties."
   },
+  "consent": {
+    "title": "Jouw privacykeuzes",
+    "body": "We willen Google Analytics gebruiken om te begrijpen hoe het spel wordt gespeeld. Analytics-cookies worden alleen geplaatst als je akkoord gaat. Je kunt je keuze altijd wijzigen.",
+    "accept": "Accepteren",
+    "reject": "Weigeren",
+    "settings": "Cookie-instellingen",
+    "privacy_analytics": "We gebruiken Google Analytics 4 om te begrijpen hoe het spel wordt gebruikt. Het draait alleen als je analytics-cookies accepteert via de toestemmingsbanner; analytische gegevens worden naar Google gestuurd. Je kunt je keuze op elk moment wijzigen of intrekken via de link 'Cookie-instellingen' in de voettekst."
+  },
   "aiNotice": {
     "short": "AI-gegenereerde content. Sommige gebeurtenissen kunnen fouten bevatten.",
     "link": "Hoe we werken",

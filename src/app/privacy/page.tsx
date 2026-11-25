@@ -11,6 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PrivacyPage() {
   const t = await getTranslations('legal');
+  const tc = await getTranslations('consent');
   return (
     <main className="min-h-screen bg-[var(--gh-bg-base)] text-[var(--gh-text-primary)] px-4 py-12">
       <article className="mx-auto max-w-3xl">
@@ -72,6 +73,9 @@ export default async function PrivacyPage() {
         <h2 className="text-xl font-semibold mt-8 mb-3">{t('privacy.section4_title')}</h2>
         <p className="leading-relaxed mb-6">
           {t('privacy.cookies_text')}
+        </p>
+        <p className="leading-relaxed mb-6">
+          {tc('privacy_analytics')}
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-3">{t('privacy.section5_title')}</h2>
