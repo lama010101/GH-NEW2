@@ -50,7 +50,9 @@
 }
 
 .closeButton {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-sizing: border-box;
   width: 100%;
   padding: 12px 0;
@@ -61,6 +63,12 @@
   font-size: var(--font-base);
   font-weight: 700;
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.closeButton + .closeButton {
+  margin-top: 10px;
 }
 
 .closeButton:hover {

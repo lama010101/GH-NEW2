@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { fetchImprovementStats, type ImprovementStats } from "@/server/improvementStats";
 import { BRAND_NAME, SITE_ORIGIN } from "@/core/brand";
 import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
+import BrandMark from "@/components/brand/BrandMark";
+import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
+import { BackButton } from "./BackButton";
 import styles from "./how-we-work.module.css";
 
 export const revalidate = 3600;
@@ -22,6 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HowWeWorkPage() {
   const t = await getTranslations("howWeWork");
+  const tNav = await getTranslations("leaderboard");
   const appName = BRAND_NAME;
 
   const cookieStore = await cookies();
@@ -50,7 +55,17 @@ export default async function HowWeWorkPage() {
   });
 
   return (
-    <main className={styles.page}>
+    <>
+      <header className={styles.topbar}>
+        <BackButton label={tNav("back")} className={styles.backButton} />
+        <Link href="/" className={styles.brand} aria-label={BRAND_NAME}>
+          <BrandMark size={28} />
+        </Link>
+        <div className={styles.langSlot}>
+          <LanguageDropdown initialLocale={locale} />
+        </div>
+      </header>
+      <main className={styles.page}>
       <div className={styles.container}>
         <h1 className={styles.title}>{t("title")}</h1>
         <p className={styles.intro}>{t("intro", { appName })}</p>
@@ -94,6 +109,7 @@ export default async function HowWeWorkPage() {
           </section>
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
