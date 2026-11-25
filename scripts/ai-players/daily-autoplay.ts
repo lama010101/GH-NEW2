@@ -3,7 +3,6 @@ import { spawn, type ChildProcess } from "child_process";
 import { resolve } from "path";
 import type { Pool } from "pg";
 import { getDbPool } from "@/server/db";
-import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
 import { classifyFailure, RATE_LIMIT_DEFERRED_MARKER } from "@/core/aiFailureCauses";
@@ -405,6 +404,10 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     // AIP-FIX-DAILY-RETRY-PARSEERRORS-1022-A04: nondeterministic model-output failures; a retry usually succeeds.
     /Failed to parse AI final guess response/,
     /Final guess response missing finalGuess/,
+    // OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: a play whose review_v1 block is
+    // missing/invalid is rejected by the worker — same nondeterministic
+    // model-output class, retried through the existing path.
+    /Failed to parse AI review response/,
   ];
   for (const pattern of transientNetworkPatterns) {
     if (pattern.test(output)) return true;
@@ -704,25 +707,51 @@ async function runPlayPhase(
   // -- Phase inputs (2e): today's challenge OR validated playable candidates -
   let dailyEventIds: string[] = [];
   let candidates: QueueCandidate[] = [];
+  // OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: the Daily phase plays the
+  // proven-true POOL (fetchProvenTrueEventIds — single owner), NOT the human
+  // daily challenge. Pool events are ordered fewest-plays-first so the
+  // least-covered events are played before already-played ones. Fail closed
+  // exactly like the 885 gate: lookup error or empty pool -> one log line,
+  // return 0, zero OpenRouter calls, zero writes (still before
+  // insertFleetRun).
+  let provenTrueIds: string[] = [];
   if (phase === "daily") {
-    if (dryRun) {
-      // getOrCreateDailyChallenge lazily INSERTs the challenge row — a
-      // dry-run must never write, so it reads the stored row only. If no row
-      // exists yet, the daily set is unknowable anyway (it is fixed at
-      // creation time), so the plan just reports an empty daily set.
-      const res = await pool.query<{ event_ids: string[] }>(
-        `SELECT event_ids FROM daily_challenges WHERE date = $1`,
-        [dateIso]
+    try {
+      provenTrueIds = await fetchProvenTrueEventIds(pool);
+    } catch (err) {
+      console.log(
+        `[DAILY-GATE] proven-true lookup failed (${err instanceof Error ? err.message : err}) — no plays`
       );
-      dailyEventIds = res.rows[0]?.event_ids ?? [];
-      if (dailyEventIds.length === 0) {
-        console.log(`[DAILY] no daily_challenges row for ${dateIso} — dry-run plans an empty daily set`);
-      }
-    } else {
-      const challenge = await getOrCreateDailyChallenge(dateIso);
-      dailyEventIds = challenge.event_ids;
+      return 0;
     }
-    console.log(`[DAILY] Challenge events: ${dailyEventIds.length}`);
+    if (provenTrueIds.length === 0) {
+      console.log("[DAILY-GATE] proven-true pool empty — no plays");
+      return 0;
+    }
+    const playsByEvent = new Map<string, number>();
+    try {
+      const playsResult = await pool.query<{ event_id: string; plays: string | number }>(
+        `SELECT event_id, COUNT(*)::int AS plays
+         FROM ai_answer_bank
+         WHERE event_id = ANY($1::uuid[])
+         GROUP BY event_id`,
+        [provenTrueIds]
+      );
+      for (const r of playsResult.rows) {
+        playsByEvent.set(r.event_id, Number(r.plays) || 0);
+      }
+    } catch (err) {
+      console.log(
+        `[DAILY-GATE] pool plays lookup failed (${err instanceof Error ? err.message : err}) — no plays`
+      );
+      return 0;
+    }
+    dailyEventIds = [...provenTrueIds].sort(
+      (a, b) =>
+        (playsByEvent.get(a) ?? 0) - (playsByEvent.get(b) ?? 0) ||
+        (a < b ? -1 : a > b ? 1 : 0)
+    );
+    console.log(`[DAILY] proven-true pool events: ${dailyEventIds.length} (fewest plays first)`);
   } else {
     try {
       const candidateResult = await pool.query<{ event_id: string; coverage: string | number }>(
@@ -797,7 +826,10 @@ async function runPlayPhase(
     successes,
     deferrals,
     errorRows,
-    maxPlaysPerRun: settings.runMaxPlays,
+    // OPS-BUILD-AIFLEET-POOLPLAY2-1125-888: a dry-run shows the full plan —
+    // the runMaxPlays cap (including a deliberate pause value) applies to
+    // live dispatch only, never to the preview.
+    maxPlaysPerRun: dryRun ? Number.MAX_SAFE_INTEGER : settings.runMaxPlays,
     practicePerPlayerPerRun: settings.practicePerPlayerPerRun,
     benchmarkSubsetSize: settings.benchmarkSubsetSize,
     now: Date.now(),
@@ -812,27 +844,13 @@ async function runPlayPhase(
     .filter((x): x is WorkItem => x !== null);
   console.log(`[${label}] Work items to process: ${items.length}`);
 
-  // OPS-GATE-AIFLEET-DAILYTRUE-1124-885: Daily plays are restricted to
-  // proven-true events (event_reliability >= 95, not quarantined) and to
-  // 'daily' mode only — product owner: AI plays ONLY Daily mode and ONLY
-  // proven-true events; an empty pool means no play. An empty pool, a lookup
-  // error or a missing relation fails CLOSED: one log line, exit 0, zero
-  // OpenRouter calls, zero writes. This runs before insertFleetRun, so even
-  // the run row is never written.
+  // OPS-GATE-AIFLEET-DAILYTRUE-1124-885 + OPS-BUILD-AIFLEET-POOLPLAY2-1125-888:
+  // Daily plays are restricted to 'daily' mode items on proven-true pool
+  // events — this drops stale step-4 refresh items for events outside the
+  // pool (e.g. yesterday's human challenge). The pool was already fetched
+  // fail-closed in the phase-inputs section; an empty pool or lookup error
+  // never reaches this point.
   if (phase === "daily") {
-    let provenTrueIds: string[];
-    try {
-      provenTrueIds = await fetchProvenTrueEventIds(pool);
-    } catch (err) {
-      console.log(
-        `[DAILY-GATE] proven-true lookup failed (${err instanceof Error ? err.message : err}) — no plays`
-      );
-      return 0;
-    }
-    if (provenTrueIds.length === 0) {
-      console.log("[DAILY-GATE] proven-true pool empty — no plays");
-      return 0;
-    }
     const provenTrue = new Set(provenTrueIds);
     const ungated = items.length;
     items = items.filter((i) => i.mode === "daily" && provenTrue.has(i.eventId));

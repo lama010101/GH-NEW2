@@ -70,6 +70,16 @@ const CRITIQUE_USAGE = {
   cost: 0.002,
 };
 
+// OPS-BUILD-AIFLEET-POOLPLAY2-1125-888 — every non-bench play's review turn
+// must return a valid review_v1 block or the play is rejected.
+const REVIEW_V1 = {
+  v: "review_v1",
+  reasoning: "The revealed metadata matches the scene; dating is the hard part.",
+  difficulty: { year: 4, location: 3 },
+  image: { anachronism: false, note: null },
+  metadata: { dispute: false, field: null, note: null },
+};
+
 function orJson(body: unknown, init?: { status?: number; retryAfter?: string }) {
   const status = init?.status ?? 200;
   return {
@@ -151,6 +161,7 @@ beforeEach(() => {
     if (sql.includes("INSERT INTO ai_answer_bank_calls")) return { rows: [] };
     if (sql.includes("INSERT INTO ai_answer_bank")) return { rows: [{ id: "bank-1" }] };
     if (sql.includes("INSERT INTO ai_hint_reviews")) return { rows: [] };
+    if (sql.includes("event_review_queue")) return { rows: [] };
     if (sql.includes("INSERT INTO eval_facts"))
       return { rows: [{ evaluation_id: "eval-1" }] };
     if (sql.includes("FROM events")) return { rows: [EVENT_ROW] };
@@ -265,6 +276,7 @@ describe("generate-answers-v3 practice mode (E2/D2)", () => {
               suggestedCorrection: null,
             },
           ],
+          review: REVIEW_V1,
         },
         CRITIQUE_USAGE
       ),
@@ -812,6 +824,12 @@ describe("generate-answers-v3 legacy path unchanged (bench flag absent)", () => 
             '{"hintId": string (the hint\'s id), "verdict": "correct" | "incorrect" | "unverifiable" | "partially_correct", ' +
             '"confidence": number 0-1, "explanation": string, "suggestedCorrection": string | null} ' +
             "judging whether the hint text is accurate given the image and the revealed truth.\n" +
+            "  - review (object, REQUIRED): the structured play review, exactly this shape:\n" +
+            '    {"v": "review_v1", "reasoning": string (non-empty),\n' +
+            '     "difficulty": {"year": integer 1-5, "location": integer 1-5} (1=easy, 5=very hard),\n' +
+            '     "image": {"anachronism": boolean, "note": string (required when anachronism is true)},\n' +
+            '     "metadata": {"dispute": boolean, "field": "title" | "year" | "place" | "description" (required when dispute is true), "note": string (required when dispute is true)}}\n' +
+            "    Judge difficulty, anachronism and metadata disputes ONLY against the revealed truth and the event metadata shown.\n" +
             "\nRespond with JSON only (no markdown).",
         },
         {
@@ -824,7 +842,7 @@ describe("generate-answers-v3 legacy path unchanged (bench flag absent)", () => 
                 "The correct answer is: latitude 38.9, longitude -77, year 1969 (Washington DC). " +
                 'Event title: "Moon landing parade". Event description: "A test description".\n\n' +
                 "Rate the image quality, guess difficulty, and authenticity of the depicted event. " +
-                "Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes, and hintReviews." +
+                "Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes, hintReviews, and review." +
                 "\n\nThe event's hints (id — tier — type — content). Review each against the image and the revealed answer:\n" +
                 '- id="hint-1" (tier 1 when): "It happened in spring"',
             },
@@ -851,6 +869,7 @@ describe("generate-answers-v3 legacy path unchanged (bench flag absent)", () => 
           difficultyNotes: "mid",
           authenticityScore: 9,
           authenticityNotes: "real",
+          review: REVIEW_V1,
         },
         CRITIQUE_USAGE
       ),
@@ -860,10 +879,182 @@ describe("generate-answers-v3 legacy path unchanged (bench flag absent)", () => 
     expect(exitSpy).toHaveBeenCalledWith(0);
     const bankInserts = queries("INSERT INTO ai_answer_bank (");
     expect(bankInserts).toHaveLength(1);
-    // Original writeResult has exactly 32 bound params — no bench columns.
-    expect(bankInserts[0].params).toHaveLength(32);
+    // 33-column legacy row — structured_payload carries {review: review_v1}.
+    expect(bankInserts[0].params).toHaveLength(33);
+    const sp = JSON.parse(String(bankInserts[0].params[32]));
+    expect(sp.review.v).toBe("review_v1");
+    expect(sp.review.difficulty).toEqual({ year: 4, location: 3 });
     expect(bankInserts[0].sql).not.toContain("prompt_version");
-    expect(bankInserts[0].sql).not.toContain("structured_payload");
     expect(bankInserts[0].sql).not.toContain("benchmark_run_id");
+  }, 25000);
+});
+
+// OPS-BUILD-AIFLEET-POOLPLAY2-1125-888 — review_v1 enforcement + dispute
+// re-queue. Same mocked harness; the review turn's payload is varied per case.
+describe("generate-answers-v3 review_v1 (OPS-BUILD-AIFLEET-POOLPLAY2-1125-888)", () => {
+  const guessReply = () =>
+    modelReply(
+      {
+        finalGuess: { latitude: 40.1, longitude: -70.2, year: 1969, confidence: 0.7 },
+        reasoning: "reasoning here",
+      },
+      TURN1_USAGE
+    );
+  const critiqueWith = (review: unknown) =>
+    modelReply(
+      {
+        imageQualityScore: 8,
+        imageQualityNotes: "sharp",
+        difficultyScore: 6,
+        difficultyNotes: "mid",
+        authenticityScore: 9,
+        authenticityNotes: "real",
+        ...(review === undefined ? {} : { review }),
+      },
+      CRITIQUE_USAGE
+    );
+
+  it("(iv) a review response missing each required field is rejected: error row, no success row", async () => {
+    const badReviews: Array<[string, unknown]> = [
+      ["missing review", undefined],
+      ["bad v", { ...REVIEW_V1, v: "v2" }],
+      ["empty reasoning", { ...REVIEW_V1, reasoning: "  " }],
+      ["missing difficulty", { ...REVIEW_V1, difficulty: undefined }],
+      ["year out of range", { ...REVIEW_V1, difficulty: { year: 6, location: 3 } }],
+      ["location non-integer", { ...REVIEW_V1, difficulty: { year: 4, location: 2.5 } }],
+      ["anachronism non-bool", { ...REVIEW_V1, image: { anachronism: "yes", note: null } }],
+      ["anachronism note missing", { ...REVIEW_V1, image: { anachronism: true, note: null } }],
+      ["dispute non-bool", { ...REVIEW_V1, metadata: { dispute: "yes", field: null, note: null } }],
+      ["dispute field missing", { ...REVIEW_V1, metadata: { dispute: true, field: null, note: "x" } }],
+      ["dispute field invalid", { ...REVIEW_V1, metadata: { dispute: true, field: "author", note: "x" } }],
+      ["dispute note missing", { ...REVIEW_V1, metadata: { dispute: true, field: "year", note: " " } }],
+    ];
+    for (const [name, review] of badReviews) {
+      mocks.orQueue = [guessReply(), critiqueWith(review)];
+      await runWorker(["evt-1"]);
+      expect(exitSpy, name).toHaveBeenCalledWith(1);
+      const bankInserts = queries("INSERT INTO ai_answer_bank (");
+      // Exactly one bank row — the ERROR row; no success row (error param null).
+      expect(bankInserts, name).toHaveLength(1);
+      expect(bankInserts[0].params[3], name).not.toBeNull();
+      expect(String(bankInserts[0].params[3]), name).toContain("review");
+      // Spend still counted: eval_fact + calls rows written.
+      expect(queries("INSERT INTO eval_facts").length, name).toBeGreaterThan(0);
+      exitSpy.mockClear();
+      mocks.recorded = [];
+    }
+  }, 60000);
+
+  it("(v) dispute=true writes exactly one event_review_queue upsert and zero fact-check/event writes", async () => {
+    const disputed = {
+      ...REVIEW_V1,
+      metadata: { dispute: true, field: "year", note: "the depicted uniforms are 20 years earlier" },
+    };
+    mocks.orQueue = [guessReply(), critiqueWith(disputed)];
+    await runWorker(["evt-1"]);
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const queueWrites = queries("event_review_queue").filter((q) =>
+      /^\s*(INSERT|UPDATE)/i.test(q.sql)
+    );
+    expect(queueWrites).toHaveLength(1);
+    expect(queueWrites[0].sql).toContain("ON CONFLICT (event_id)");
+    expect(queueWrites[0].params).toEqual(["evt-1"]);
+    // structured_payload.review persisted on the success row.
+    const bankInsert = queries("INSERT INTO ai_answer_bank (")[0];
+    const sp = JSON.parse(String(bankInsert.params[32]));
+    expect(sp.review.metadata.dispute).toBe(true);
+    expect(sp.review.metadata.field).toBe("year");
+    // No event_fact_checks writes, no events writes.
+    expect(
+      mocks.recorded.filter(
+        (q) =>
+          /event_fact_checks/i.test(q.sql) && /^\s*(INSERT|UPDATE|DELETE)/i.test(q.sql)
+      )
+    ).toHaveLength(0);
+    expect(
+      mocks.recorded.filter(
+        (q) => /\b(events|event_reliability)\b/i.test(q.sql) && /^\s*(INSERT|UPDATE|DELETE)/i.test(q.sql)
+      )
+    ).toHaveLength(0);
+  }, 25000);
+
+  it("(v2) dispute=false writes no queue upsert", async () => {
+    mocks.orQueue = [guessReply(), critiqueWith(REVIEW_V1)];
+    await runWorker(["evt-1"]);
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    expect(
+      queries("event_review_queue").filter((q) => /^\s*(INSERT|UPDATE)/i.test(q.sql))
+    ).toHaveLength(0);
+  }, 25000);
+
+  it("(vi) bench-v1 structured_payload is unchanged — no review key", async () => {
+    const BENCH_RUN_ID = "123e4567-e89b-42d3-a456-426614174000";
+    mocks.orQueue = [
+      orJson(
+        {
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: JSON.stringify({
+                  finalGuess: { latitude: 40.1, longitude: -70.2, year: 1969, confidence: 0.7 },
+                  reasoning: "r".repeat(50),
+                  preReveal: {
+                    image_description: "d",
+                    detected_clues: ["a"],
+                    year_reasoning: "y",
+                    location_reasoning: "l",
+                  },
+                }),
+                reasoning: "provider trace",
+              },
+            },
+          ],
+          usage: TURN1_USAGE,
+        },
+        { status: 200 }
+      ),
+      orJson(
+        {
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: JSON.stringify({
+                  imageQualityScore: 8,
+                  imageQualityNotes: "sharp",
+                  difficultyScore: 6,
+                  difficultyNotes: "mid",
+                  authenticityScore: 9,
+                  authenticityNotes: "real",
+                  postReveal: {
+                    difficulty_year: 7,
+                    difficulty_location: 6,
+                    hard_factors: ["f"],
+                    event_plausibility: 8,
+                    ai_image_depiction_score: 85,
+                    fame_score: 90,
+                    difficulty_notes: "n",
+                  },
+                }),
+              },
+            },
+          ],
+          usage: CRITIQUE_USAGE,
+        },
+        { status: 200 }
+      ),
+    ];
+    await runWorker([
+      "--mode=practice",
+      "--prompt-version=bench-v1",
+      "--benchmark-run-id=" + BENCH_RUN_ID,
+      "evt-1",
+    ]);
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    const p = queries("INSERT INTO ai_answer_bank (")[0].params;
+    const sp = JSON.parse(String(p[34]));
+    expect(Object.keys(sp).sort()).toEqual(["postReveal", "preReveal", "prompt_version"]);
+    expect(sp.review).toBeUndefined();
   }, 25000);
 });
