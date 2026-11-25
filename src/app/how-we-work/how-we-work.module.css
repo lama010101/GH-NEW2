@@ -2,6 +2,48 @@
    Font sizes use var(--font-*) tokens only
    (ENFORCE-CSS-NO-HARDCODED-TOKENS-001). */
 
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--gh-bg-elevated);
+  border-bottom: 1px solid var(--gh-border-default);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--gh-orange);
+  font-size: var(--font-base);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: var(--gh-radius-sm);
+}
+
+.backButton:hover {
+  background: rgba(var(--gh-orange-rgb), 0.12);
+}
+
+.langSlot {
+  margin-left: auto;
+}
+
 .page {
   min-height: 100vh;
   background: var(--gh-bg-base);
