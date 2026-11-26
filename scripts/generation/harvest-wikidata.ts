@@ -5,9 +5,11 @@
 //   npx tsx scripts/generation/harvest-wikidata.ts \
 //     --env-file D:\GH-NEW2\.env.local --target 320 --seed 1122801 \
 //     [--write] [--run-id wdh-1122-801] [--out <json>] [--existing]
+//     [--retry-rejected] [--resume <state-json>] [--max-minutes N] [--max-queries N]
 //
-// DRY-RUN by default: zero DB writes. --write inserts ONLY into
-// public.generation_candidates (ON CONFLICT wikidata_qid DO NOTHING).
+// DRY-RUN by default: zero DB writes. --write writes ONLY into
+// public.generation_candidates (retry rows UPDATE in place; other rows use
+// ON CONFLICT wikidata_qid DO NOTHING; surplus passers carry selected=false).
 // --existing is REPORT ONLY — zero writes even when --write is passed.
 //
 // Sources (all serial, cached, rate-limited):
@@ -20,8 +22,9 @@
 import dotenv from "dotenv";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, resolve } from "path";
-import { dbPool } from "../../src/server/db";
+import { Pool, type QueryResultRow } from "pg";
 import { haversineDistanceKm } from "../../src/core/rules";
+import { continentForCountryCode } from "../../src/core/continents";
 import {
   ERA_BUCKETS,
   MIN_SITELINKS,
@@ -43,6 +46,10 @@ type Flags = {
   seed: number;
   write: boolean;
   existing: boolean;
+  retryRejected: boolean;
+  resume: string;
+  maxMinutes: number;
+  maxQueries: number;
   out: string;
   runId: string;
 };
@@ -66,6 +73,10 @@ function parseFlags(): Flags {
     seed: flags.has("seed") ? Number(flags.get("seed")) : 1122801,
     write: flags.has("write"),
     existing: flags.has("existing"),
+    retryRejected: flags.has("retry-rejected"),
+    resume: String(flags.get("resume") ?? ""),
+    maxMinutes: flags.has("max-minutes") ? Number(flags.get("max-minutes")) : 0,
+    maxQueries: flags.has("max-queries") ? Number(flags.get("max-queries")) : 0,
     out: String(
       flags.get("out") ?? resolve(process.cwd(), "..", `wdharvest-${runId}-report.json`)
     ),
@@ -105,13 +116,35 @@ const UA =
   "GuessHistoryBot/1.0 (https://www.guess-history.com; Wikidata-first event harvester EDQ-BUILD-WDHARVEST-1122-801)";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+type Service = "sparql" | "wikidata" | "wiki" | "nominatim";
+
 const stats = {
   sparql: 0,
   wikidata: 0,
   wiki: 0,
   nominatim: 0,
   errors: 0,
+  retries: 0,
+  status: {} as Record<string, number>,
 };
+
+function countStatus(status: number) {
+  const key = String(status);
+  stats.status[key] = (stats.status[key] ?? 0) + 1;
+}
+
+let runStartedAt = Date.now();
+const sparqlTimings: Array<{ scope: string; status: number; seconds: number; detail: string }> = [];
+function heartbeat(scope: string, detail = "") {
+  const elapsedSec = Math.round((Date.now() - runStartedAt) / 100) / 10;
+  const status = Object.entries(stats.status)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, n]) => `${k}:${n}`)
+    .join(",");
+  console.log(
+    `[hb] ${scope} elapsed=${elapsedSec}s sparql=${stats.sparql} wikidata=${stats.wikidata} wiki=${stats.wiki} nominatim=${stats.nominatim} retries=${stats.retries} errors=${stats.errors} status={${status}}${detail ? ` ${detail}` : ""}`
+  );
+}
 
 const lastHit: Record<string, number> = {};
 async function throttle(svc: string, gapMs: number) {
@@ -124,7 +157,7 @@ type HttpResult = { status: number; body: unknown };
 
 async function fetchJson(
   url: string,
-  svc: keyof typeof stats & string,
+  svc: Service,
   gapMs: number,
   timeoutMs: number,
   maxRetries: number
@@ -139,11 +172,13 @@ async function fetchJson(
         signal: ctrl.signal,
       });
       clearTimeout(timer);
+      countStatus(res.status);
       if (res.status === 429 || res.status >= 500) {
         if (attempt === maxRetries) {
           stats.errors += 1;
           return { status: res.status, body: null };
         }
+        stats.retries += 1;
         const ra = Number(res.headers.get("retry-after"));
         await sleep(
           Number.isFinite(ra) && ra > 0 ? ra * 1000 : Math.min(16000, 1000 * 2 ** attempt)
@@ -158,15 +193,76 @@ async function fetchJson(
       return { status: res.status, body };
     } catch {
       clearTimeout(timer);
+      countStatus(0);
       if (attempt === maxRetries) {
         stats.errors += 1;
         return { status: 0, body: null };
       }
+      stats.retries += 1;
       await sleep(Math.min(16000, 1000 * 2 ** attempt));
     }
   }
   return null;
 }
+
+// Harvester-local pool lifecycle: the DB is connected for short read/write
+// phases only, never held open across long Wikidata/Wikipedia/Nominatim phases.
+class HarvestDb {
+  private pool: Pool | null = null;
+
+  private ensurePool(): Pool {
+    if (this.pool) return this.pool;
+    const connectionString = process.env.SUPABASE_DB_CONNECTION;
+    if (!connectionString) throw new Error("SUPABASE_DB_CONNECTION missing");
+    const pool = new Pool({
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+      max: 2,
+      min: 0,
+      connectionTimeoutMillis: 20000,
+      idleTimeoutMillis: 10000,
+      allowExitOnIdle: true,
+      keepAlive: true,
+    });
+    pool.on("error", (err) => {
+      const code = (err as { code?: unknown }).code;
+      console.error(`[DB][POOL] idle error code=${typeof code === "string" ? code : "unknown"} message=${err.message.split("\n")[0]}`);
+    });
+    pool.on("connect", () => console.log("[DB][POOL] connect"));
+    pool.on("remove", () => console.log("[DB][POOL] remove"));
+    this.pool = pool;
+    return pool;
+  }
+
+  async query<T extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]) {
+    let lastErr: Error | null = null;
+    for (let attempt = 0; attempt <= 3; attempt++) {
+      try {
+        return await this.ensurePool().query<T>(text, params);
+      } catch (err) {
+        const e = err as Error & { code?: string };
+        const transient =
+          e.code === "ECONNRESET" ||
+          e.code === "57P01" ||
+          /ECONNRESET|terminating connection|server closed the connection/i.test(e.message);
+        lastErr = e;
+        if (!transient || attempt === 3) throw e;
+        console.error(`[DB][RETRY] code=${e.code ?? "network"} attempt=${attempt + 1}/3`);
+        await this.end();
+        await sleep(Math.min(8000, 500 * 2 ** attempt));
+      }
+    }
+    throw lastErr ?? new Error("db_query_failed");
+  }
+
+  async end(): Promise<void> {
+    const pool = this.pool;
+    this.pool = null;
+    if (pool) await pool.end().catch(() => undefined);
+  }
+}
+
+const harvestDb = new HarvestDb();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Wikidata Action API (wbgetentities) — entity cache shared by both modes.
@@ -271,12 +367,19 @@ function eraFilter(era: string): string {
   }
 }
 
+type SparqlClassEraResult = {
+  qids: string[];
+  truncated: boolean;
+  status: number;
+  error: string | null;
+};
+
 async function sparqlClassEra(
   era: string,
   classQids: string[],
   sitelinkFloor: number
-): Promise<{ qids: string[]; truncated: boolean } | null> {
-  if (!classQids.length) return { qids: [], truncated: false };
+): Promise<SparqlClassEraResult> {
+  if (!classQids.length) return { qids: [], truncated: false, status: 200, error: null };
   const values = classQids.map((q) => `wd:${q}`).join(" ");
   const query = `
 SELECT DISTINCT ?item ?sitelinks WHERE {
@@ -290,37 +393,68 @@ SELECT DISTINCT ?item ?sitelinks WHERE {
 }
 LIMIT 500`;
   const url = SPARQL_URL + "?" + new URLSearchParams({ query, format: "json" });
+  const queryStarted = Date.now();
   const r = await fetchJson(url, "sparql", 1000, 60000, 5);
   stats.sparql += 1;
-  if (!r || r.status !== 200 || !r.body) return null;
+  const elapsedSec = Math.round((Date.now() - queryStarted) / 100) / 10;
+  if (!r || r.status !== 200 || !r.body) {
+    const status = r?.status ?? 0;
+    sparqlTimings.push({ scope: "class-era", status, seconds: elapsedSec, detail: `${era}/${sitelinkFloor}` });
+    heartbeat("sparql", `era=${era} floor=${sitelinkFloor} status=${status} qtime=${elapsedSec}s error=1`);
+    return { qids: [], truncated: false, status, error: `http_${status}` };
+  }
   const bindings =
     (r.body as { results?: { bindings?: Array<Record<string, { value?: string }>> } })
       ?.results?.bindings ?? [];
   const qids = bindings
     .map((b) => qidOf(b.item?.value))
     .filter((v): v is string => v != null);
-  return { qids: [...new Set(qids)], truncated: bindings.length >= 500 };
+  sparqlTimings.push({ scope: "class-era", status: 200, seconds: elapsedSec, detail: `${era}/${sitelinkFloor}` });
+  heartbeat("sparql", `era=${era} floor=${sitelinkFloor} status=200 qids=${qids.length} qtime=${elapsedSec}s`);
+  return { qids: [...new Set(qids)], truncated: bindings.length >= 500, status: 200, error: null };
 }
 
 // Subclass expansion roots (CTO spec): Q1190554 occurrence, Q13418847 historical event.
+// The expansion is split by root and paged in small batches; labels are resolved
+// later through wbgetentities so WDQS never has to run the label service here.
 async function fetchSubclassClasses(roots: string[], limit = 2000) {
-  const values = roots.map((q) => `wd:${q}`).join(" ");
-  const query = `
-SELECT DISTINCT ?class ?classLabel WHERE {
-  ?class wdt:P279* ?root .
-  VALUES ?root { ${values} }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+  const byQid = new Map<string, { qid: string; label: string }>();
+  const errors: Array<{ root: string; offset: number; status: number }> = [];
+  const batchSize = 250;
+  for (const root of roots) {
+    for (let offset = 0; offset < limit; offset += batchSize) {
+      const query = `
+SELECT DISTINCT ?class WHERE {
+  ?class wdt:P279* wd:${root} .
 }
-LIMIT ${limit}`;
-  const url = SPARQL_URL + "?" + new URLSearchParams({ query, format: "json" });
-  const r = await fetchJson(url, "sparql", 1000, 60000, 5);
-  stats.sparql += 1;
-  const bindings =
-    (r?.body as { results?: { bindings?: Array<Record<string, { value?: string }>> } } | null)
-      ?.results?.bindings ?? [];
-  return bindings
-    .map((b) => ({ qid: qidOf(b.class?.value) ?? "", label: b.classLabel?.value ?? "" }))
-    .filter((c) => /^Q\d+$/.test(c.qid));
+ORDER BY ?class
+LIMIT ${batchSize}
+OFFSET ${offset}`;
+      const url = SPARQL_URL + "?" + new URLSearchParams({ query, format: "json" });
+      const queryStarted = Date.now();
+      const r = await fetchJson(url, "sparql", 1000, 60000, 5);
+      stats.sparql += 1;
+      const elapsedSec = Math.round((Date.now() - queryStarted) / 100) / 10;
+      if (!r || r.status !== 200 || !r.body) {
+        const status = r?.status ?? 0;
+        errors.push({ root, offset, status });
+        sparqlTimings.push({ scope: "subclass", status, seconds: elapsedSec, detail: `${root}@${offset}` });
+        heartbeat("sparql-subclass", `root=${root} offset=${offset} status=${status} qtime=${elapsedSec}s error=1`);
+        break;
+      }
+      const bindings =
+        (r.body as { results?: { bindings?: Array<Record<string, { value?: string }>> } })
+          ?.results?.bindings ?? [];
+      for (const b of bindings) {
+        const qid = qidOf(b.class?.value);
+        if (qid && /^Q\d+$/.test(qid)) byQid.set(qid, { qid, label: "" });
+      }
+      sparqlTimings.push({ scope: "subclass", status: 200, seconds: elapsedSec, detail: `${root}@${offset}` });
+      heartbeat("sparql-subclass", `root=${root} offset=${offset} status=200 rows=${bindings.length} qtime=${elapsedSec}s`);
+      if (bindings.length < batchSize) break;
+    }
+  }
+  return { classes: [...byQid.values()].slice(0, limit), errors };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -552,43 +686,18 @@ async function evaluateCandidate(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Continent from coordinates — documented static bounding table (coarse).
-// Boxes are evaluated in array order; first match wins. "Oceania" is allowed.
-// ─────────────────────────────────────────────────────────────────────────────
-
-type Box = { name: string; latMin: number; latMax: number; lonMin: number; lonMax: number };
-const CONTINENT_BOXES: Box[] = [
-  // Oceania first: Pacific islands must not fall into Asia/NorthAmerica.
-  { name: "Oceania", latMin: -55, latMax: -5, lonMin: 110, lonMax: 180 }, // Australia, NZ, S.Pacific
-  { name: "Oceania", latMin: -55, latMax: 30, lonMin: -180, lonMax: -125 }, // Hawaii + far Pacific
-  { name: "Oceania", latMin: -12, latMax: 0, lonMin: 130, lonMax: 155 }, // PNG northern sliver
-  { name: "Africa", latMin: -35, latMax: 37, lonMin: -18, lonMax: 52 },
-  { name: "Europe", latMin: 36, latMax: 71, lonMin: -25, lonMax: 45 },
-  { name: "Asia", latMin: -12, latMax: 78, lonMin: 45, lonMax: 180 }, // incl. SE-Asia islands, Indonesia
-  { name: "South America", latMin: -56, latMax: 13, lonMin: -82, lonMax: -34 }, // before NorthAmerica so Colombia/Venezuela stay SA
-  { name: "North America", latMin: 5, latMax: 72, lonMin: -170, lonMax: -52 },
-];
-
-function continentForCoords(lat: number, lon: number): string {
-  for (const b of CONTINENT_BOXES) {
-    if (lat >= b.latMin && lat <= b.latMax && lon >= b.lonMin && lon <= b.lonMax) {
-      return b.name;
-    }
-  }
-  return "unknown";
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // DB helpers (reads in dry-run; writes only under --write in harvest mode).
+// The harvester owns pool connect/release phases through harvestDb so no DB
+// connection is held while slow external network phases run.
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function loadExistingQids(): Promise<Set<string>> {
   const out = new Set<string>();
-  const a = await dbPool.query<{ wikidata_qid: string }>(
+  const a = await harvestDb.query<{ wikidata_qid: string }>(
     "SELECT wikidata_qid FROM public.generation_candidates WHERE wikidata_qid IS NOT NULL"
   );
   for (const r of a.rows) out.add(r.wikidata_qid);
-  const b = await dbPool.query<{ wikidata_qid: string }>(
+  const b = await harvestDb.query<{ wikidata_qid: string }>(
     "SELECT wikidata_qid FROM public.event_wikidata_verification WHERE wikidata_qid IS NOT NULL"
   );
   for (const r of b.rows) out.add(r.wikidata_qid);
@@ -596,10 +705,36 @@ async function loadExistingQids(): Promise<Set<string>> {
 }
 
 async function loadExistingFingerprints(): Promise<Set<string>> {
-  const r = await dbPool.query<{ dedupe_fingerprint: string }>(
+  const r = await harvestDb.query<{ dedupe_fingerprint: string }>(
     "SELECT dedupe_fingerprint FROM public.generation_candidates WHERE dedupe_fingerprint IS NOT NULL"
   );
   return new Set(r.rows.map((x) => x.dedupe_fingerprint));
+}
+
+type RetryRejectedRow = {
+  wikidata_qid: string;
+  event_year: number | null;
+  dedupe_fingerprint: string | null;
+  g3_reason: string | null;
+  g5_reason: string | null;
+};
+
+/** Rows whose rejection reasons belong to the fixed harvester/date/network bug classes. */
+async function loadRetryRejectedRows(): Promise<Map<string, RetryRejectedRow>> {
+  const r = await harvestDb.query<RetryRejectedRow>(
+    `WITH reasons AS (
+       SELECT wikidata_qid, event_year, dedupe_fingerprint,
+              checks->'gates'->'G3'->>'reason' AS g3_reason,
+              checks->'gates'->'G5'->>'reason' AS g5_reason
+         FROM public.generation_candidates
+        WHERE status = 'rejected' AND wikidata_qid IS NOT NULL
+     )
+     SELECT * FROM reasons
+      WHERE g3_reason IN ('support_lang_agreement_0_below_2','missing_en_extract')
+         OR g5_reason = 'reverse_geocode_unavailable'
+         OR (g3_reason = 'en_extract_lacks_year' AND event_year < 0)`
+  );
+  return new Map(r.rows.map((x) => [x.wikidata_qid, x]));
 }
 
 function fingerprintOf(label: string | null, year: number | null): string | null {
@@ -633,11 +768,14 @@ type CandidateRow = {
   extracts: Record<string, string | null>;
   reverse_geocode: { countryCode: string | null; displayName: string | null } | null;
   continent: string | null;
+  country: string | null;
   cell_era: string | null;
   cell_continent: string | null;
   fingerprint: string | null;
   dedupe_skip: "qid" | "fingerprint" | null;
   selected: boolean;
+  retryOfRejected: boolean;
+  originalFingerprint: string | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -685,10 +823,194 @@ type HarvestCtx = {
   classReport: ClassEntry[];
   existingQids: Set<string>;
   existingFingerprints: Set<string>;
+  retryRejected: Map<string, RetryRejectedRow>;
   rows: CandidateRow[];
   evaluatedQids: Set<string>;
+  completedRounds: Set<string>;
   harvestLog: Array<Record<string, unknown>>;
+  startedAt: number;
+  stopReason: string | null;
 };
+
+type HarvestState = {
+  version: 1;
+  runId: string;
+  target: number;
+  seed: number;
+  rows: CandidateRow[];
+  evaluatedQids: string[];
+  completedRounds: string[];
+  harvestLog: Array<Record<string, unknown>>;
+  classReport: ClassEntry[];
+  eventClasses: string[];
+  fictionalClasses: string[];
+  retryRejectedQids: string[];
+  stopReason: string | null;
+};
+
+function harvestStatePath(flags: Flags): string {
+  return flags.resume || `${resolve(flags.out)}.state.json`;
+}
+
+function saveHarvestState(ctx: HarvestCtx): void {
+  const state: HarvestState = {
+    version: 1,
+    runId: ctx.flags.runId,
+    target: ctx.flags.target,
+    seed: ctx.flags.seed,
+    rows: ctx.rows,
+    evaluatedQids: [...ctx.evaluatedQids],
+    completedRounds: [...ctx.completedRounds],
+    harvestLog: ctx.harvestLog,
+    classReport: ctx.classReport,
+    eventClasses: [...ctx.eventClasses],
+    fictionalClasses: [...ctx.fictionalClasses],
+    retryRejectedQids: [...ctx.retryRejected.keys()],
+    stopReason: ctx.stopReason,
+  };
+  try {
+    writeFileSync(harvestStatePath(ctx.flags), JSON.stringify(state));
+  } catch {
+    /* resumable-state writes are best-effort; the report remains authoritative */
+  }
+}
+
+function loadHarvestState(flags: Flags): HarvestState | null {
+  if (!flags.resume || !existsSync(flags.resume)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(flags.resume, "utf8")) as HarvestState;
+    if (parsed.version !== 1 || parsed.runId !== flags.runId || parsed.seed !== flags.seed || parsed.target !== flags.target) {
+      console.log(`resume state ignored: identity mismatch in ${flags.resume}`);
+      return null;
+    }
+    return parsed;
+  } catch {
+    console.log(`resume state ignored: unreadable ${flags.resume}`);
+    return null;
+  }
+}
+
+function stopHarvest(ctx: HarvestCtx, reason: string): void {
+  if (!ctx.stopReason) {
+    ctx.stopReason = reason;
+    console.log(`STOP-EARLY: ${reason}; writing resumable state and partial report`);
+  }
+}
+
+function checkHarvestLimits(ctx: HarvestCtx): boolean {
+  if (ctx.stopReason) return true;
+  if (ctx.flags.maxMinutes > 0 && Date.now() - ctx.startedAt >= ctx.flags.maxMinutes * 60_000) {
+    stopHarvest(ctx, `max_minutes_${ctx.flags.maxMinutes}_reached`);
+    return true;
+  }
+  if (ctx.flags.maxQueries > 0 && stats.sparql >= ctx.flags.maxQueries) {
+    stopHarvest(ctx, `max_queries_${ctx.flags.maxQueries}_reached`);
+    return true;
+  }
+  return false;
+}
+
+function continentOfEvaluation(ev: EvalOutcome): string | null {
+  if (!ev.result.coords) return null;
+  return continentForCountryCode(
+    ev.reverseGeocode?.countryCode ?? ev.result.reverse_country_code,
+    ev.result.coords.lat,
+    ev.result.coords.lon
+  );
+}
+
+const CANDIDATE_FLUSH_N = 25;
+
+function buildCandidateRow(
+  ctx: HarvestCtx,
+  qid: string,
+  era: string,
+  ev: EvalOutcome,
+  retryRow: RetryRejectedRow | null
+): CandidateRow {
+  const entity = entityCache[qid];
+  const label = wdLabelOf(entity, qid);
+  const fp = fingerprintOf(label, ev.result.year);
+  let dedupe: CandidateRow["dedupe_skip"] = null;
+  if (!retryRow && ctx.existingQids.has(qid)) dedupe = "qid";
+  else if (
+    fp &&
+    ctx.existingFingerprints.has(fp) &&
+    fp !== retryRow?.dedupe_fingerprint
+  ) {
+    dedupe = "fingerprint";
+  }
+  const continent = continentOfEvaluation(ev);
+  const p17 = claimItemIds(entity, "P17")[0];
+  const country = p17 ? (countryLabelOf(p17) ?? ev.result.stated_country_isos[0] ?? null) : null;
+  return {
+    qid,
+    wd_label: label,
+    query_eras: era ? [era] : [],
+    result: ev.result,
+    extracts: ev.extracts,
+    reverse_geocode: ev.reverseGeocode,
+    continent,
+    country,
+    cell_era: ev.result.era,
+    cell_continent: continent,
+    fingerprint: fp,
+    dedupe_skip: dedupe,
+    selected: false,
+    retryOfRejected: retryRow != null,
+    originalFingerprint: retryRow?.dedupe_fingerprint ?? null,
+  };
+}
+
+function incrementalFlush(ctx: HarvestCtx): void {
+  flushCaches();
+  saveHarvestState(ctx);
+  writeHarvestReport(ctx, null, false);
+}
+
+async function evaluateAndStoreCandidate(
+  ctx: HarvestCtx,
+  qid: string,
+  era: string,
+  roundName: string,
+  retryRow: RetryRejectedRow | null
+): Promise<void> {
+  ctx.evaluatedQids.add(qid);
+  try {
+    const ev = await evaluateCandidate(qid, era, ctx.eventClasses, ctx.fictionalClasses);
+    const row = buildCandidateRow(ctx, qid, era, ev, retryRow);
+    ctx.rows.push(row);
+    if (row.fingerprint) ctx.existingFingerprints.add(row.fingerprint); // within-run dedupe: first wins
+    if (ctx.rows.length % CANDIDATE_FLUSH_N === 0) {
+      heartbeat("candidates", `rows=${ctx.rows.length} evaluated=${ctx.evaluatedQids.size} pass=${ctx.rows.filter((r) => r.result.pass).length}`);
+      incrementalFlush(ctx);
+    }
+  } catch (err) {
+    stats.errors += 1;
+    ctx.harvestLog.push({ round: roundName, era, qid, error: err instanceof Error ? err.message : String(err) });
+  }
+}
+
+async function evaluateRetryRejectedRows(ctx: HarvestCtx): Promise<number> {
+  const roundKey = "retry-rejected";
+  if (ctx.completedRounds.has(roundKey) || !ctx.retryRejected.size) return 0;
+  const qids = [...ctx.retryRejected.keys()].filter((q) => !ctx.evaluatedQids.has(q));
+  if (!qids.length) {
+    ctx.completedRounds.add(roundKey);
+    return 0;
+  }
+  console.log(`retry-rejected: re-evaluating ${qids.length} bug-class rejected rows in place`);
+  await fetchClosure(qids);
+  let done = 0;
+  for (const qid of qids) {
+    if (checkHarvestLimits(ctx)) break;
+    await evaluateAndStoreCandidate(ctx, qid, "", "retry-rejected", ctx.retryRejected.get(qid) ?? null);
+    done += 1;
+  }
+  if (!ctx.stopReason) ctx.completedRounds.add(roundKey);
+  saveHarvestState(ctx);
+  return done;
+}
 
 async function harvestRound(
   ctx: HarvestCtx,
@@ -697,54 +1019,34 @@ async function harvestRound(
   floor: number,
   roundName: string
 ): Promise<number> {
+  const roundKey = `${roundName}|${era}|${floor}|${classQids.join("+")}`;
+  if (ctx.completedRounds.has(roundKey)) return 0;
+  if (checkHarvestLimits(ctx)) return 0;
   const res = await sparqlClassEra(era, classQids, floor);
   ctx.harvestLog.push({
     round: roundName,
     era,
     classes: classQids.length,
     floor,
-    qids: res?.qids.length ?? null,
-    truncated: res?.truncated ?? null,
-    error: res === null,
+    qids: res.qids.length,
+    truncated: res.truncated,
+    status: res.status,
+    error: res.error,
   });
-  if (!res) return 0;
+  if (res.error) {
+    saveHarvestState(ctx);
+    return 0;
+  }
   const fresh = res.qids.filter(
     (q) => !ctx.evaluatedQids.has(q) && !ctx.existingQids.has(q)
   );
-  if (!fresh.length) return 0;
-  await fetchClosure(fresh);
+  if (fresh.length) await fetchClosure(fresh);
   for (const qid of fresh) {
-    ctx.evaluatedQids.add(qid);
-    try {
-      const ev = await evaluateCandidate(qid, era, ctx.eventClasses, ctx.fictionalClasses);
-      const entity = entityCache[qid];
-      const label = wdLabelOf(entity, qid);
-      const fp = fingerprintOf(label, ev.result.year);
-      let dedupe: CandidateRow["dedupe_skip"] = null;
-      if (ctx.existingQids.has(qid)) dedupe = "qid";
-      else if (fp && ctx.existingFingerprints.has(fp)) dedupe = "fingerprint";
-      const continent =
-        ev.result.coords != null ? continentForCoords(ev.result.coords.lat, ev.result.coords.lon) : null;
-      ctx.rows.push({
-        qid,
-        wd_label: label,
-        query_eras: [era],
-        result: ev.result,
-        extracts: ev.extracts,
-        reverse_geocode: ev.reverseGeocode,
-        continent,
-        cell_era: ev.result.era,
-        cell_continent: continent,
-        fingerprint: fp,
-        dedupe_skip: dedupe,
-        selected: false,
-      });
-      if (fp) ctx.existingFingerprints.add(fp); // within-run dedupe: first wins
-    } catch (err) {
-      stats.errors += 1;
-      ctx.harvestLog.push({ round: roundName, era, qid, error: String(err) });
-    }
+    if (checkHarvestLimits(ctx)) break;
+    await evaluateAndStoreCandidate(ctx, qid, era, roundName, ctx.retryRejected.get(qid) ?? null);
   }
+  if (!ctx.stopReason) ctx.completedRounds.add(roundKey);
+  saveHarvestState(ctx);
   return fresh.length;
 }
 
@@ -757,6 +1059,7 @@ function selectQuota(rows: CandidateRow[], target: number, seed: number) {
   const cap = quotaPerCell(target);
   const rng = mulberry32(seed);
   const cells = new Map<string, CandidateRow[]>();
+  for (const r of rows) r.selected = false;
   for (const r of rows) {
     if (!r.result.pass || r.dedupe_skip) continue;
     const key = `${r.cell_era}::${r.cell_continent}`;
@@ -799,10 +1102,182 @@ function shortCells(rows: CandidateRow[], target: number): Set<string> {
   return short;
 }
 
+type CandidateWriteStats = {
+  new: number;
+  rejected: number;
+  updated: number;
+  skippedConflict: number;
+};
+
+function candidateDbPayload(r: CandidateRow, flags: Flags) {
+  const status = r.result.pass ? "new" : "rejected";
+  const label = r.wd_label ?? r.qid;
+  const p31json = JSON.stringify(r.result.p31);
+  const citations = JSON.stringify({
+    statement_excerpt: r.result.date_prop
+      ? `${r.result.date_prop} ${r.result.date_time ?? ""} precision=${r.result.date_precision ?? "?"}`
+      : null,
+    extracts: Object.fromEntries(
+      Object.entries(r.extracts).map(([k, v]) => [k, v ? v.slice(0, 600) : null])
+    ),
+    reverse_geocode: r.reverse_geocode
+      ? {
+          country_code: r.reverse_geocode.countryCode,
+          display_name: r.reverse_geocode.displayName,
+        }
+      : null,
+  });
+  const quotaBucket = {
+    era: r.cell_era,
+    continent: r.cell_continent,
+    run_id: flags.runId,
+    selected: r.selected,
+  };
+  const checks = JSON.stringify({
+    gates: r.result.gates,
+    year: r.result.year,
+    coord_source: r.result.coord_source,
+    era: r.result.era,
+    continent: r.cell_continent,
+    langs_agreed: r.result.langsAgreed,
+    date_prop: r.result.date_prop,
+    date_time: r.result.date_time,
+    date_precision: r.result.date_precision,
+    span_years: r.result.span_years,
+    stated_country_isos: r.result.stated_country_isos,
+    place_country_isos: r.result.place_country_isos,
+    reverse_country_code: r.result.reverse_country_code,
+    quota_bucket: quotaBucket,
+  });
+  return {
+    status,
+    label,
+    p31json,
+    citations,
+    checks,
+    quota: JSON.stringify(quotaBucket),
+    fp: r.fingerprint,
+    country: r.country,
+  };
+}
+
+type WriteOutcome = "inserted" | "updated" | "conflict";
+
+async function writeCandidateRow(r: CandidateRow, flags: Flags): Promise<WriteOutcome> {
+  const p = candidateDbPayload(r, flags);
+  const params = [
+    p.status, r.qid, p.label, r.result.year, r.result.date_time, r.result.date_precision,
+    r.result.coords?.lat ?? null, r.result.coords?.lon ?? null, r.result.coord_source,
+    p.country, r.cell_continent, r.result.sitelinks, p.p31json, p.citations, p.checks,
+    p.quota, p.fp, true,
+  ];
+  if (r.retryOfRejected) {
+    const upd = await harvestDb.query<{ status: string }>(
+      `UPDATE public.generation_candidates SET
+         status=$1, wd_label=$3, event_year=$4, event_date=$5, date_precision=$6,
+         latitude=$7, longitude=$8, coord_source=$9, country=$10, continent=$11,
+         sitelinks=$12, p31=$13, source_citations=$14, checks=$15, quota_bucket=$16,
+         dedupe_fingerprint=$17, real_event=$18
+       WHERE wikidata_qid=$2
+       RETURNING status`,
+      params
+    );
+    if (upd.rows.length) return "updated";
+  }
+  const ins = await harvestDb.query<{ status: string }>(
+    `INSERT INTO public.generation_candidates
+      (status, wikidata_qid, wd_label, event_year, event_date, date_precision,
+       latitude, longitude, coord_source, country, continent, sitelinks, p31,
+       source_citations, checks, quota_bucket, dedupe_fingerprint, real_event)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+     ON CONFLICT (wikidata_qid) WHERE wikidata_qid IS NOT NULL DO NOTHING
+     RETURNING status`,
+    params
+  );
+  return ins.rows.length ? "inserted" : "conflict";
+}
+
+function writeHarvestReport(
+  ctx: HarvestCtx,
+  writeStats: CandidateWriteStats | null,
+  final: boolean
+) {
+  const { selected, surplus, cap } = selectQuota(ctx.rows, ctx.flags.target, ctx.flags.seed);
+  const { grid, emptyCells } = gridOf(ctx.rows);
+  const gates = gateTable(ctx.rows);
+  const passCount = ctx.rows.filter((r) => r.result.pass && !r.dedupe_skip).length;
+  const deduped = ctx.rows.filter((r) => r.dedupe_skip).length;
+  const elapsedSec = Math.round((Date.now() - ctx.startedAt) / 100) / 10;
+  const outPath = resolve(ctx.flags.out);
+  const report = {
+    meta: {
+      task: "EDQ-FIX-HARVESTER-OPS-1126-904",
+      runId: ctx.flags.runId,
+      target: ctx.flags.target,
+      seed: ctx.flags.seed,
+      write: ctx.flags.write,
+      final,
+      stopReason: ctx.stopReason,
+      elapsedSec,
+      stats,
+      nominatimCalls,
+      quotaPerCell: cap,
+      stateFile: harvestStatePath(ctx.flags),
+      rollback: `DELETE FROM public.generation_candidates WHERE quota_bucket->>'run_id' = '${ctx.flags.runId}';`,
+    },
+    classes: {
+      event: ctx.classReport.filter((c) => HINT_CLASS_QIDS.includes(c.qid)),
+      fictional: ctx.classReport.filter((c) => FICTIONAL_CANDIDATE_QIDS.includes(c.qid)),
+      expansion: ctx.classReport.filter((c) => !HINT_CLASS_QIDS.includes(c.qid) && !FICTIONAL_CANDIDATE_QIDS.includes(c.qid)),
+    },
+    harvestLog: ctx.harvestLog,
+    sparqlTimings,
+    gateTable: gates,
+    passCount,
+    deduped,
+    selected: selected.length,
+    surplus: surplus.length,
+    writeStats: ctx.flags.write ? writeStats : null,
+    grid,
+    emptyCells,
+    evidence: {
+      passers: selected.slice(0, 5).map((r) => ({
+        qid: r.qid, label: r.wd_label, year: r.result.year, coords: r.result.coords,
+        coord_source: r.result.coord_source, era: r.result.era, continent: r.cell_continent,
+        gates: r.result.gates, langs_agreed: r.result.langsAgreed,
+      })),
+      failures: ctx.rows.filter((r) => !r.result.pass && !r.dedupe_skip).slice(0, 5).map((r) => ({
+        qid: r.qid, label: r.wd_label, year: r.result.year,
+        failed_gates: Object.entries(r.result.gates).filter(([, g]) => !g.ok).map(([k, g]) => ({ gate: k, reason: g.reason })),
+      })),
+    },
+    rows: ctx.rows.map((r) => ({
+      qid: r.qid,
+      wd_label: r.wd_label,
+      pass: r.result.pass,
+      selected: r.selected,
+      retryOfRejected: r.retryOfRejected,
+      dedupe_skip: r.dedupe_skip,
+      year: r.result.year,
+      coords: r.result.coords,
+      coord_source: r.result.coord_source,
+      era: r.result.era,
+      continent: r.cell_continent,
+      country: r.country,
+      gates: r.result.gates,
+      langs_agreed: r.result.langsAgreed,
+      fingerprint: r.fingerprint,
+    })),
+  };
+  writeFileSync(outPath, JSON.stringify(report, null, 1));
+  return { selected, surplus, cap, grid, emptyCells, gates, passCount, deduped, elapsedSec, outPath };
+}
+
 async function runHarvest(flags: Flags) {
   const startedAt = Date.now();
+  runStartedAt = startedAt;
   console.log("=== WD-HARVEST — DRY RUN unless --write ===");
-  console.log(`run_id: ${flags.runId}  target: ${flags.target}  seed: ${flags.seed}  mode: ${flags.write ? "WRITE" : "DRY-RUN"}`);
+  console.log(`run_id: ${flags.runId}  target: ${flags.target}  seed: ${flags.seed}  mode: ${flags.write ? "WRITE" : "DRY-RUN"} max_minutes=${flags.maxMinutes || "off"} max_queries=${flags.maxQueries || "off"} retry_rejected=${flags.retryRejected}`);
 
   // 1. Verify event classes by label; drop non-event classes.
   const hintReport = await verifyClassQids(HINT_CLASS_QIDS, (label, e) => {
@@ -823,10 +1298,13 @@ async function runHarvest(flags: Flags) {
   const fictionalClasses = new Set(ficReport.filter((c) => c.kept).map((c) => c.qid));
   console.log("fictional classes kept:", [...fictionalClasses].join(", ") || "none");
 
-  // 2. Dedupe sets from DB (reads only).
+  // 2. Dedupe sets and retry candidates from DB (reads only), then release the DB.
   const existingQids = await loadExistingQids();
   const existingFingerprints = await loadExistingFingerprints();
-  console.log(`dedupe: ${existingQids.size} existing qids, ${existingFingerprints.size} fingerprints`);
+  const retryRejected = flags.retryRejected ? await loadRetryRejectedRows() : new Map<string, RetryRejectedRow>();
+  for (const qid of retryRejected.keys()) existingQids.delete(qid);
+  await harvestDb.end();
+  console.log(`dedupe: ${existingQids.size} existing qids, ${existingFingerprints.size} fingerprints; retry-rejected candidates=${retryRejected.size}; DB released before network harvest`);
 
   const ctx: HarvestCtx = {
     flags,
@@ -835,10 +1313,29 @@ async function runHarvest(flags: Flags) {
     classReport: [...hintReport, ...ficReport],
     existingQids,
     existingFingerprints,
+    retryRejected,
     rows: [],
     evaluatedQids: new Set(),
+    completedRounds: new Set(),
     harvestLog: [],
+    startedAt,
+    stopReason: null,
   };
+
+  const resumed = loadHarvestState(flags);
+  if (resumed) {
+    ctx.rows = resumed.rows;
+    ctx.evaluatedQids = new Set(resumed.evaluatedQids);
+    ctx.completedRounds = new Set(resumed.completedRounds);
+    ctx.harvestLog = resumed.harvestLog;
+    ctx.stopReason = null;
+    for (const row of ctx.rows) {
+      if (row.fingerprint) ctx.existingFingerprints.add(row.fingerprint);
+    }
+    console.log(`resume: rows=${ctx.rows.length} evaluated=${ctx.evaluatedQids.size} completed_rounds=${ctx.completedRounds.size}`);
+  }
+
+  if (flags.retryRejected) await evaluateRetryRejectedRows(ctx);
 
   // 3. Pass 1: strict sitelink floor (MIN_SITELINKS) for every era x class.
   const pass1Classes = verifiedHints;
@@ -869,10 +1366,14 @@ async function runHarvest(flags: Flags) {
   //    Q1190554 / Q13418847 and re-query the deficient eras.
   short = shortCells(ctx.rows, flags.target);
   const shortEras = [...new Set([...short].map((k) => k.split("::")[0]))];
-  if (shortEras.length && ctx.rows.filter((r) => r.result.pass).length < flags.target) {
+  if (!ctx.stopReason && shortEras.length && ctx.rows.filter((r) => r.result.pass).length < flags.target) {
     console.log(`expansion round for eras: ${shortEras.join(", ")} (passers ${ctx.rows.filter((r) => r.result.pass).length} < ${flags.target})`);
     const subCandidates = await fetchSubclassClasses(["Q1190554", "Q13418847"]);
-    const subQids = subCandidates.map((c) => c.qid).filter((q) => !eventClasses.has(q));
+    if (subCandidates.errors.length) {
+      console.log(`expansion SPARQL errors: ${subCandidates.errors.map((e) => `${e.root}@${e.offset}=HTTP${e.status}`).join(", ")}`);
+      ctx.harvestLog.push({ round: "expanded", error: "subclass_query_http", details: subCandidates.errors });
+    }
+    const subQids = subCandidates.classes.map((c) => c.qid).filter((q) => !eventClasses.has(q));
     const subReport = await verifyClassQids(subQids.slice(0, 400), (label, e) => {
       if (label && EVENT_LABEL_RE.test(label)) return { ok: true, reason: "event_label" };
       if (isDirectEventSubclass(e)) return { ok: true, reason: "subclass_of_event_root" };
@@ -889,156 +1390,52 @@ async function runHarvest(flags: Flags) {
     }
   }
 
-  // 6. Aggregates + quota selection.
-  const { selected, surplus, cap } = selectQuota(ctx.rows, flags.target, flags.seed);
-  const { grid, emptyCells } = gridOf(ctx.rows);
-  const gates = gateTable(ctx.rows);
-  const passCount = ctx.rows.filter((r) => r.result.pass && !r.dedupe_skip).length;
-  const deduped = ctx.rows.filter((r) => r.dedupe_skip).length;
+  // 6. Aggregates + quota selection. Selection is deterministic and surplus
+  // passers remain first-class rows so they can be persisted with selected=false.
+  const aggregate = writeHarvestReport(ctx, null, false);
 
   console.log(`\n=== GATE TABLE (n=${ctx.rows.length}) ===`);
-  for (const [g, c] of Object.entries(gates)) {
+  for (const [g, c] of Object.entries(aggregate.gates)) {
     console.log(`  ${g}: pass=${c.pass} fail=${c.fail}`);
   }
-  console.log(`passers: ${passCount}  dedupe-skipped: ${deduped}  selected(new): ${selected.length}  surplus: ${surplus.length}  quota/cell: ${cap}`);
+  console.log(`passers: ${aggregate.passCount}  dedupe-skipped: ${aggregate.deduped}  selected(new): ${aggregate.selected.length}  surplus: ${aggregate.surplus.length}  quota/cell: ${aggregate.cap}`);
   console.log("\n=== ERA x CONTINENT GRID (pass counts) ===");
   for (const era of ERA_BUCKETS) {
-    const cells = Object.entries(grid[era]).map(([c, n]) => `${c}=${n}`).join("  ");
+    const cells = Object.entries(aggregate.grid[era]).map(([c, n]) => `${c}=${n}`).join("  ");
     console.log(`  ${era}: ${cells}`);
   }
-  console.log(`empty cells: ${emptyCells.length}`);
-  for (const c of emptyCells) console.log(`  EMPTY ${c}`);
+  console.log(`empty cells: ${aggregate.emptyCells.length}`);
+  for (const c of aggregate.emptyCells) console.log(`  EMPTY ${c}`);
 
-  // 7. Optional write — generation_candidates ONLY.
-  let writeStats = { new: 0, rejected: 0, skippedConflict: 0 };
+  // 7. Optional write — generation_candidates ONLY. Retry-rejected rows UPDATE
+  // their existing row by wikidata_qid; all other inserts use ON CONFLICT DO NOTHING.
+  const writeStats: CandidateWriteStats = { new: 0, rejected: 0, updated: 0, skippedConflict: 0 };
   if (flags.write) {
-    const toWrite = ctx.rows.filter(
-      (r) => !r.dedupe_skip && (r.selected || !r.result.pass)
-    );
-    console.log(`\nWRITE: inserting ${toWrite.length} rows (new=${selected.length}, rejected=${ctx.rows.filter((r) => !r.dedupe_skip && !r.result.pass).length})`);
+    const toWrite = ctx.rows.filter((r) => !r.dedupe_skip);
+    const rejectedCount = toWrite.filter((r) => !r.result.pass).length;
+    console.log(`\nWRITE: candidate rows=${toWrite.length} (passers=${toWrite.filter((r) => r.result.pass).length}, selected=${aggregate.selected.length}, surplus=${aggregate.surplus.length}, rejected=${rejectedCount})`);
     for (const r of toWrite) {
-      const status = r.result.pass ? "new" : "rejected";
-      const label = r.wd_label ?? r.qid;
-      const p31json = JSON.stringify(r.result.p31);
-      const citations = JSON.stringify({
-        statement_excerpt: r.result.date_prop
-          ? `${r.result.date_prop} ${r.result.date_time ?? ""} precision=${r.result.date_precision ?? "?"}`
-          : null,
-        extracts: Object.fromEntries(
-          Object.entries(r.extracts).map(([k, v]) => [k, v ? v.slice(0, 600) : null])
-        ),
-        reverse_geocode: r.reverse_geocode
-          ? {
-              country_code: r.reverse_geocode.countryCode,
-              display_name: r.reverse_geocode.displayName,
-            }
-          : null,
-      });
-      const checks = JSON.stringify({
-        gates: r.result.gates,
-        year: r.result.year,
-        coord_source: r.result.coord_source,
-        era: r.result.era,
-        continent: r.cell_continent,
-        langs_agreed: r.result.langsAgreed,
-        date_prop: r.result.date_prop,
-        date_time: r.result.date_time,
-        date_precision: r.result.date_precision,
-        span_years: r.result.span_years,
-        stated_country_isos: r.result.stated_country_isos,
-        place_country_isos: r.result.place_country_isos,
-        reverse_country_code: r.result.reverse_country_code,
-        quota_bucket: { era: r.cell_era, continent: r.cell_continent, run_id: flags.runId },
-      });
-      const quota = JSON.stringify({ era: r.cell_era, continent: r.cell_continent, run_id: flags.runId });
-      const fp = r.fingerprint;
-      const country = (() => {
-        const p17 = claimItemIds(entityCache[r.qid], "P17")[0];
-        return p17 ? (countryLabelOf(p17) ?? r.result.stated_country_isos[0] ?? null) : null;
-      })();
-      const res = await dbPool.query(
-        `INSERT INTO public.generation_candidates
-          (status, wikidata_qid, wd_label, event_year, event_date, date_precision,
-           latitude, longitude, coord_source, country, continent, sitelinks, p31,
-           source_citations, checks, quota_bucket, dedupe_fingerprint, real_event)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
-         ON CONFLICT (wikidata_qid) WHERE wikidata_qid IS NOT NULL DO NOTHING
-         RETURNING status`,
-        [
-          status, r.qid, label, r.result.year, r.result.date_time, r.result.date_precision,
-          r.result.coords?.lat ?? null, r.result.coords?.lon ?? null, r.result.coord_source,
-          country, r.cell_continent, r.result.sitelinks, p31json, citations, checks,
-          quota, fp, true,
-        ]
-      );
-      if (res.rows.length) {
-        if (status === "new") writeStats.new += 1;
-        else writeStats.rejected += 1;
-      } else writeStats.skippedConflict += 1;
+      if (checkHarvestLimits(ctx)) break;
+      const outcome = await writeCandidateRow(r, flags);
+      if (outcome === "updated") writeStats.updated += 1;
+      else if (outcome === "conflict") writeStats.skippedConflict += 1;
+      else if (r.result.pass) writeStats.new += 1;
+      else writeStats.rejected += 1;
+      if ((writeStats.new + writeStats.rejected + writeStats.updated + writeStats.skippedConflict) % CANDIDATE_FLUSH_N === 0) {
+        heartbeat("write", `written=${writeStats.new + writeStats.rejected + writeStats.updated + writeStats.skippedConflict}/${toWrite.length}`);
+        incrementalFlush(ctx);
+      }
     }
-    console.log(`write result: new=${writeStats.new} rejected=${writeStats.rejected} conflicts=${writeStats.skippedConflict}`);
+    await harvestDb.end();
+    console.log(`write result: new=${writeStats.new} rejected=${writeStats.rejected} updated=${writeStats.updated} conflicts=${writeStats.skippedConflict}`);
   }
 
-  const elapsedSec = Math.round((Date.now() - startedAt) / 100) / 10;
-  const outPath = resolve(flags.out);
-  const report = {
-    meta: {
-      task: "EDQ-BUILD-WDHARVEST-1122-801",
-      runId: flags.runId,
-      target: flags.target,
-      seed: flags.seed,
-      write: flags.write,
-      elapsedSec,
-      stats,
-      nominatimCalls,
-      quotaPerCell: cap,
-      rollback: `DELETE FROM public.generation_candidates WHERE quota_bucket->>'run_id' = '${flags.runId}';`,
-    },
-    classes: {
-      event: hintReport,
-      fictional: ficReport,
-      expansion: ctx.classReport.filter((c) => !HINT_CLASS_QIDS.includes(c.qid) && !FICTIONAL_CANDIDATE_QIDS.includes(c.qid)),
-    },
-    harvestLog: ctx.harvestLog,
-    gateTable: gates,
-    passCount,
-    deduped,
-    selected: selected.length,
-    surplus: surplus.length,
-    writeStats: flags.write ? writeStats : null,
-    grid,
-    emptyCells,
-    evidence: {
-      passers: selected.slice(0, 5).map((r) => ({
-        qid: r.qid, label: r.wd_label, year: r.result.year, coords: r.result.coords,
-        coord_source: r.result.coord_source, era: r.result.era, continent: r.cell_continent,
-        gates: r.result.gates, langs_agreed: r.result.langsAgreed,
-      })),
-      failures: ctx.rows.filter((r) => !r.result.pass && !r.dedupe_skip).slice(0, 5).map((r) => ({
-        qid: r.qid, label: r.wd_label, year: r.result.year,
-        failed_gates: Object.entries(r.result.gates).filter(([, g]) => !g.ok).map(([k, g]) => ({ gate: k, reason: g.reason })),
-      })),
-    },
-    rows: ctx.rows.map((r) => ({
-      qid: r.qid,
-      wd_label: r.wd_label,
-      pass: r.result.pass,
-      selected: r.selected,
-      dedupe_skip: r.dedupe_skip,
-      year: r.result.year,
-      coords: r.result.coords,
-      coord_source: r.result.coord_source,
-      era: r.result.era,
-      continent: r.cell_continent,
-      gates: r.result.gates,
-      langs_agreed: r.result.langsAgreed,
-      fingerprint: r.fingerprint,
-    })),
-  };
-  writeFileSync(outPath, JSON.stringify(report, null, 1));
-  console.log(`\nreport: ${outPath}`);
-  console.log(`stats: sparql=${stats.sparql} wikidata=${stats.wikidata} wiki=${stats.wiki} nominatim=${stats.nominatim} errors=${stats.errors} elapsed=${elapsedSec}s`);
+  saveHarvestState(ctx);
+  const finalReport = writeHarvestReport(ctx, flags.write ? writeStats : null, true);
+  console.log(`\nreport: ${finalReport.outPath}`);
+  console.log(`stats: sparql=${stats.sparql} wikidata=${stats.wikidata} wiki=${stats.wiki} nominatim=${stats.nominatim} retries=${stats.retries} errors=${stats.errors} elapsed=${finalReport.elapsedSec}s`);
   console.log(`ROLLBACK: DELETE FROM public.generation_candidates WHERE quota_bucket->>'run_id' = '${flags.runId}';`);
+  if (ctx.stopReason) console.log(`STOPPED EARLY CLEANLY: ${ctx.stopReason}; resume with --resume ${harvestStatePath(flags)}`);
   if (!flags.write) console.log("DRY RUN COMPLETE — generation_candidates untouched (0 writes).");
   flushCaches();
 }
@@ -1097,7 +1494,7 @@ async function runExisting(flags: Flags) {
   );
   const fictionalClasses = new Set(ficReport.filter((c) => c.kept).map((c) => c.qid));
 
-  const res = await dbPool.query<ExistingRow>(
+  const res = await harvestDb.query<ExistingRow>(
     `SELECT v.event_id, e.title, e.event_year, v.wikidata_qid AS qid, v.status AS vstatus,
             l.latitude AS lat, l.longitude AS lon
        FROM public.event_wikidata_verification v
@@ -1107,6 +1504,7 @@ async function runExisting(flags: Flags) {
         AND v.wikidata_qid IS NOT NULL`
   );
   console.log(`existing validated events: ${res.rows.length}`);
+  await harvestDb.end();
 
   const qids = [...new Set(res.rows.map((r) => r.qid))];
   await fetchClosure(qids);
@@ -1232,9 +1630,11 @@ async function main() {
     else await runHarvest(flags);
   } catch (err) {
     flushCaches();
+    await harvestDb.end();
     console.error("FATAL:", err instanceof Error ? err.message : err);
     process.exit(1);
   }
+  await harvestDb.end();
   process.exit(0);
 }
 
