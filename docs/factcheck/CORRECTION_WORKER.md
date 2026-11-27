@@ -73,4 +73,6 @@ Rules:
 - Never mark TRUE from one source or from sources inside only one domain family.
 - Never use or quote the original wrong-row notes/sources; verification is blind.
 - Never propose or apply a place change.
+- Never treat a year shift greater than 10 years as auto-applicable; the apply command marks it `year_shift_needs_image_review` and leaves the event quarantined for image/manual review.
+- Never revive a `NOT_REAL` event. `NOT_REAL` events stay quarantined forever.
 - Never edit events directly. Only the apply command can apply a verified correction, and it re-checks the database state before writing.
