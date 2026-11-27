@@ -41,6 +41,8 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npm run typecheck
+      - name: Repository invariants
+        run: npm run check:invariants
 
   auth-tests:
     name: Auth unit tests
