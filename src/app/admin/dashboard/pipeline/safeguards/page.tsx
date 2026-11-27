@@ -6,9 +6,7 @@ import {
   PIPELINE_STEPS,
   type Automation,
 } from "@/core/pipelineRegistry";
-import { getDbPool } from "@/server/db";
 import { StatusBadge } from "../StatusBadge";
-import { collectPipelineKpis, type PipelineQueryable } from "../pipelineQueries";
 import styles from "../pipeline.module.css";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +21,6 @@ const AUTOMATION_ORDER: readonly Automation[] = [
 
 export default async function PipelineSafeguardsPage() {
   await requireAdmin();
-  const pool = getDbPool();
-  await collectPipelineKpis(pool as unknown as PipelineQueryable);
-
   return (
     <div className="ops-page">
       <div className={styles.pageStack}>

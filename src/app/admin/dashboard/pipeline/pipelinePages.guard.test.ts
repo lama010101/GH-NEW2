@@ -25,13 +25,15 @@ function firstIndexAfterAdmin(src: string): number {
 
 describe("pipeline page authentication guard", () => {
   for (const page of PAGES) {
-    it(`${page} is dynamic and awaits requireAdmin before any database access`, () => {
+    it(`${page} is dynamic and any database access happens after requireAdmin`, () => {
       const src = readPipeline(page);
       expect(src).toContain('export const dynamic = "force-dynamic";');
       const adminIndex = src.indexOf("await requireAdmin()");
       const dbIndex = firstIndexAfterAdmin(src);
       expect(adminIndex).toBeGreaterThanOrEqual(0);
-      expect(dbIndex).toBeGreaterThan(adminIndex);
+      if (dbIndex >= 0) {
+        expect(dbIndex).toBeGreaterThan(adminIndex);
+      }
     });
   }
 });
