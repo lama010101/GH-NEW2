@@ -114,6 +114,12 @@ const GROUPS: NavGroup[] = [
         match: "/admin/dashboard/generator",
         icon: <Icon d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" />,
       },
+      {
+        label: "Pipeline",
+        href: "/admin/dashboard/pipeline",
+        match: "/admin/dashboard/pipeline",
+        icon: <Icon d="M4 6h5v5H4zM15 6h5v5h-5zM9 15h6v5H9zM9 8.5h6M12 13v2" />,
+      },
     ],
   },
 ];

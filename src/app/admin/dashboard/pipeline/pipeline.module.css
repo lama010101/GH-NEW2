@@ -1,0 +1,449 @@
+/* OPS-BUILD-PIPELINEPAGE-1126-915 — scoped styles for the read-only pipeline
+   admin pages. Colors consume the existing --ops-* tokens; ops.css is not edited. */
+
+.pageStack {
+  display: grid;
+  gap: 16px;
+}
+
+.notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel);
+  color: var(--ops-mute);
+  font-size: var(--font-xs);
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-line);
+}
+
+@media (min-width: 900px) {
+  .kpiGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .kpiGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.kpiTile {
+  min-width: 0;
+  padding: 12px;
+  background: var(--ops-panel);
+}
+
+.kpiLabel {
+  margin: 0;
+  color: var(--ops-mute);
+  font-size: var(--font-2xs);
+}
+
+.kpiValue {
+  margin: 4px 0 0;
+  color: var(--ops-ink);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.panel {
+  padding: 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel);
+}
+
+.panelTitle {
+  margin: 0 0 4px;
+  color: var(--ops-ink);
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.panelSub {
+  margin: 0 0 10px;
+  color: var(--ops-mute);
+  font-size: var(--font-2xs);
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 800px) {
+  .statusGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.statusCount {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+}
+
+.statusNumber {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.linkRow a {
+  display: inline-block;
+  padding: 5px 9px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  color: var(--ops-accent);
+  font-size: var(--font-xs);
+  text-decoration: none;
+}
+
+.linkRow a:hover {
+  background: var(--ops-hover);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 1px 6px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  color: var(--ops-ink);
+  font-size: var(--font-2xs);
+  white-space: nowrap;
+}
+
+.badgeDot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ops-mute);
+}
+
+.badgeLive {
+  color: var(--ops-ok);
+  border-color: var(--ops-ok);
+}
+
+.badgeLive .badgeDot {
+  background: var(--ops-ok);
+}
+
+.badgeInProgress {
+  color: var(--ops-warn);
+  border-color: var(--ops-warn);
+}
+
+.badgeInProgress .badgeDot,
+.badgeBuiltDark .badgeDot {
+  background: var(--ops-warn);
+}
+
+.badgeBuiltDark {
+  color: var(--ops-warn);
+  border-color: var(--ops-warn);
+}
+
+.badgePlanned {
+  color: var(--ops-mute);
+}
+
+.badgePlanned .badgeDot {
+  background: var(--ops-mute);
+}
+
+.badgeBlocked {
+  color: var(--ops-bad);
+  border-color: var(--ops-bad);
+}
+
+.badgeBlocked .badgeDot {
+  background: var(--ops-bad);
+}
+
+.badgeSuperseded {
+  color: var(--ops-mute);
+}
+
+.badgeSuperseded .badgeDot {
+  background: var(--ops-line);
+}
+
+.diagramScroll {
+  overflow-x: auto;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel);
+}
+
+.diagram {
+  display: block;
+  width: 100%;
+  min-width: 980px;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .diagram {
+    width: 980px;
+  }
+}
+
+.diagramLaneLabel {
+  fill: var(--ops-mute);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+}
+
+.diagramNode rect {
+  fill: var(--ops-panel);
+  stroke: var(--ops-line);
+  stroke-width: 1.2;
+  rx: 5px;
+}
+
+.diagramNode:hover rect {
+  stroke: var(--ops-accent);
+}
+
+.diagramNodeTitle {
+  fill: var(--ops-ink);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+}
+
+.diagramNodeStatus {
+  fill: var(--ops-mute);
+  font-size: var(--font-2xs);
+}
+
+.diagramArrow {
+  fill: none;
+  stroke: var(--ops-mute);
+  stroke-width: 1.4;
+  marker-end: url(#pipeline-arrowhead);
+}
+
+.diagramLegend {
+  fill: var(--ops-mute);
+  font-size: var(--font-2xs);
+}
+
+.stageSection {
+  display: grid;
+  gap: 10px;
+}
+
+.stageHeading {
+  margin: 8px 0 0;
+  color: var(--ops-ink);
+  font-size: var(--font-base);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.stepCard {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel);
+  scroll-margin-top: 64px;
+}
+
+.stepHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stepTitle {
+  margin: 0;
+  color: var(--ops-ink);
+  font-size: var(--font-base);
+  font-weight: 600;
+}
+
+.stepMeta {
+  margin: 3px 0 0;
+  color: var(--ops-mute);
+  font-size: var(--font-2xs);
+}
+
+.stepSummary {
+  margin: 0;
+  color: var(--ops-ink);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 900px) {
+  .detailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.detailBlock {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+}
+
+.detailTitle {
+  margin: 0 0 6px;
+  color: var(--ops-mute);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detailList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ops-ink);
+  font-size: var(--font-xs);
+  line-height: 1.45;
+}
+
+.inlineChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.inlineChip {
+  padding: 1px 6px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  color: var(--ops-ink);
+  font-size: var(--font-2xs);
+}
+
+.kpiInline {
+  display: grid;
+  gap: 5px;
+}
+
+.kpiInlineRow {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(180px, 1.2fr);
+  gap: 8px;
+  color: var(--ops-ink);
+  font-size: var(--font-xs);
+}
+
+.kpiInlineRow span:last-child {
+  color: var(--ops-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.metaTable {
+  display: grid;
+  grid-template-columns: minmax(90px, max-content) 1fr;
+  gap: 4px 10px;
+  color: var(--ops-ink);
+  font-size: var(--font-xs);
+}
+
+.metaTable dt {
+  color: var(--ops-mute);
+}
+
+.metaTable dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel);
+}
+
+.tableWrap table {
+  min-width: 980px;
+}
+
+.tableWrap td {
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stateOk {
+  color: var(--ops-ok);
+}
+
+.stateNotBuilt {
+  color: var(--ops-warn);
+}
+
+.stateError {
+  color: var(--ops-bad);
+}
+
+.matrixWrap {
+  overflow-x: auto;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel);
+}
+
+.matrixWrap table {
+  min-width: 900px;
+}
+
+.matrixMark {
+  color: var(--ops-accent);
+  font-weight: 600;
+  text-align: center;
+}
+
+.smallNote {
+  margin: 0;
+  color: var(--ops-mute);
+  font-size: var(--font-2xs);
+  line-height: 1.45;
+}
