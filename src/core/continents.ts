@@ -88,45 +88,25 @@ function transcontinentalContinent(
   }
 }
 
-type Box = { name: Continent | "unknown"; latMin: number; latMax: number; lonMin: number; lonMax: number };
-
-// Last-resort coordinate boxes, evaluated in order. They are used only when
-// reverse geocoding yields no country code. The Middle East carve-out precedes
-// Africa because the coarse Africa box otherwise reaches across southwest Asia.
-const FALLBACK_BOXES: Box[] = [
-  { name: "Asia", latMin: 12, latMax: 42, lonMin: 34, lonMax: 60 }, // Middle East carve-out
-  { name: "Oceania", latMin: -55, latMax: -5, lonMin: 110, lonMax: 180 },
-  { name: "Oceania", latMin: -12, latMax: 0, lonMin: 130, lonMax: 155 },
-  { name: "Africa", latMin: -35, latMax: 37, lonMin: -18, lonMax: 52 },
-  { name: "Europe", latMin: 36, latMax: 71, lonMin: -25, lonMax: 45 },
-  { name: "Asia", latMin: -12, latMax: 78, lonMin: 45, lonMax: 180 },
-  { name: "South America", latMin: -56, latMax: 13, lonMin: -82, lonMax: -34 },
-  { name: "North America", latMin: 5, latMax: 72, lonMin: -170, lonMax: -52 },
-  { name: "Antarctica", latMin: -90, latMax: -60, lonMin: -180, lonMax: 180 },
-];
-
-function fallbackContinent(lat: number, lon: number): string {
-  for (const b of FALLBACK_BOXES) {
-    if (lat >= b.latMin && lat <= b.latMax && lon >= b.lonMin && lon <= b.lonMax) {
-      return b.name;
-    }
-  }
-  return "unknown";
-}
-
 /**
  * Resolve the production continent convention for an ISO 3166 alpha-2 code.
- * Unknown or absent codes fall back to coarse coordinate boxes. ISO codes are
- * case-insensitive; the pseudo-code XK (Kosovo, used by Nominatim) is Europe.
+ * Unknown or absent codes are unknown — never classified by coordinate boxes.
+ * ISO codes are case-insensitive; the pseudo-code XK (Kosovo, used by
+ * Nominatim) is Europe. Coordinates are consulted only for the explicitly
+ * transcontinental countries in transcontinentalContinent. regionCode is the
+ * reverse-geocoded ISO 3166-2 subdivision when available; US-HI is Oceania by
+ * the product convention even though its country code is US.
  */
 export function continentForCountryCode(
   iso2: string | null | undefined,
   lat: number,
-  lon: number
+  lon: number,
+  regionCode?: string | null
 ): string {
   const code = iso2?.trim().toUpperCase() ?? "";
-  if (!/^[A-Z]{2}$/.test(code)) return fallbackContinent(lat, lon);
+  if (!/^[A-Z]{2}$/.test(code)) return "unknown";
 
+  if (code === "US" && regionCode?.trim().toUpperCase() === "US-HI") return "Oceania";
   const special = transcontinentalContinent(code, lat, lon);
   if (special) return special;
   if (EUROPE.has(code)) return "Europe";
@@ -136,5 +116,5 @@ export function continentForCountryCode(
   if (SOUTH_AMERICA.has(code)) return "South America";
   if (OCEANIA.has(code)) return "Oceania";
   if (code === "AQ") return "Antarctica";
-  return fallbackContinent(lat, lon);
+  return "unknown";
 }

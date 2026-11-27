@@ -4,8 +4,9 @@
 //
 //   npx tsx scripts/generation/harvest-wikidata.ts \
 //     --env-file D:\GH-NEW2\.env.local --target 320 --seed 1122801 \
-//     [--write] [--run-id wdh-1122-801] [--out <json>] [--existing]
+//     [--write] [--write-cap 150] [--run-id wdh-1122-801] [--out <json>] [--existing]
 //     [--retry-rejected] [--resume <state-json>] [--max-minutes N] [--max-queries N]
+//     [--reclassify-continents --backup D:\gh-audits\batch-1127\continent-backup-108.json]
 //
 // DRY-RUN by default: zero DB writes. --write writes ONLY into
 // public.generation_candidates (retry rows UPDATE in place; other rows use
@@ -45,8 +46,11 @@ type Flags = {
   target: number;
   seed: number;
   write: boolean;
+  writeCap: number;
   existing: boolean;
   retryRejected: boolean;
+  reclassifyContinents: boolean;
+  backup: string;
   resume: string;
   maxMinutes: number;
   maxQueries: number;
@@ -72,8 +76,11 @@ function parseFlags(): Flags {
     target: flags.has("target") ? Number(flags.get("target")) : 320,
     seed: flags.has("seed") ? Number(flags.get("seed")) : 1122801,
     write: flags.has("write"),
+    writeCap: flags.has("write-cap") ? Number(flags.get("write-cap")) : 150,
     existing: flags.has("existing"),
     retryRejected: flags.has("retry-rejected"),
+    reclassifyContinents: flags.has("reclassify-continents"),
+    backup: String(flags.get("backup") ?? ""),
     resume: String(flags.get("resume") ?? ""),
     maxMinutes: flags.has("max-minutes") ? Number(flags.get("max-minutes")) : 0,
     maxQueries: flags.has("max-queries") ? Number(flags.get("max-queries")) : 0,
@@ -144,6 +151,25 @@ function heartbeat(scope: string, detail = "") {
   console.log(
     `[hb] ${scope} elapsed=${elapsedSec}s sparql=${stats.sparql} wikidata=${stats.wikidata} wiki=${stats.wiki} nominatim=${stats.nominatim} retries=${stats.retries} errors=${stats.errors} status={${status}}${detail ? ` ${detail}` : ""}`
   );
+}
+
+const operProgress = { phase: "startup", processed: 0, total: 0 };
+
+function operProgressDetail(): string {
+  const elapsedSec = Math.max(1, (Date.now() - runStartedAt) / 1000);
+  const ratePerMin = operProgress.processed / (elapsedSec / 60);
+  const remaining = Math.max(0, operProgress.total - operProgress.processed);
+  const eta = ratePerMin > 0 ? `${Math.ceil(remaining / ratePerMin)}min` : "unknown";
+  return `phase=${operProgress.phase} processed=${operProgress.processed}/total=${operProgress.total} rate=${ratePerMin.toFixed(2)}/min eta=${eta}`;
+}
+
+function startOperHeartbeat(onTick: () => void): NodeJS.Timeout {
+  const timer = setInterval(() => {
+    onTick();
+    heartbeat("progress", operProgressDetail());
+  }, 30_000);
+  timer.unref();
+  return timer;
 }
 
 const lastHit: Record<string, number> = {};
@@ -529,8 +555,15 @@ async function verifyClassQids(
 // sitelink title (never the en title on foreign wikis). Cached JSON outside repo.
 // ─────────────────────────────────────────────────────────────────────────────
 
+type ReverseGeo = {
+  countryCode: string | null;
+  displayName: string | null;
+  regionCode?: string | null;
+  zoom?: number;
+};
+
 let wikiCache: Record<string, string | null> = {};
-let geoCache: Record<string, { countryCode: string | null; displayName: string | null } | null> = {};
+let geoCache: Record<string, ReverseGeo | null> = {};
 let wikiCachePath = "";
 let geoCachePath = "";
 let nominatimCalls = 0;
@@ -596,9 +629,12 @@ async function fetchExtracts(entity: WdEntity): Promise<Record<string, string | 
 
 async function reverseGeocode(
   coords: { lat: number; lon: number }
-): Promise<{ countryCode: string | null; displayName: string | null } | null> {
+): Promise<ReverseGeo | null> {
   const key = `${coords.lat.toFixed(2)},${coords.lon.toFixed(2)}`;
-  if (key in geoCache) return geoCache[key];
+  if (key in geoCache) {
+    const cached = geoCache[key];
+    if (cached === null || cached.zoom === 5) return cached;
+  }
   if (nominatimCalls >= NOMINATIM_LIMIT) {
     throw new Error(`nominatim_budget_exceeded:${NOMINATIM_LIMIT}`);
   }
@@ -609,17 +645,23 @@ async function reverseGeocode(
       format: "jsonv2",
       lat: String(coords.lat),
       lon: String(coords.lon),
-      zoom: "3",
+      zoom: "5",
     });
   const r = await fetchJson(url, "nominatim", 1000, 30000, 3);
   stats.nominatim += 1;
-  let out: { countryCode: string | null; displayName: string | null } | null = null;
+  let out: ReverseGeo | null = null;
   if (r && r.status === 200 && r.body && typeof r.body === "object") {
-    const b = r.body as { address?: { country_code?: unknown }; display_name?: unknown };
+    const b = r.body as {
+      address?: { country_code?: unknown; ["ISO3166-2-lvl4"]?: unknown };
+      display_name?: unknown;
+    };
     const cc = b.address?.country_code;
+    const region = b.address?.["ISO3166-2-lvl4"];
     out = {
       countryCode: typeof cc === "string" && cc ? cc.toUpperCase() : null,
       displayName: typeof b.display_name === "string" ? b.display_name : null,
+      regionCode: typeof region === "string" && region ? region.toUpperCase() : null,
+      zoom: 5,
     };
   }
   geoCache[key] = out;
@@ -635,7 +677,7 @@ async function reverseGeocode(
 type EvalOutcome = {
   result: FactLockResult;
   extracts: Record<string, string | null>;
-  reverseGeocode: { countryCode: string | null; displayName: string | null } | null;
+  reverseGeocode: ReverseGeo | null;
 };
 
 async function evaluateCandidate(
@@ -653,7 +695,7 @@ async function evaluateCandidate(
     era: queryEra,
   };
   let extracts: Record<string, string | null> = {};
-  let geo: { countryCode: string | null; displayName: string | null } | null = null;
+  let geo: ReverseGeo | null = null;
   let evaluatedG3 = false;
   let evaluatedG5 = false;
 
@@ -766,7 +808,7 @@ type CandidateRow = {
   query_eras: string[];
   result: FactLockResult;
   extracts: Record<string, string | null>;
-  reverse_geocode: { countryCode: string | null; displayName: string | null } | null;
+  reverse_geocode: ReverseGeo | null;
   continent: string | null;
   country: string | null;
   cell_era: string | null;
@@ -810,6 +852,176 @@ function gridOf(rows: CandidateRow[]): {
     }
   }
   return { grid, emptyCells };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECLASSIFY MODE — status='new' rows only; writes continent and
+// quota_bucket.continent only. Backup is written before any DB mutation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ReclassifyRow = {
+  id: string;
+  title: string | null;
+  country: string | null;
+  continent: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  reverse_country_code: string | null;
+  reverse_region_code: string | null;
+  citation_region_code: string | null;
+  quota_bucket: Record<string, unknown> | null;
+};
+
+function continentCounts(rows: Array<{ continent: string | null }>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const r of rows) {
+    const key = r.continent ?? "unknown";
+    out[key] = (out[key] ?? 0) + 1;
+  }
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+async function runReclassifyContinents(flags: Flags) {
+  console.log("=== WD-HARVEST --reclassify-continents — DRY RUN unless --write ===");
+  if (!flags.backup) throw new Error("--backup <json> is required for --reclassify-continents");
+
+  const res = await harvestDb.query<ReclassifyRow>(
+    `SELECT id, COALESCE(wd_label, title, wikidata_qid) AS title, country, continent,
+            latitude, longitude,
+            checks->>'reverse_country_code' AS reverse_country_code,
+            checks->>'reverse_region_code' AS reverse_region_code,
+            source_citations->'reverse_geocode'->>'region_code' AS citation_region_code,
+            quota_bucket
+       FROM public.generation_candidates
+      WHERE status='new'
+      ORDER BY created_at, id`
+  );
+  await harvestDb.end();
+
+  const backupPath = resolve(flags.backup);
+  mkdirSync(dirname(backupPath), { recursive: true });
+  const backup = {
+    created_at: new Date().toISOString(),
+    source: "public.generation_candidates status=new",
+    rows: res.rows.map((r) => ({
+      id: r.id,
+      old_continent: r.continent,
+      old_quota_bucket: r.quota_bucket,
+    })),
+  };
+  writeFileSync(backupPath, JSON.stringify(backup, null, 1));
+  console.log(`backup written: ${backupPath} rows=${backup.rows.length}`);
+
+  const beforeCounts = continentCounts(res.rows);
+  const updates: Array<{
+    id: string;
+    title: string | null;
+    country: string | null;
+    oldContinent: string | null;
+    newContinent: string;
+    oldQuotaContinent: unknown;
+    reverseCountryCode: string | null;
+    reverseRegionCode: string | null;
+  }> = [];
+  const evaluated: Array<ReclassifyRow & { newContinent: string }> = [];
+
+  for (const row of res.rows) {
+    let countryCode = row.reverse_country_code?.toUpperCase() ?? null;
+    let regionCode = row.reverse_region_code ?? row.citation_region_code ?? null;
+    if (countryCode === "US" && !regionCode && row.latitude != null && row.longitude != null) {
+      const geo = await reverseGeocode({ lat: row.latitude, lon: row.longitude });
+      countryCode = geo?.countryCode ?? countryCode;
+      regionCode = geo?.regionCode ?? regionCode;
+    }
+    const newContinent = row.latitude != null && row.longitude != null
+      ? continentForCountryCode(countryCode, row.latitude, row.longitude, regionCode)
+      : "unknown";
+    evaluated.push({ ...row, newContinent });
+    const oldQuotaContinent = row.quota_bucket?.continent;
+    if (row.continent !== newContinent || oldQuotaContinent !== newContinent) {
+      updates.push({
+        id: row.id,
+        title: row.title,
+        country: row.country,
+        oldContinent: row.continent,
+        newContinent,
+        oldQuotaContinent,
+        reverseCountryCode: countryCode,
+        reverseRegionCode: regionCode,
+      });
+    }
+  }
+
+  console.log(`reclassify evaluated=${res.rows.length} changed=${updates.length}`);
+  console.log(`before continent counts: ${JSON.stringify(beforeCounts)}`);
+  for (const u of updates) {
+    console.log(`changed: ${u.title ?? u.id} | country=${u.country ?? "-"} | ${u.oldContinent ?? "unknown"} -> ${u.newContinent}`);
+  }
+
+  let writeError: string | null = null;
+  let updatedRows = 0;
+  let afterCounts: Record<string, number> | null = null;
+  if (flags.write && updates.length) {
+    try {
+      await harvestDb.query("BEGIN");
+      for (const u of updates) {
+        const upd = await harvestDb.query(
+          `UPDATE public.generation_candidates
+              SET continent=$2,
+                  quota_bucket=jsonb_set(coalesce(quota_bucket,'{}'::jsonb),'{continent}',to_jsonb($2::text),true)
+            WHERE id=$1 AND status='new'`,
+          [u.id, u.newContinent]
+        );
+        updatedRows += upd.rowCount ?? 0;
+      }
+      await harvestDb.query("COMMIT");
+      const after = await harvestDb.query<{ continent: string | null }>(
+        "SELECT continent FROM public.generation_candidates WHERE status='new'"
+      );
+      afterCounts = continentCounts(after.rows);
+      console.log(`after continent counts: ${JSON.stringify(afterCounts)}`);
+      console.log(`reclassify write result: updated_rows=${updatedRows} changed_plan=${updates.length}`);
+    } catch (err) {
+      await harvestDb.query("ROLLBACK").catch(() => undefined);
+      const e = err as Error & { code?: string };
+      writeError = `${e.code ?? "db_error"}:${e.message.split("\n")[0]}`;
+      console.error(`reclassify write failed soft; no commit. ${writeError}`);
+    } finally {
+      await harvestDb.end();
+    }
+  } else if (!flags.write) {
+    console.log("DRY RUN COMPLETE — generation_candidates untouched (0 writes).");
+  }
+
+  flushCaches();
+  const rollbackScript = backupPath.replace(/\.json$/i, ".rollback.mjs");
+  const report = {
+    meta: {
+      task: "EDQ-FIX-HARVESTER-OPS-1126-904",
+      mode: "reclassify-continents",
+      write: flags.write,
+      backupPath,
+      rollbackScript,
+      writeError,
+    },
+    beforeCounts,
+    afterCounts,
+    evaluated: evaluated.map((r) => ({
+      id: r.id,
+      title: r.title,
+      country: r.country,
+      oldContinent: r.continent,
+      newContinent: r.newContinent,
+      reverseCountryCode: r.reverse_country_code,
+    })),
+    updates,
+    updatedRows: flags.write && !writeError ? updatedRows : 0,
+  };
+  const outPath = resolve(flags.out);
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, JSON.stringify(report, null, 1));
+  console.log(`report: ${outPath}`);
+  console.log(`rollback script path: ${rollbackScript}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -915,7 +1127,8 @@ function continentOfEvaluation(ev: EvalOutcome): string | null {
   return continentForCountryCode(
     ev.reverseGeocode?.countryCode ?? ev.result.reverse_country_code,
     ev.result.coords.lat,
-    ev.result.coords.lon
+    ev.result.coords.lon,
+    ev.reverseGeocode?.regionCode ?? null
   );
 }
 
@@ -976,6 +1189,7 @@ async function evaluateAndStoreCandidate(
   retryRow: RetryRejectedRow | null
 ): Promise<void> {
   ctx.evaluatedQids.add(qid);
+  operProgress.processed = ctx.evaluatedQids.size;
   try {
     const ev = await evaluateCandidate(qid, era, ctx.eventClasses, ctx.fictionalClasses);
     const row = buildCandidateRow(ctx, qid, era, ev, retryRow);
@@ -1000,6 +1214,7 @@ async function evaluateRetryRejectedRows(ctx: HarvestCtx): Promise<number> {
     return 0;
   }
   console.log(`retry-rejected: re-evaluating ${qids.length} bug-class rejected rows in place`);
+  operProgress.total += qids.length;
   await fetchClosure(qids);
   let done = 0;
   for (const qid of qids) {
@@ -1040,6 +1255,7 @@ async function harvestRound(
   const fresh = res.qids.filter(
     (q) => !ctx.evaluatedQids.has(q) && !ctx.existingQids.has(q)
   );
+  operProgress.total += fresh.length;
   if (fresh.length) await fetchClosure(fresh);
   for (const qid of fresh) {
     if (checkHarvestLimits(ctx)) break;
@@ -1124,6 +1340,7 @@ function candidateDbPayload(r: CandidateRow, flags: Flags) {
       ? {
           country_code: r.reverse_geocode.countryCode,
           display_name: r.reverse_geocode.displayName,
+          region_code: r.reverse_geocode.regionCode ?? null,
         }
       : null,
   });
@@ -1147,6 +1364,7 @@ function candidateDbPayload(r: CandidateRow, flags: Flags) {
     stated_country_isos: r.result.stated_country_isos,
     place_country_isos: r.result.place_country_isos,
     reverse_country_code: r.result.reverse_country_code,
+    reverse_region_code: r.reverse_geocode?.regionCode ?? null,
     quota_bucket: quotaBucket,
   });
   return {
@@ -1335,6 +1553,11 @@ async function runHarvest(flags: Flags) {
     console.log(`resume: rows=${ctx.rows.length} evaluated=${ctx.evaluatedQids.size} completed_rounds=${ctx.completedRounds.size}`);
   }
 
+  operProgress.phase = "harvest";
+  operProgress.processed = ctx.evaluatedQids.size;
+  operProgress.total = ctx.evaluatedQids.size;
+  const operTimer = startOperHeartbeat(() => incrementalFlush(ctx));
+
   if (flags.retryRejected) await evaluateRetryRejectedRows(ctx);
 
   // 3. Pass 1: strict sitelink floor (MIN_SITELINKS) for every era x class.
@@ -1411,24 +1634,44 @@ async function runHarvest(flags: Flags) {
   // their existing row by wikidata_qid; all other inserts use ON CONFLICT DO NOTHING.
   const writeStats: CandidateWriteStats = { new: 0, rejected: 0, updated: 0, skippedConflict: 0 };
   if (flags.write) {
-    const toWrite = ctx.rows.filter((r) => !r.dedupe_skip);
+    const writeCap = Math.max(0, Math.floor(flags.writeCap));
+    const writableRows = ctx.rows.filter((r) => !r.dedupe_skip);
+    const toWrite = writableRows.slice(0, writeCap);
     const rejectedCount = toWrite.filter((r) => !r.result.pass).length;
-    console.log(`\nWRITE: candidate rows=${toWrite.length} (passers=${toWrite.filter((r) => r.result.pass).length}, selected=${aggregate.selected.length}, surplus=${aggregate.surplus.length}, rejected=${rejectedCount})`);
+    console.log(`\nWRITE: candidate rows=${toWrite.length}/${writableRows.length} cap=${writeCap} (passers=${toWrite.filter((r) => r.result.pass).length}, selected=${aggregate.selected.length}, surplus=${aggregate.surplus.length}, rejected=${rejectedCount})`);
+    operProgress.phase = "write";
+    operProgress.processed = 0;
+    operProgress.total = toWrite.length;
+    let writeFailure: string | null = null;
     for (const r of toWrite) {
       if (checkHarvestLimits(ctx)) break;
-      const outcome = await writeCandidateRow(r, flags);
-      if (outcome === "updated") writeStats.updated += 1;
-      else if (outcome === "conflict") writeStats.skippedConflict += 1;
-      else if (r.result.pass) writeStats.new += 1;
-      else writeStats.rejected += 1;
-      if ((writeStats.new + writeStats.rejected + writeStats.updated + writeStats.skippedConflict) % CANDIDATE_FLUSH_N === 0) {
-        heartbeat("write", `written=${writeStats.new + writeStats.rejected + writeStats.updated + writeStats.skippedConflict}/${toWrite.length}`);
+      try {
+        const outcome = await writeCandidateRow(r, flags);
+        if (outcome === "updated") writeStats.updated += 1;
+        else if (outcome === "conflict") writeStats.skippedConflict += 1;
+        else if (r.result.pass) writeStats.new += 1;
+        else writeStats.rejected += 1;
+      } catch (err) {
+        const e = err as Error & { code?: string };
+        writeFailure = `${e.code ?? "db_error"}:${e.message.split("\n")[0]}`;
+        stopHarvest(ctx, "db_write_failed_checkpoint_saved");
+        incrementalFlush(ctx);
+        break;
+      }
+      const written = writeStats.new + writeStats.rejected + writeStats.updated + writeStats.skippedConflict;
+      operProgress.processed = written;
+      if (written % CANDIDATE_FLUSH_N === 0) {
+        heartbeat("write", `written=${written}/${toWrite.length}`);
         incrementalFlush(ctx);
       }
     }
     await harvestDb.end();
-    console.log(`write result: new=${writeStats.new} rejected=${writeStats.rejected} updated=${writeStats.updated} conflicts=${writeStats.skippedConflict}`);
+    console.log(`write result: new=${writeStats.new} rejected=${writeStats.rejected} updated=${writeStats.updated} conflicts=${writeStats.skippedConflict}${writeFailure ? ` db_failure=${writeFailure}` : ""}`);
   }
+
+  operProgress.phase = "complete";
+  clearInterval(operTimer);
+  heartbeat("progress", operProgressDetail());
 
   saveHarvestState(ctx);
   const finalReport = writeHarvestReport(ctx, flags.write ? writeStats : null, true);
@@ -1622,11 +1865,16 @@ async function main() {
     console.error("FATAL: SUPABASE_DB_CONNECTION not set after --env-file load (name only, value never printed).");
     process.exit(1);
   }
+  if (!Number.isFinite(flags.writeCap) || flags.writeCap < 0) {
+    console.error("FATAL: --write-cap must be a non-negative number.");
+    process.exit(1);
+  }
   const outDir = dirname(resolve(flags.out));
   mkdirSync(outDir, { recursive: true });
   loadCaches(outDir);
   try {
-    if (flags.existing) await runExisting(flags);
+    if (flags.reclassifyContinents) await runReclassifyContinents(flags);
+    else if (flags.existing) await runExisting(flags);
     else await runHarvest(flags);
   } catch (err) {
     flushCaches();
