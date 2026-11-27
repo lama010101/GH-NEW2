@@ -775,7 +775,7 @@ export const PIPELINE_SAFEGUARDS: readonly Safeguard[] = [
     id: "broadcast-golden-path",
     title: "Broadcast/golden-path gate",
     protects: "the compete core from regressions while pipeline work proceeds",
-    mechanism: "protected compete files trigger the golden-path gate; room.broadcast remains absent from src and partykit outside the owned implementation path",
+    mechanism: "protected compete files trigger the golden-path gate; the banned room-wide broadcast call remains absent from src and partykit outside the owned implementation path",
     enforcedBy: "ci",
     status: "live",
     ownerTask: null,
