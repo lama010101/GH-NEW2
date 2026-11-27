@@ -1644,7 +1644,6 @@ async function runHarvest(flags: Flags) {
     operProgress.total = toWrite.length;
     let writeFailure: string | null = null;
     for (const r of toWrite) {
-      if (checkHarvestLimits(ctx)) break;
       try {
         const outcome = await writeCandidateRow(r, flags);
         if (outcome === "updated") writeStats.updated += 1;
