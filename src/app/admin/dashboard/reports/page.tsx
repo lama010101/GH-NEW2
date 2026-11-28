@@ -145,6 +145,9 @@ export default async function EventReportsPage({
             {" — players flag problems; nothing is removed automatically"}
           </p>
         </div>
+        <Link href="/admin/dashboard/reports/feedback" className="ops-btn">
+          Event feedback
+        </Link>
       </header>
 
       <div className="fleet-filterbar" role="group" aria-label="Filter by status">

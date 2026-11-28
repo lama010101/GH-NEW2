@@ -83,6 +83,18 @@ export type EventLearnResponse = {
   title: string | null;
   /** events.description — "What happened". */
   description: string | null;
+  /**
+   * UX-BUILD-EVENTFEEDBACK-1128-925 — raw English source values captured
+   * before any translation overlay. Correction suggestions are prefilled and
+   * compared against these values, never against overlaid display text.
+   */
+  canonical: {
+    title: string;
+    description: string | null;
+    year: number;
+    locationName: string | null;
+    imageUrl: string | null;
+  };
   /** hints.content of the when/tier-5 row, or null when absent. */
   yearClues: string | null;
   /** hints.content of the where/tier-5 row, or null when absent. */

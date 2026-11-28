@@ -359,6 +359,15 @@ export async function loadEventLearn(params: {
     return { status: "not_found" };
   }
 
+  const imageRes = await dbPool.query<{ url: string | null }>(
+    `SELECT url
+     FROM images
+     WHERE event_id = $1::uuid
+     ORDER BY display_order, created_at
+     LIMIT 1`,
+    [eventId]
+  );
+
   const hintsRes = await dbPool.query<{
     id: string;
     tier: number;
@@ -448,6 +457,13 @@ export async function loadEventLearn(params: {
   const data: EventLearnResponse = {
     title: row.title,
     description: row.description,
+    canonical: {
+      title: row.title,
+      description: row.description,
+      year: row.event_year,
+      locationName: row.display_name,
+      imageUrl: imageRes.rows[0]?.url ?? null,
+    },
     yearClues,
     locationClues,
     contemporaryEvent,
