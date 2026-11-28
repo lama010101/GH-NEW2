@@ -54,11 +54,6 @@ const KNOWN_FAILING: Record<string, { todo: string; reason: string }> = {
     reason:
       "origin/main still contains legacy era notation in year parsing tests/comments and generation-era bucket labels; product-code migration is outside this guardrails phase.",
   },
-  [RULE4_ID]: {
-    todo: "EDQ-TODO-TRACKED-SECRET-SHAPED-STRINGS",
-    reason:
-      "origin/main already contains secret-shaped literals/pattern sources in tracked security fixtures, docs, mobile config, and test assets; separating real secrets from test/documentation patterns is outside this guardrails phase.",
-  },
 };
 
 // Signed-year notation allowlist. Currently empty by design: no exception has
@@ -66,6 +61,126 @@ const KNOWN_FAILING: Record<string, { todo: string; reason: string }> = {
 // must carry a reason comment explaining why recognizing legacy input notation
 // is required rather than emitting it.
 const SIGNED_YEAR_ALLOWLIST: ReadonlyArray<{ path: string; line: number; reason: string }> = [];
+
+type SecretPatternClass =
+  | "PRIVATE_KEY_BEGIN"
+  | "JWT_LIKE"
+  | "OPENROUTER_LIKE"
+  | "GOOGLE_API_KEY_LIKE"
+  | "BEARER_VALUE"
+  | "TOKEN_QUERY_VALUE"
+  | "POSTGRES_DSN"
+  | "SENSITIVE_ASSIGNMENT";
+
+type SecretAllowlistEntry = {
+  path: string;
+  line?: number;
+  patternClass: SecretPatternClass;
+  reason: string;
+};
+
+// Secret-scan allowlist. Entries are intentionally path+pattern-class specific
+// or line-specific; none is a whole-directory suppression. Each reason records
+// why the literal is test/documentation material or public client configuration.
+const SECRET_ALLOWLIST: ReadonlyArray<SecretAllowlistEntry> = [
+  {
+    path: "android/app/google-services.json",
+    patternClass: "GOOGLE_API_KEY_LIKE",
+    reason: "Firebase Android client configuration is distributed with the app by design; dashboard/API restrictions cannot be verified from the repository.",
+  },
+  {
+    path: "docs/SECRET_HYGIENE.md",
+    line: 44,
+    patternClass: "OPENROUTER_LIKE",
+    reason: "Secret-hygiene documentation contains a deliberately non-usable example of the key format.",
+  },
+  {
+    path: "package-lock.json",
+    patternClass: "JWT_LIKE",
+    reason: "Generated lockfile data contains a non-credential JWT-shaped substring in public package metadata.",
+  },
+  {
+    path: "scripts/dev/envCheck.test.ts",
+    line: 213,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Environment-validation test fixture; not a deployed credential.",
+  },
+  {
+    path: "scripts/dev/envCheck.test.ts",
+    line: 249,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Environment-validation test fixture; not a deployed credential.",
+  },
+  {
+    path: "scripts/dev/envCheck.test.ts",
+    line: 298,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Environment-validation test fixture; not a deployed credential.",
+  },
+  {
+    path: "scripts/dev/envCheck.test.ts",
+    line: 301,
+    patternClass: "POSTGRES_DSN",
+    reason: "Environment-validation test DSN uses non-resolving test infrastructure and is not a deployed credential.",
+  },
+  {
+    path: "scripts/dev/envCheck.test.ts",
+    line: 302,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Environment-validation test fixture; not a deployed credential.",
+  },
+  {
+    path: "scripts/dev/envCheck.test.ts",
+    line: 304,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Environment-validation test fixture; not a deployed credential.",
+  },
+  {
+    path: "scripts/dev/secretScan.test.ts",
+    line: 39,
+    patternClass: "PRIVATE_KEY_BEGIN",
+    reason: "Secret-scanner test fixture proving detector behavior; not a credential in use.",
+  },
+  {
+    path: "scripts/dev/secretScanCore.ts",
+    patternClass: "OPENROUTER_LIKE",
+    reason: "Scanner pattern-source/test constant documents the detector shape and is deliberately non-usable.",
+  },
+  {
+    path: "scripts/dev/secretScanCore.ts",
+    patternClass: "PRIVATE_KEY_BEGIN",
+    reason: "Scanner pattern-source/test constant documents the detector shape and is deliberately non-usable.",
+  },
+  {
+    path: "scripts/dev/security-posture-audit.sql",
+    line: 149,
+    patternClass: "PRIVATE_KEY_BEGIN",
+    reason: "Security-audit fixture/pattern source used to test detection logic; not a credential in use.",
+  },
+  {
+    path: "scripts/test/_scratch/theme-screenshots/contact-sheet.html",
+    patternClass: "JWT_LIKE",
+    reason: "Generated visual-test artifact contains a JWT-shaped base64 substring that is not credential material.",
+  },
+  {
+    path: "src/app/api/push/fcm-token/route.test.ts",
+    line: 4,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Push-token route test fixture; not a deployed credential.",
+  },
+  {
+    path: "src/server/pushSender.test.ts",
+    line: 254,
+    patternClass: "SENSITIVE_ASSIGNMENT",
+    reason: "Push sender test fixture; not a deployed credential.",
+  },
+  {
+    path: "src/server/pushSender.test.ts",
+    line: 309,
+    patternClass: "PRIVATE_KEY_BEGIN",
+    reason: "Push sender test fixture key material generated for tests; not a credential in use.",
+  },
+];
 
 function git(args: string[], cwd: string): string {
   return execFileSync("git", args, {
@@ -278,7 +393,7 @@ function checkSignedYearsRule(files: SourceFile[]): RuleResult {
   };
 }
 
-function secretPatterns(): ReadonlyArray<{ id: string; re: RegExp }> {
+function secretPatterns(): ReadonlyArray<{ id: SecretPatternClass; re: RegExp }> {
   return [
     { id: "PRIVATE_KEY_BEGIN", re: new RegExp("-{5}BEGIN", "g") },
     { id: "JWT_LIKE", re: new RegExp("eyJ" + "[A-Za-z0-9_-]{10,}", "g") },
@@ -322,6 +437,171 @@ function isEnvOrCodeValue(value: string): boolean {
   return false;
 }
 
+type SecretScanResult = {
+  occurrences: number;
+  locations: LocationCount[];
+  rawOccurrences: number;
+  nonLiteralExclusions: number;
+  nonCredentialExclusions: number;
+  allowlistedOccurrences: number;
+};
+
+function stripSecretPunctuation(raw: string): string {
+  return raw.trim().replace(/^["'`]+|["'`\),;\]]+$/g, "");
+}
+
+function isObviouslyNonLiteralSecretValue(raw: string): boolean {
+  const value = raw.trim();
+  const lower = value.toLowerCase();
+  if (value.includes("${") || value.includes("$(") || value.includes("`")) return true;
+  if (value.includes("<") || value.includes(">") || value.includes("[") || value.includes("]")) return true;
+  if (/^(bearer\s+)?(token|apikey|api_key|key|secret|password|servicerolekey|service_role_key|anonkey|anon_key)[`'")\],;]*$/i.test(value)) {
+    return true;
+  }
+  for (const word of ["your", "placeholder", "example", "redacted", "changeme", "replace", "dummy", "fake", "sample", "synthetic"]) {
+    if (lower.includes(word)) return true;
+  }
+  return lower.includes("localhost") || lower.includes("127.0.0.1");
+}
+
+function entropyPerChar(value: string): number {
+  if (value.length === 0) return 0;
+  const counts = new Map<string, number>();
+  for (const ch of value) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+  let entropy = 0;
+  for (const count of counts.values()) {
+    const probability = count / value.length;
+    entropy -= probability * Math.log2(probability);
+  }
+  return entropy;
+}
+
+function highEntropyToken(raw: string): boolean {
+  const value = stripSecretPunctuation(raw);
+  if (value.length < 20) return false;
+  if (/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(value)) return true;
+  if (/^(sk|pk|xox|ghp|github_pat|hf|AIza)[A-Za-z0-9_\-]{12,}/.test(value)) return true;
+  if (/^[A-Fa-f0-9]{32,}$/.test(value)) return true;
+  return /^[A-Za-z0-9_\-+/=]{24,}$/.test(value) && entropyPerChar(value) >= 4.0;
+}
+
+function tokenQueryCredential(raw: string): boolean {
+  return highEntropyToken(stripSecretPunctuation(raw).replace(new RegExp("^" + "token" + "=", "i"), ""));
+}
+
+function bearerCredential(raw: string): boolean {
+  return highEntropyToken(stripSecretPunctuation(raw).replace(/^Bearer\s+/i, ""));
+}
+
+type PostgresDsnRisk = "credential" | "fixture" | "not_credential" | "unknown";
+
+function postgresDsnRisk(raw: string): PostgresDsnRisk {
+  const cleaned = stripSecretPunctuation(raw);
+  if (isPlaceholderValue(cleaned) || isObviouslyNonLiteralSecretValue(cleaned)) return "fixture";
+  try {
+    const url = new URL(cleaned);
+    const host = url.hostname.toLowerCase();
+    const password = decodeURIComponent(url.password || "");
+    if (!password) return "not_credential";
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host.endsWith(".local") ||
+      host.endsWith(".test") ||
+      host.endsWith(".invalid") ||
+      host.endsWith(".example") ||
+      /example|fake|dummy|placeholder/.test(host)
+    ) {
+      return "fixture";
+    }
+    if (["password", "postgres", "example", "placeholder", "changeme"].includes(password.toLowerCase())) return "fixture";
+    if (/your|example|placeholder|changeme|fake|dummy/i.test(password)) return "fixture";
+    return "credential";
+  } catch {
+    const lower = cleaned.toLowerCase();
+    if (
+      lower.includes("user:password@host") ||
+      lower.includes(":password@") ||
+      lower.includes("your") ||
+      lower.includes("example") ||
+      lower.includes("fake") ||
+      lower.includes("dummy") ||
+      lower.includes("localhost") ||
+      lower.includes("127.0.0.1")
+    ) {
+      return "fixture";
+    }
+    return "unknown";
+  }
+}
+
+function credentialShaped(patternClass: SecretPatternClass, raw: string): boolean {
+  if (patternClass === "PRIVATE_KEY_BEGIN" || patternClass === "OPENROUTER_LIKE" || patternClass === "GOOGLE_API_KEY_LIKE") return true;
+  if (patternClass === "JWT_LIKE" || patternClass === "SENSITIVE_ASSIGNMENT") {
+    if (/^postgres(ql)?:\/\//i.test(stripSecretPunctuation(raw))) {
+      const risk = postgresDsnRisk(raw);
+      return risk === "credential" || risk === "unknown";
+    }
+    return highEntropyToken(raw);
+  }
+  if (patternClass === "BEARER_VALUE") return bearerCredential(raw);
+  if (patternClass === "TOKEN_QUERY_VALUE") return tokenQueryCredential(raw);
+  if (patternClass === "POSTGRES_DSN") {
+    const risk = postgresDsnRisk(raw);
+    return risk === "credential" || risk === "unknown";
+  }
+  return false;
+}
+
+function isSecretAllowlisted(path: string, line: number, patternClass: SecretPatternClass): boolean {
+  return SECRET_ALLOWLIST.some(
+    (entry) => entry.path === path && entry.patternClass === patternClass && (entry.line === undefined || entry.line === line),
+  );
+}
+
+function emptySecretScanResult(): SecretScanResult {
+  return {
+    occurrences: 0,
+    locations: [],
+    rawOccurrences: 0,
+    nonLiteralExclusions: 0,
+    nonCredentialExclusions: 0,
+    allowlistedOccurrences: 0,
+  };
+}
+
+function scanSecretPattern(files: SourceFile[], pattern: { id: SecretPatternClass; re: RegExp }): SecretScanResult {
+  const result = emptySecretScanResult();
+  for (const file of files) {
+    const lines = file.text.split(/\r?\n/);
+    for (let index = 0; index < lines.length; index++) {
+      let count = 0;
+      for (const match of lines[index].matchAll(pattern.re)) {
+        const raw = match[0];
+        result.rawOccurrences += 1;
+        if (isObviouslyNonLiteralSecretValue(raw)) {
+          result.nonLiteralExclusions += 1;
+          continue;
+        }
+        if (!credentialShaped(pattern.id, raw)) {
+          result.nonCredentialExclusions += 1;
+          continue;
+        }
+        if (isSecretAllowlisted(file.path, index + 1, pattern.id)) {
+          result.allowlistedOccurrences += 1;
+          continue;
+        }
+        count += 1;
+      }
+      if (count > 0) {
+        result.occurrences += count;
+        result.locations.push({ path: file.path, line: index + 1, count });
+      }
+    }
+  }
+  return result;
+}
+
 function isForbiddenCommittedEnvPath(path: string): boolean {
   const base = baseName(path);
   if (base === ".dev.vars") return true;
@@ -330,9 +610,8 @@ function isForbiddenCommittedEnvPath(path: string): boolean {
   return false;
 }
 
-function scanSensitiveAssignments(files: SourceFile[]): { occurrences: number; locations: LocationCount[] } {
-  let occurrences = 0;
-  const locations: LocationCount[] = [];
+function scanSensitiveAssignments(files: SourceFile[]): SecretScanResult {
+  const result = emptySecretScanResult();
   for (const file of files) {
     const lines = file.text.split(/\r?\n/);
     for (let index = 0; index < lines.length; index++) {
@@ -340,22 +619,29 @@ function scanSensitiveAssignments(files: SourceFile[]): { occurrences: number; l
       let count = 0;
       for (const match of line.matchAll(SENSITIVE_ASSIGNMENT_RE)) {
         const raw = match[2] ?? match[3] ?? match[4] ?? "";
-        if (
-          raw.length >= 20 &&
-          !isPlaceholderValue(raw) &&
-          !isPureVariableRef(raw) &&
-          !isEnvOrCodeValue(raw)
-        ) {
-          count += 1;
+        if (!(raw.length >= 20 && !isPlaceholderValue(raw) && !isPureVariableRef(raw) && !isEnvOrCodeValue(raw))) continue;
+        result.rawOccurrences += 1;
+        if (isObviouslyNonLiteralSecretValue(raw) || /\s/.test(raw.trim())) {
+          result.nonLiteralExclusions += 1;
+          continue;
         }
+        if (!credentialShaped("SENSITIVE_ASSIGNMENT", raw)) {
+          result.nonCredentialExclusions += 1;
+          continue;
+        }
+        if (isSecretAllowlisted(file.path, index + 1, "SENSITIVE_ASSIGNMENT")) {
+          result.allowlistedOccurrences += 1;
+          continue;
+        }
+        count += 1;
       }
       if (count > 0) {
-        occurrences += count;
-        locations.push({ path: file.path, line: index + 1, count });
+        result.occurrences += count;
+        result.locations.push({ path: file.path, line: index + 1, count });
       }
     }
   }
-  return { occurrences, locations };
+  return result;
 }
 
 function checkCommittedSecretsRule(files: SourceFile[], trackedFiles: string[]): RuleResult {
@@ -364,23 +650,40 @@ function checkCommittedSecretsRule(files: SourceFile[], trackedFiles: string[]):
   const counts: Record<string, number> = {
     forbiddenEnvFiles: forbiddenPaths.length,
     dotenvExampleFilesSkippedForSecretSafety: dotenvExamplesSkipped,
+    secretAllowlistEntries: SECRET_ALLOWLIST.length,
   };
   const locations: LocationCount[] = forbiddenPaths.map((path) => ({ path, line: 0, count: 1 }));
+  let rawPatternOccurrences = 0;
+  let nonLiteralExclusions = 0;
+  let nonCredentialExclusions = 0;
+  let allowlistedOccurrences = 0;
 
   for (const pattern of secretPatterns()) {
-    const scan = scanLocations(files, () => true, pattern.re);
+    const scan = scanSecretPattern(files, pattern);
     counts[`pattern_${pattern.id}`] = scan.occurrences;
+    rawPatternOccurrences += scan.rawOccurrences;
+    nonLiteralExclusions += scan.nonLiteralExclusions;
+    nonCredentialExclusions += scan.nonCredentialExclusions;
+    allowlistedOccurrences += scan.allowlistedOccurrences;
     locations.push(...scan.locations);
   }
 
   const assignments = scanSensitiveAssignments(files);
   counts.sensitiveEnvAssignmentValues = assignments.occurrences;
+  rawPatternOccurrences += assignments.rawOccurrences;
+  nonLiteralExclusions += assignments.nonLiteralExclusions;
+  nonCredentialExclusions += assignments.nonCredentialExclusions;
+  allowlistedOccurrences += assignments.allowlistedOccurrences;
   locations.push(...assignments.locations);
 
   const patternHitOccurrences = Object.keys(counts)
     .filter((key) => key.startsWith("pattern_"))
     .reduce((sum, key) => sum + counts[key], 0);
   counts.patternHitOccurrences = patternHitOccurrences;
+  counts.rawPatternOccurrences = rawPatternOccurrences;
+  counts.nonLiteralExclusions = nonLiteralExclusions;
+  counts.nonCredentialExclusions = nonCredentialExclusions;
+  counts.allowlistedOccurrences = allowlistedOccurrences;
 
   return {
     id: RULE4_ID,
@@ -554,12 +857,13 @@ function selfTestFixtures(violating: boolean): { files: SourceFile[]; tracked: s
     };
   }
 
-  const jwtLike = "eyJ" + "abcdefghij";
-  const openRouterLike = "sk-or-" + "abcdef123456";
-  const googleLike = "AIza" + "01234567890123456789";
-  const bearerLike = "Bearer" + " synthetic";
-  const tokenLike = "token" + "=synthetic";
-  const postgresLike = "postgresql" + "://user:password@host/db";
+  const highEntropyFixture = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const jwtLike = "eyJ" + highEntropyFixture;
+  const openRouterLike = "sk-or-" + highEntropyFixture;
+  const googleLike = "AIza" + highEntropyFixture;
+  const bearerLike = "Bearer" + " " + highEntropyFixture;
+  const tokenLike = "token" + "=" + highEntropyFixture;
+  const postgresLike = "postgresql" + "://runner:" + highEntropyFixture + "@db.internal:5432/postgres";
   const privateBegin = "-".repeat(5) + "BEGIN";
   return {
     files: [
