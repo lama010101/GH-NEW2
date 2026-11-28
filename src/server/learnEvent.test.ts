@@ -277,6 +277,8 @@ const LEARN_EVENT_ROW: MockRow = {
   display_name: "Self Loc EN",
 };
 
+const LEARN_IMAGE_URL = "https://firebasestorage.googleapis.com/example/learn.webp";
+
 const LEARN_HINT_ROWS: MockRow[] = [
   { id: "h-t2", tier: 2, type: "when", content: "Tier2 EN", metadata: null },
   { id: "h-t4w", tier: 4, type: "when", content: "Contemp EN", metadata: { km: 5 } },
@@ -316,7 +318,9 @@ const LEARN_LOCATION_TR: MockRow[] = [
   { event_id: "c4", display_name: "Loc C4 FR", country: "C4" },
 ];
 
-function installLearnFixture() {
+function installLearnFixture(
+  overrides: { eventRows?: MockRow[]; sessionOk?: boolean } = {}
+) {
   mockDbQuery.mockImplementation(async (sql: string, params?: unknown[]) => {
     const ids = Array.isArray(params?.[0]) ? (params[0] as string[]) : [];
     if (sql.includes("event_translations")) {
@@ -332,16 +336,21 @@ function installLearnFixture() {
         rows: LEARN_LOCATION_TR.filter((r) => ids.includes(r.event_id as string)),
       };
     }
-    if (sql.includes("FROM sessions")) return { rows: [{ ok: true }] };
+    if (sql.includes("FROM sessions")) {
+      return { rows: [{ ok: overrides.sessionOk ?? true }] };
+    }
     if (sql.includes("SESSION_CREATED")) {
       return { rows: [{ event_ids: ["e0", "e1", "e2"] }] };
     }
     if (sql.includes("round_results")) {
       return { rows: [0, 1, 2].map((round_index) => ({ round_index })) };
     }
+    if (sql.includes("FROM images")) return { rows: [{ url: LEARN_IMAGE_URL }] };
     if (sql.includes("FROM hints")) return { rows: LEARN_HINT_ROWS };
     if (sql.includes("e.id <> $1::uuid")) return { rows: LEARN_CANDIDATE_ROWS };
-    if (sql.includes("FROM events e")) return { rows: [LEARN_EVENT_ROW] };
+    if (sql.includes("FROM events e")) {
+      return { rows: overrides.eventRows ?? [LEARN_EVENT_ROW] };
+    }
     return { rows: [] };
   });
 }
@@ -379,6 +388,13 @@ const mapPt = (
 const EN_DATA = {
   title: "Self Title EN",
   description: "Self desc EN",
+  canonical: {
+    title: "Self Title EN",
+    description: "Self desc EN",
+    year: 1900,
+    locationName: "Self Loc EN",
+    imageUrl: LEARN_IMAGE_URL,
+  },
   yearClues: "Year clues EN",
   locationClues: "Loc clues EN",
   contemporaryEvent: { content: "Contemp EN", metadata: { km: 5 } },
@@ -402,6 +418,13 @@ const EN_DATA = {
 const FR_DATA = {
   title: "Self Title FR",
   description: "Self desc FR",
+  canonical: {
+    title: "Self Title EN",
+    description: "Self desc EN",
+    year: 1900,
+    locationName: "Self Loc EN",
+    imageUrl: LEARN_IMAGE_URL,
+  },
   yearClues: "Year clues FR",
   locationClues: "Loc clues FR",
   contemporaryEvent: { content: "Contemp EN", metadata: { km: 5 } },
@@ -437,7 +460,7 @@ describe("loadEventLearn i18n overlay", () => {
 
     const sqls = mockDbQuery.mock.calls.map((c) => String(c[0]));
     expect(sqls.filter((s) => s.includes("_translations"))).toHaveLength(0);
-    expect(sqls).toHaveLength(6);
+    expect(sqls).toHaveLength(7);
     expect(result.data).toEqual(EN_DATA);
   });
 
@@ -457,13 +480,14 @@ describe("loadEventLearn i18n overlay", () => {
 
     const sqls = mockDbQuery.mock.calls.map((c) => String(c[0]));
     expect(sqls.filter((s) => s.includes("_translations"))).toHaveLength(3);
-    expect(sqls).toHaveLength(9);
+    expect(sqls).toHaveLength(10);
 
     expect(result.data).toEqual(FR_DATA);
 
     // Response shape is unchanged.
     expect(Object.keys(result.data).sort()).toEqual(
       [
+        "canonical",
         "contemporaryEvent",
         "description",
         "locationClues",
@@ -494,5 +518,37 @@ describe("loadEventLearn i18n overlay", () => {
     expect([...(trCall![1] as [string[], string])[0]].sort()).toEqual(
       ["c1", "c2", "c3", "c4", "e0"].sort()
     );
+  });
+
+  it("with lang='fr' overlays data.title while canonical.title remains the raw English value", async () => {
+    const result = await loadEventLearn(learnParams("fr"));
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+
+    expect(result.data.title).toBe("Self Title FR");
+    expect(result.data.canonical.title).toBe("Self Title EN");
+    expect(result.data.canonical.description).toBe("Self desc EN");
+  });
+
+  it("canonical carries the raw year, location name, and primary image URL", async () => {
+    const result = await loadEventLearn(learnParams());
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+
+    expect(result.data.canonical.year).toBe(1900);
+    expect(result.data.canonical.locationName).toBe("Self Loc EN");
+    expect(result.data.canonical.imageUrl).toBe(LEARN_IMAGE_URL);
+  });
+
+  it("forbidden and not_found results carry no canonical block", async () => {
+    installLearnFixture({ sessionOk: false });
+    const forbidden = await loadEventLearn(learnParams());
+    expect(forbidden.status).toBe("forbidden");
+    expect(Object.keys(forbidden).sort()).toEqual(["status"]);
+
+    installLearnFixture({ eventRows: [] });
+    const notFound = await loadEventLearn(learnParams());
+    expect(notFound.status).toBe("not_found");
+    expect(Object.keys(notFound).sort()).toEqual(["status"]);
   });
 });
